@@ -1,29 +1,106 @@
 import mysql from 'mysql2/promise';
+import fs from 'fs';
+import path from 'path';
 
-const pool = mysql.createPool({
-  host: process.env.MYSQL_HOST,
-  port: parseInt(process.env.MYSQL_PORT || '3306'),
-  user: process.env.MYSQL_USER,
-  password: process.env.MYSQL_PASSWORD,
-  database: process.env.MYSQL_DB,
-  ssl: process.env.MYSQL_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
-  waitForConnections: true,
-  connectionLimit: 3,
-  queueLimit: 0,
-  connectTimeout: 15000,
-  acquireTimeout: 15000,
-  timeout: 15000
-});
+// Fallback to JSON file when MySQL is not available
+const useJsonFallback = process.env.USE_JSON_DB === 'true' || !process.env.MYSQL_HOST;
+let jsonData = null;
 
-// Generic query function
-const query = async (sql, params = []) => {
-  try {
-    const [results] = await pool.execute(sql, params);
-    return results;
-  } catch (error) {
-    console.error('Database query error:', error);
-    throw error;
+const loadJsonData = () => {
+  if (!jsonData) {
+    const jsonPath = path.join(process.cwd(), 'database.json');
+    if (fs.existsSync(jsonPath)) {
+      const data = fs.readFileSync(jsonPath, 'utf-8');
+      jsonData = JSON.parse(data);
+    }
   }
+  return jsonData;
+};
+
+// Initialize MySQL pool only if host is available
+let pool = null;
+let mysqlAvailable = false;
+
+if (!useJsonFallback && process.env.MYSQL_HOST) {
+  try {
+    pool = mysql.createPool({
+      host: process.env.MYSQL_HOST,
+      port: parseInt(process.env.MYSQL_PORT || '3306'),
+      user: process.env.MYSQL_USER,
+      password: process.env.MYSQL_PASSWORD,
+      database: process.env.MYSQL_DB,
+      ssl: process.env.MYSQL_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
+      waitForConnections: true,
+      connectionLimit: 3,
+      queueLimit: 0,
+      connectTimeout: 15000,
+      acquireTimeout: 15000,
+      timeout: 15000
+    });
+    mysqlAvailable = true;
+  } catch (error) {
+    console.warn('MySQL pool creation failed, using JSON fallback:', error.message);
+  }
+}
+
+// Generic query function with fallback
+const query = async (sql, params = []) => {
+  // Try MySQL first if available
+  if (mysqlAvailable && pool) {
+    try {
+      const [results] = await pool.execute(sql, params);
+      return results;
+    } catch (error) {
+      console.error('Database query error:', error);
+      // Fall through to JSON fallback
+    }
+  }
+
+  // Fallback to JSON file
+  const data = loadJsonData();
+  if (!data) {
+    throw new Error('No database available (MySQL connection failed and no JSON fallback)');
+  }
+
+  // Parse SQL to determine which table to query
+  const sqlLower = sql.toLowerCase().trim();
+  
+  // Extract table name from SQL
+  const fromMatch = sqlLower.match(/from\s+(\w+)/);
+  const whereMatch = sqlLower.match(/where\s+(.+?)(?:\s+order|\s+limit|\s+group|$)/i);
+  
+  if (!fromMatch) {
+    throw new Error('Invalid SQL query for JSON fallback');
+  }
+  
+  const tableName = fromMatch[1];
+  let results = data[tableName] || [];
+  
+  // Handle WHERE conditions (simple cases only)
+  if (whereMatch && results.length > 0) {
+    const whereClause = whereMatch[1];
+    
+    // Handle is_active = 1
+    const isActiveMatch = whereClause.match(/is_active\s*=\s*(\d+)/);
+    if (isActiveMatch) {
+      const isActiveValue = parseInt(isActiveMatch[1]);
+      results = results.filter(item => item.is_active === isActiveValue);
+    }
+    
+    // Handle id = ?
+    if (whereClause.includes('= ?') || whereClause.includes('=?')) {
+      const paramValue = params[0];
+      if (paramValue !== undefined) {
+        // Try to match by id
+        const idMatch = whereClause.match(/id\s*=\s*\?/);
+        if (idMatch) {
+          results = results.filter(item => item.id === paramValue);
+        }
+      }
+    }
+  }
+  
+  return results;
 };
 
 // Generic get one
