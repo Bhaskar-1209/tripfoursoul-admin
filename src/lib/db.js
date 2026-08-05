@@ -45,27 +45,51 @@ if (!useJsonFallback && process.env.MYSQL_HOST) {
 
 // Generic query function with fallback
 const query = async (sql, params = []) => {
-  // Try MySQL first if available
-  if (mysqlAvailable && pool) {
+  const sqlLower = sql.toLowerCase().trim();
+  
+  // CREATE/ALTER/INSERT/UPDATE/DELETE queries - only work with MySQL
+  const isDDL = sqlLower.startsWith('create') || sqlLower.startsWith('alter') || 
+                sqlLower.startsWith('insert') || sqlLower.startsWith('update') || 
+                sqlLower.startsWith('delete');
+  
+  if (isDDL) {
+    // These queries require MySQL
+    if (!mysqlAvailable || !pool) {
+      console.warn('DDL query skipped - MySQL not available:', sql);
+      // Return dummy result for INSERT (to get insertId)
+      if (sqlLower.startsWith('insert')) {
+        return { insertId: Date.now() };
+      }
+      return [];
+    }
+    
     try {
       const [results] = await pool.execute(sql, params);
       return results;
     } catch (error) {
       console.error('Database query error:', error);
+      throw error;
+    }
+  }
+  
+  // SELECT queries - can use JSON fallback
+  if (mysqlAvailable && pool) {
+    try {
+      const [results] = await pool.execute(sql, params);
+      return results;
+    } catch (error) {
+      console.error('Database query error, falling back to JSON:', error.message);
       // Fall through to JSON fallback
     }
   }
 
-  // Fallback to JSON file
+  // Fallback to JSON file for SELECT queries
   const data = loadJsonData();
   if (!data) {
     throw new Error('No database available (MySQL connection failed and no JSON fallback)');
   }
 
   // Parse SQL to determine which table to query
-  const sqlLower = sql.toLowerCase().trim();
-  
-  // Extract table name from SQL
   const fromMatch = sqlLower.match(/from\s+(\w+)/);
   const whereMatch = sqlLower.match(/where\s+(.+?)(?:\s+order|\s+limit|\s+group|$)/i);
   
