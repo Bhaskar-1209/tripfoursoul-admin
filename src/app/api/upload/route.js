@@ -8,6 +8,71 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+export async function GET(request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const imageUrl = searchParams.get('url');
+    const imagePath = searchParams.get('path');
+
+    if (!imageUrl && !imagePath) {
+      return NextResponse.json({ error: 'Image URL or path is required' }, { status: 400 });
+    }
+
+    let imageBuffer;
+    let contentType = 'image/jpeg';
+
+    // Fetch from URL (Cloudinary or external)
+    if (imageUrl) {
+      const response = await fetch(imageUrl);
+      if (!response.ok) {
+        return NextResponse.json({ error: 'Failed to fetch image' }, { status: 400 });
+      }
+      const arrayBuffer = await response.arrayBuffer();
+      imageBuffer = Buffer.from(arrayBuffer);
+      
+      // Detect content type from URL
+      if (imageUrl.endsWith('.png')) contentType = 'image/png';
+      else if (imageUrl.endsWith('.gif')) contentType = 'image/gif';
+      else if (imageUrl.endsWith('.webp')) contentType = 'image/webp';
+    }
+    // Read from local path
+    else if (imagePath) {
+      const fs = await import('fs');
+      const path = await import('path');
+      
+      // Remove leading slash if present
+      const cleanPath = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath;
+      const fullPath = path.join(process.cwd(), 'public', cleanPath);
+      
+      if (!fs.existsSync(fullPath)) {
+        return NextResponse.json({ error: 'Image not found' }, { status: 404 });
+      }
+      
+      imageBuffer = fs.readFileSync(fullPath);
+      
+      // Detect content type from extension
+      const ext = path.extname(fullPath).toLowerCase();
+      if (ext === '.png') contentType = 'image/png';
+      else if (ext === '.gif') contentType = 'image/gif';
+      else if (ext === '.webp') contentType = 'image/webp';
+    }
+
+    // Convert to base64
+    const base64Image = imageBuffer.toString('base64');
+    const dataUrl = `data:${contentType};base64,${base64Image}`;
+
+    return NextResponse.json({ 
+      success: true, 
+      base64Image: dataUrl,
+      contentType
+    });
+
+  } catch (error) {
+    console.error('Error converting image to base64:', error);
+    return NextResponse.json({ error: 'Failed to convert image to base64' }, { status: 500 });
+  }
+}
+
 export async function POST(request) {
   try {
     const contentType = request.headers.get('content-type');
