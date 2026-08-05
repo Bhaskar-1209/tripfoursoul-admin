@@ -1,0 +1,836 @@
+{
+  "admins": [
+    {
+      "username": "admin",
+      "email": "admin@tripforsoul.com",
+      "password": "$2b$10$sbSnC1X6DqOt9BxA97EDneDhJQNeGmhht5IeZyArMDXPgTyykwEWS",
+      "role": "super_admin",
+      "permissions": null,
+      "id": 1
+    },
+    {
+      "username": "Bhaskar",
+      "email": "bhskrbnsl@gmail.com",
+      "password": "$2b$10$Wr9mUgqrJPch7Avu.RaYN.NBnhmKo.sdaZTajo6Lo5QiA0EVJ7qb.",
+      "role": "staff",
+      "permissions": [
+        "dashboard",
+        "banner",
+        "trending"
+      ],
+      "is_active": 1,
+      "created_at": "2026-08-02T14:12:02.313Z",
+      "id": 2
+    }
+  ],
+  "banner_settings": [
+    {
+      "heading": "Journeys Crafted for the Soul",
+      "subtitle": "Not just another trip. We design meaningful land journeys that connect you with culture, people, and places beyond the tourist trail.",
+      "button1_text": "Find Now",
+      "button2_text": "View All Trips",
+      "button2_link": "/destinations",
+      "id": 1
+    }
+  ],
+  "banner_images": [
+    {
+      "image_url": "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1200&q=80",
+      "sort_order": 1,
+      "is_active": 1,
+      "id": 1
+    },
+    {
+      "image_url": "https://images.unsplash.com/photo-1503220317375-aaad61436b1b?w=1200&q=80",
+      "sort_order": 2,
+      "is_active": 1,
+      "id": 2
+    },
+    {
+      "image_url": "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1200&q=80",
+      "sort_order": 3,
+      "is_active": 1,
+      "id": 3
+    }
+  ],
+  "trending_settings": [
+    {
+      "is_enabled": 1,
+      "heading": "Trending Now",
+      "subtitle": "Most sought-after destinations this season",
+      "id": 1
+    }
+  ],
+  "trending_items": [],
+  "region_pricing": [
+    {
+      "region": "Asia",
+      "starting_price": "$799",
+      "currency": "USD",
+      "is_active": 1,
+      "id": 1
+    },
+    {
+      "region": "Europe",
+      "starting_price": "$1,499",
+      "currency": "USD",
+      "is_active": 1,
+      "id": 2
+    },
+    {
+      "region": "Middle East",
+      "starting_price": "$999",
+      "currency": "USD",
+      "is_active": 1,
+      "id": 3
+    },
+    {
+      "region": "Africa",
+      "starting_price": "$1,299",
+      "currency": "USD",
+      "is_active": 1,
+      "id": 4
+    },
+    {
+      "region": "Americas",
+      "starting_price": "$1,199",
+      "currency": "USD",
+      "is_active": 1,
+      "id": 5
+    }
+  ],
+  "popular_destinations": [],
+  "homepage_sections": [
+    {
+      "section_key": "banner",
+      "section_name": "Banner",
+      "is_visible": 1,
+      "sort_order": 1,
+      "id": 1
+    },
+    {
+      "section_key": "about_us",
+      "section_name": "About Us",
+      "is_visible": 1,
+      "sort_order": 2,
+      "id": 2
+    },
+    {
+      "section_key": "trending",
+      "section_name": "Trending Now",
+      "is_visible": 1,
+      "sort_order": 3,
+      "id": 3
+    },
+    {
+      "section_key": "popular_destinations",
+      "section_name": "Popular Destinations",
+      "is_visible": 1,
+      "sort_order": 4,
+      "id": 4
+    },
+    {
+      "section_key": "spiritual_escape",
+      "section_name": "Spiritual Escape",
+      "is_visible": 1,
+      "sort_order": 5,
+      "id": 5
+    },
+    {
+      "section_key": "features",
+      "section_name": "Features",
+      "is_visible": 1,
+      "sort_order": 6,
+      "id": 6
+    },
+    {
+      "section_key": "testimonials",
+      "section_name": "Testimonials",
+      "is_visible": 1,
+      "sort_order": 7,
+      "id": 7
+    },
+    {
+      "section_key": "gallery",
+      "section_name": "Gallery",
+      "is_visible": 1,
+      "sort_order": 8,
+      "id": 9
+    },
+    {
+      "section_key": "footer",
+      "section_name": "Footer",
+      "is_visible": 1,
+      "sort_order": 9,
+      "id": 8
+    },
+    {
+      "id": 10,
+      "section_key": "deals",
+      "section_name": "Deals",
+      "is_visible": 1,
+      "sort_order": 10
+    }
+  ],
+  "trips": [
+    {
+      "name": "Swiss Alps Explorer",
+      "description": "Experience the breathtaking beauty of the Swiss Alps with this 7-day adventure.",
+      "image_url": "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=700&q=80",
+      "price": "€2,499",
+      "duration": "7 Days / 6 Nights",
+      "location": "Switzerland",
+      "category": "trending",
+      "badge": "Hot Deal",
+      "is_active": 1,
+      "sort_order": 1,
+      "id": 1
+    },
+    {
+      "name": "Maldives Retreat",
+      "description": "Relax in the beautiful Maldives with crystal clear waters and luxurious overwater bungalows.",
+      "image_url": "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=700&q=80",
+      "price": "$1,899",
+      "duration": "5 Days / 4 Nights",
+      "location": "Maldives",
+      "category": "trending",
+      "badge": "Best Seller",
+      "is_active": 1,
+      "sort_order": 2,
+      "id": 2
+    },
+    {
+      "name": "Moroccan Sahara",
+      "description": "Explore the magic of Morocco with visits to Marrakech, Fez, and the Sahara Desert.",
+      "image_url": "https://images.unsplash.com/photo-1489749798305-4fea3ae63d43?w=700&q=80",
+      "price": "$1,299",
+      "duration": "8 Days / 7 Nights",
+      "location": "Morocco",
+      "category": "trending",
+      "badge": "Trending",
+      "is_active": 1,
+      "sort_order": 3,
+      "id": 3
+    },
+    {
+      "name": "Japan Cherry Blossom",
+      "description": "Witness the beautiful cherry blossoms in Japan during peak bloom season.",
+      "image_url": "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=700&q=80",
+      "price": "$2,199",
+      "duration": "10 Days / 9 Nights",
+      "location": "Japan",
+      "category": "trending",
+      "badge": "Popular",
+      "is_active": 1,
+      "sort_order": 4,
+      "id": 4
+    },
+    {
+      "name": "Bali Wellness Escape",
+      "description": "Rejuvenate your mind and body with yoga, meditation, and spa treatments in Bali.",
+      "image_url": "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=700&q=80",
+      "price": "$1,499",
+      "duration": "6 Days / 5 Nights",
+      "location": "Indonesia",
+      "category": "trending",
+      "badge": "New",
+      "is_active": 1,
+      "sort_order": 5,
+      "id": 5
+    },
+    {
+      "name": "Greek Island Hopping",
+      "description": "Explore the beautiful Greek islands including Santorini, Mykonos, and Athens.",
+      "image_url": "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=700&q=80",
+      "price": "€1,799",
+      "duration": "9 Days / 8 Nights",
+      "location": "Greece",
+      "category": "trending",
+      "badge": "Popular",
+      "is_active": 1,
+      "sort_order": 6,
+      "id": 6
+    },
+    {
+      "name": "Varanasi & Ganga Aarti",
+      "description": "A restorative journey through Varanasi with sunrise boat rides, temple visits, guided meditation, and the evening Ganga Aarti.",
+      "image_url": "https://images.unsplash.com/photo-1561361513-2d000a50f0dc?w=700&q=80",
+      "price": "₹24,999",
+      "duration": "5 Days / 4 Nights",
+      "location": "Varanasi, India",
+      "category": "spiritual_escape",
+      "badge": "Sacred Journey",
+      "is_active": 1,
+      "id": 7,
+      "destination_id": "5"
+    },
+    {
+      "name": "Rishikesh Yoga Retreat",
+      "description": "Reconnect with yourself beside the Ganges through daily yoga, breathwork, guided meditation, and peaceful Himalayan walks.",
+      "image_url": "https://images.unsplash.com/photo-1500534623283-312aade485b7?w=700&q=80",
+      "price": "₹29,999",
+      "duration": "6 Days / 5 Nights",
+      "location": "Rishikesh, India",
+      "category": "spiritual_escape",
+      "badge": "Wellness Pick",
+      "is_active": 1,
+      "id": 8,
+      "destination_id": "3"
+    },
+    {
+      "name": "Bodh Gaya Mindfulness Tour",
+      "description": "Follow the Buddhist path in Bodh Gaya with monastery visits, mindful sessions, and time for quiet reflection under the Bodhi tree.",
+      "image_url": "https://images.unsplash.com/photo-1609947017136-9daf32a5eb16?w=700&q=80",
+      "price": "₹22,999",
+      "duration": "4 Days / 3 Nights",
+      "location": "Bodh Gaya, India",
+      "category": "spiritual_escape",
+      "badge": "Mindful Escape",
+      "is_active": 1,
+      "sort_order": 3,
+      "id": 9
+    },
+    {
+      "name": "Kedarnath Pilgrimage",
+      "description": "Undertake a carefully planned Himalayan pilgrimage to Kedarnath with comfortable stays, local guidance, and meaningful temple time.",
+      "image_url": "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=700&q=80",
+      "price": "₹34,999",
+      "duration": "7 Days / 6 Nights",
+      "location": "Uttarakhand, India",
+      "category": "spiritual_escape",
+      "badge": "Popular",
+      "is_active": 1,
+      "sort_order": 4,
+      "id": 10
+    },
+    {
+      "name": "Europe Highlights Getaway",
+      "description": "A signature Europe itinerary covering Paris, Amsterdam, and Barcelona with handpicked stays and guided city experiences.",
+      "image_url": "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=700&q=80",
+      "price": "€1,499",
+      "duration": "8 Days / 7 Nights",
+      "location": "France, Netherlands & Spain",
+      "category": "popular_destinations",
+      "badge": "Popular",
+      "is_active": 1,
+      "sort_order": 1,
+      "id": 11
+    },
+    {
+      "name": "India, Sri Lanka & Nepal Explorer",
+      "description": "Discover the cultural treasures, sacred sites, and warm hospitality of South Asia in one thoughtfully planned journey.",
+      "image_url": "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=700&q=80",
+      "price": "₹89,999",
+      "duration": "12 Days / 11 Nights",
+      "location": "India, Sri Lanka & Nepal",
+      "category": "popular_destinations",
+      "badge": "Best Seller",
+      "is_active": 1,
+      "sort_order": 2,
+      "id": 12
+    },
+    {
+      "name": "Vietnam & Cambodia Discovery",
+      "description": "Travel from Hanoi to Ha Long Bay and the ancient temples of Angkor on a culture-rich Southeast Asian escape.",
+      "image_url": "https://images.unsplash.com/photo-1552733407-5d5c46c3bb3b?w=700&q=80",
+      "price": "₹74,999",
+      "duration": "9 Days / 8 Nights",
+      "location": "Vietnam & Cambodia",
+      "category": "popular_destinations",
+      "badge": "Top Rated",
+      "is_active": 1,
+      "sort_order": 3,
+      "id": 13
+    },
+    {
+      "name": "Singapore & Thailand Escape",
+      "description": "Enjoy Singapore's city energy and Thailand's island charm with family-friendly hotels and seamless transfers.",
+      "image_url": "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=700&q=80",
+      "price": "₹69,999",
+      "duration": "7 Days / 6 Nights",
+      "location": "Singapore & Thailand",
+      "category": "popular_destinations",
+      "badge": "Family Favourite",
+      "is_active": 1,
+      "sort_order": 4,
+      "id": 14
+    }
+  ],
+  "destination_packages": [
+    {
+      "destination_id": 1,
+      "trip_id": 11,
+      "id": 1
+    },
+    {
+      "destination_id": 2,
+      "trip_id": 12,
+      "id": 2
+    },
+    {
+      "destination_id": 5,
+      "trip_id": 13,
+      "id": 3
+    },
+    {
+      "destination_id": 6,
+      "trip_id": 14,
+      "id": 4
+    }
+  ],
+  "about_us": [
+    {
+      "heading": "Travel that Touches the Soul",
+      "subheading": "Curated Travel. Authentic Moments. Lasting Impact.",
+      "description": "At Trip For Soul, we craft meaningful land journeys that are soulful, sustainable, and deeply personal.",
+      "features": "[\"Handpicked destinations\", \"Local guides\", \"Sustainable tourism\", \"24/7 support\"]",
+      "cta_text": "Begin Your Journey",
+      "cta_link": "/enquire-now",
+      "image_url": "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&q=80",
+      "is_active": 1,
+      "id": 1,
+      "premium_heading": "Premium Travel for the Curious Soul",
+      "premium_description": "At Trip For Soul, we design immersive, high-end journeys for travelers who want more than just a trip. Every detail is carefully curated — from first-class comfort to authentic experiences — so you can explore the world with ease, depth, and style. Discover the difference of traveling well — with every moment thoughtfully tailored to you.",
+      "premium_button_text": "Explore Our Destinations",
+      "premium_button_link": "/destination",
+      "experience_heading": "Curated Travel Moments",
+      "experience_description_title": "Luxury isn't just about where you stay",
+      "experience_description": "At Trip For Soul, we don't just book trips — we craft unforgettable journeys. From hot-air balloon rides over ancient landscapes to boutique stays along dramatic coastlines, we create travel experiences as bold, beautiful, and unique as you are. We're a boutique agency with a taste for the extraordinary — blending luxury, adventure, and personalized service to create moments that go far beyond the itinerary.",
+      "experience_subheading": "What We Do Best",
+      "experience_list": "[\"Tailor-made escapes\", \"Private tours and once-in-a-lifetime adventures\", \"Exotic honeymoons, wellness retreats & family getaways\", \"Luxury stays and VIP concierge services\", \"On-call travel support, wherever you are in the world\"]",
+      "experience_image": "/uploads/1784971410110-home-hero-removebg-preview.jpg",
+      "why_heading": "Service Beyond Expectations",
+      "why_description": "Because you deserve more than just a vacation — you deserve a journey crafted entirely around you. From the moment your adventure begins, every detail is thoughtfully managed. Our expert Travel Directors and professional Drivers ensure a smooth, inspiring journey — adding insight, comfort, and a personal touch every step of the way. Along your path, you'll connect with local Experts and Specialists who bring each destination to life through hidden gems, rich stories, and cultural moments that go far beyond the guidebook. Enjoy seamless service. This isn't just a tour. It's tailored travel at its finest — elevated, effortless, and unforgettable.",
+      "why_image": "",
+      "promise_heading": "Our Commitment to You",
+      "promise_subheading": "At Trip For Soul, our promise is simple:",
+      "promise_description": "To deliver extraordinary journeys, flawlessly executed. We are committed to creating personalized travel experiences that go beyond expectations — where every destination is handpicked, every moment is designed with care, and every journey is meaningful. From your first inquiry to your final farewell, we ensure:",
+      "promise_list": "[\"Tailor-made escapes\", \"Private tours and once-in-a-lifetime adventures\", \"Exotic honeymoons, wellness retreats & family getaways\", \"Luxury stays and VIP concierge services\", \"On-call travel support, wherever you are in the world\"]",
+      "promise_image": "",
+      "difference_heading": "What Makes Us Different",
+      "difference_description": "We don't just plan trips — we design journeys with intention, care, and imagination. At Trip For Soul, we believe luxury lies in the details, and that travel becomes extraordinary when expert planning meets personal passion.",
+      "difference_subheading": "What Sets Us Apart",
+      "difference_list": "[\"Tailor-Made Itineraries : No one-size-fits-all tours — just journeys created around your pace, style, and preferences.\", \"Insider Access & Authentic Encounters : Go beyond the guidebook with exclusive experiences, local connections, and behind-the-scenes moments.\", \"Premium Service, Start to Finish : From VIP transfers to attentive concierge support, we take care of everything — so you don't have to.\", \"Experts Who Travel Like You Do : Our planners are passionate explorers who understand what discerning travelers expect — because they expect it too.\"]",
+      "difference_image": "",
+      "cta_heading": "Start Planning Your Journey",
+      "cta_description": "Let us bring your next great story to life.",
+      "cta_button_text": "Enquire Now",
+      "cta_button_link": "/enquire-now"
+    }
+  ],
+  "features": [
+    {
+      "is_active": 1,
+      "id": 1,
+      "title": "Best Price Guarantee",
+      "description": "We ensure you get the most value for your journey with competitive pricing on every package.\n\n",
+      "sort_order": 0,
+      "icon": "Pricing"
+    },
+    {
+      "icon": "easy-booking",
+      "title": "Easy & Quick Booking",
+      "description": "Book your dream trips in minutes with our simple and hassle-free booking system.",
+      "sort_order": 2,
+      "is_active": 1,
+      "id": 2
+    },
+    {
+      "icon": "support",
+      "title": "Customer Care 24/7",
+      "description": "Our dedicated support team is available around the clock to ensure a seamless travel experience.",
+      "sort_order": 3,
+      "is_active": 1,
+      "id": 3
+    }
+  ],
+  "testimonials": [
+    {
+      "name": "Mr. Ritik Singh",
+      "image_url": "https://tripforsoul.com/public/img/gallery/b-4.png",
+      "rating": 5,
+      "review": "We booked a 12-day tour of Italy with TripForSoul and had an absolutely remarkable experience.",
+      "sort_order": 1,
+      "is_active": 1,
+      "id": 1
+    },
+    {
+      "name": "Sohan Sharma",
+      "image_url": "https://tripforsoul.com/public/img/gallery/b-1.png",
+      "rating": 5,
+      "review": "We booked Vietnam with TripForSoul. It was so much enchanting.",
+      "sort_order": 2,
+      "is_active": 1,
+      "id": 2
+    },
+    {
+      "name": "Rakesh Singh",
+      "image_url": "https://tripforsoul.com/public/img/gallery/b-2.png",
+      "rating": 5,
+      "review": "Europe package was a dream with TripForSoul. Hotels well-situated and clean.",
+      "sort_order": 3,
+      "is_active": 1,
+      "id": 3
+    },
+    {
+      "name": "Vishnu Kumar",
+      "image_url": "https://tripforsoul.com/public/img/gallery/b-3.png",
+      "rating": 5,
+      "review": "Our UK tour was absolutely unforgettable. Everything was organised flawlessly.",
+      "sort_order": 4,
+      "is_active": 1,
+      "id": 4
+    },
+    {
+      "name": "Bhaskar Bansal",
+      "image_url": "/uploads/1785047991317-desti.png",
+      "rating": 4,
+      "review": "Best travel agency",
+      "sort_order": 0,
+      "is_active": 1,
+      "id": 5
+    }
+  ],
+  "destinations": [
+    {
+      "name": "Europe",
+      "image_url": "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=700&q=80",
+      "region": "Europe",
+      "price": "€1,299+",
+      "description": "Explore the beautiful cities of Europe including Paris, Amsterdam, Barcelona, and more.",
+      "sort_order": 1,
+      "is_trending": 1,
+      "is_active": 1,
+      "id": 1,
+      "slug": "europe"
+    },
+    {
+      "name": "India • Sri Lanka • Nepal",
+      "image_url": "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=700&q=80",
+      "region": "Asia",
+      "price": "$799+",
+      "description": "Discover the rich culture and heritage of South Asia with our curated tours. Discover the rich culture and heritage of South Asia with our curated tours. Discover the rich culture and heritage of South Asia with our curated tours. Discover the rich culture and heritage of South Asia with our curated tours. Discover the rich culture and heritage of South Asia with our curated tours. Discover the rich culture and heritage of South Asia with our curated tours. Discover the rich culture and heritage of South Asia with our curated tours.",
+      "sort_order": 2,
+      "is_trending": 1,
+      "is_active": 1,
+      "id": 2,
+      "slug": "india-sri-lanka-nepal"
+    },
+    {
+      "name": "Norway & Iceland",
+      "image_url": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=700&q=80",
+      "region": "Europe",
+      "price": "€1,899+",
+      "description": "Experience the Northern Lights and stunning fjords of Scandinavia.",
+      "sort_order": 3,
+      "is_trending": 1,
+      "is_active": 1,
+      "id": 3,
+      "slug": "norway-iceland"
+    },
+    {
+      "name": "CIS Destinations",
+      "image_url": "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=700&q=80",
+      "region": "Asia",
+      "price": "$999+",
+      "description": "Explore the hidden gems of Central Asia and the Caucasus region.",
+      "sort_order": 4,
+      "is_trending": 1,
+      "is_active": 1,
+      "id": 4,
+      "slug": "cis-destinations"
+    },
+    {
+      "name": "Vietnam & Cambodia",
+      "image_url": "https://images.unsplash.com/photo-1552733407-5d5c46c3bb3b?w=700&q=80",
+      "region": "Asia",
+      "price": "$699+",
+      "description": "Discover ancient temples, vibrant cities, and delicious cuisine of Southeast Asia.",
+      "sort_order": 5,
+      "is_trending": 0,
+      "is_active": 1,
+      "id": 5,
+      "slug": "vietnam-cambodia"
+    },
+    {
+      "name": "Singapore & Thailand",
+      "image_url": "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=700&q=80",
+      "region": "Asia",
+      "price": "$899+",
+      "description": "Experience the perfect blend of modern city life and tropical beaches.",
+      "sort_order": 6,
+      "is_trending": 0,
+      "is_active": 1,
+      "id": 6,
+      "slug": "singapore-thailand"
+    }
+  ],
+  "packages": [
+    {
+      "id": 1,
+      "destination_id": 1,
+      "title": "Europe Highlights Getaway",
+      "slug": "europe-highlights-getaway",
+      "days": "8 Days / 7 Nights",
+      "meals": "",
+      "short_description": "A signature Europe itinerary covering Paris, Amsterdam, and Barcelona with handpicked stays and guided city experiences.",
+      "long_description": "A signature Europe itinerary covering Paris, Amsterdam, and Barcelona with handpicked stays and guided city experiences.",
+      "sub_heading": "Popular",
+      "image_url": "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=700&q=80",
+      "inclusives": "",
+      "exclusives": "",
+      "price": "€1,499",
+      "sort_order": 1,
+      "is_active": 1
+    },
+    {
+      "id": 2,
+      "destination_id": 2,
+      "title": "India, Sri Lanka & Nepal Explorer",
+      "slug": "india-sri-lanka-nepal-explorer",
+      "days": "12 Days / 11 Nights",
+      "meals": "",
+      "short_description": "Discover the cultural treasures, sacred sites, and warm hospitality of South Asia in one thoughtfully planned journey.",
+      "long_description": "Discover the cultural treasures, sacred sites, and warm hospitality of South Asia in one thoughtfully planned journey.",
+      "sub_heading": "Best Seller",
+      "image_url": "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=700&q=80",
+      "inclusives": "",
+      "exclusives": "",
+      "price": "₹89,999",
+      "sort_order": 2,
+      "is_active": 1,
+      "itinerary": "Day: 1\nDay 2:",
+      "additional_info": ""
+    },
+    {
+      "id": 3,
+      "destination_id": 5,
+      "title": "Vietnam & Cambodia Discovery",
+      "slug": "vietnam-cambodia-discovery",
+      "days": "9 Days / 8 Nights",
+      "meals": "",
+      "short_description": "Travel from Hanoi to Ha Long Bay and the ancient temples of Angkor on a culture-rich Southeast Asian escape.",
+      "long_description": "Travel from Hanoi to Ha Long Bay and the ancient temples of Angkor on a culture-rich Southeast Asian escape.",
+      "sub_heading": "Top Rated",
+      "image_url": "https://images.unsplash.com/photo-1552733407-5d5c46c3bb3b?w=700&q=80",
+      "inclusives": "",
+      "exclusives": "",
+      "price": "₹74,999",
+      "sort_order": 3,
+      "is_active": 1
+    },
+    {
+      "id": 4,
+      "destination_id": 6,
+      "title": "Singapore & Thailand Escape",
+      "slug": "singapore-thailand-escape",
+      "days": "7 Days / 6 Nights",
+      "meals": "",
+      "short_description": "Enjoy Singapore's city energy and Thailand's island charm with family-friendly hotels and seamless transfers.",
+      "long_description": "Enjoy Singapore's city energy and Thailand's island charm with family-friendly hotels and seamless transfers.",
+      "sub_heading": "Family Favourite",
+      "image_url": "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=700&q=80",
+      "inclusives": "",
+      "exclusives": "",
+      "price": "₹69,999",
+      "sort_order": 4,
+      "is_active": 1
+    }
+  ],
+  "team_members": [],
+  "page_banners": [
+    {
+      "page_key": "destinations",
+      "heading": "",
+      "subheading": "",
+      "image_url": "/uploads/1784632224545-desti.png",
+      "is_active": 1,
+      "id": 1
+    },
+    {
+      "page_key": "gallery",
+      "heading": "",
+      "subheading": "",
+      "image_url": "/uploads/1785053576780-barcelona.jpg",
+      "is_active": 1,
+      "id": 2
+    }
+  ],
+  "gallery_images": [
+    {
+      "image_url": "/uploads/gallery-1.jpg",
+      "title": "Mountain Landscape",
+      "is_active": 1,
+      "id": 1
+    },
+    {
+      "image_url": "/uploads/gallery-2.jpg",
+      "title": "Nature Valley",
+      "is_active": 1,
+      "id": 2
+    },
+    {
+      "image_url": "/uploads/gallery-3.jpg",
+      "title": "Forest Path",
+      "is_active": 1,
+      "id": 3
+    },
+    {
+      "image_url": "/uploads/gallery-4.jpg",
+      "title": "Ancient Ruins",
+      "is_active": 1,
+      "id": 4
+    },
+    {
+      "image_url": "/uploads/gallery-5.jpg",
+      "title": "Europe Trip",
+      "is_active": 1,
+      "id": 5
+    },
+    {
+      "image_url": "/uploads/gallery-6.jpg",
+      "title": "Tropical Beach",
+      "is_active": 1,
+      "id": 6
+    },
+    {
+      "image_url": "/uploads/gallery-7.jpg",
+      "title": "Waterfall",
+      "is_active": 1,
+      "id": 7
+    },
+    {
+      "image_url": "/uploads/gallery-8.jpg",
+      "title": "Sunset View",
+      "is_active": 1,
+      "id": 8
+    },
+    {
+      "image_url": "/uploads/gallery-9.jpg",
+      "title": "Mountain Peak",
+      "is_active": 1,
+      "id": 9
+    },
+    {
+      "image_url": "/uploads/gallery-10.jpg",
+      "title": "Lake Reflection",
+      "is_active": 1,
+      "id": 10
+    },
+    {
+      "image_url": "/uploads/gallery-11.jpg",
+      "title": "Countryside",
+      "is_active": 1,
+      "id": 11
+    },
+    {
+      "image_url": "/uploads/gallery-12.jpg",
+      "title": "Forest Trail",
+      "is_active": 1,
+      "id": 12
+    },
+    {
+      "image_url": "/uploads/gallery-13.jpg",
+      "title": "Desert Dunes",
+      "is_active": 1,
+      "id": 13
+    },
+    {
+      "image_url": "/uploads/gallery-14.jpg",
+      "title": "Ocean Waves",
+      "is_active": 1,
+      "id": 14
+    },
+    {
+      "image_url": "/uploads/gallery-15.jpg",
+      "title": "City Lights",
+      "is_active": 1,
+      "id": 15
+    },
+    {
+      "image_url": "/uploads/gallery-16.jpg",
+      "title": "Snow Mountains",
+      "is_active": 1,
+      "id": 16
+    },
+    {
+      "image_url": "/uploads/gallery-17.jpg",
+      "title": "Green Hills",
+      "is_active": 1,
+      "id": 17
+    },
+    {
+      "image_url": "/uploads/gallery-18.jpg",
+      "title": "Tropical Paradise",
+      "is_active": 1,
+      "id": 18
+    },
+    {
+      "image_url": "/uploads/gallery-19.jpg",
+      "title": "Scenic View",
+      "is_active": 1,
+      "id": 19
+    },
+    {
+      "image_url": "/uploads/gallery-20.jpg",
+      "title": "Meadow",
+      "is_active": 1,
+      "id": 20
+    },
+    {
+      "image_url": "/uploads/gallery-21.jpg",
+      "title": "Adventure",
+      "is_active": 1,
+      "id": 21
+    },
+    {
+      "image_url": "/uploads/gallery-22.jpg",
+      "title": "Beautiful Sunset",
+      "is_active": 1,
+      "id": 22
+    },
+    {
+      "image_url": "/uploads/gallery-23.jpg",
+      "title": "Coastal View",
+      "is_active": 1,
+      "id": 23
+    },
+    {
+      "image_url": "/uploads/gallery-24.jpg",
+      "title": "Nature Wonder",
+      "is_active": 1,
+      "id": 24
+    }
+  ],
+  "blogs": [
+    {
+      "title": "Lorem Ipsum Blog",
+      "slug": "lorem-ipsum-blog",
+      "excerpt": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
+      "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.\n\nWhy Lorem Ipsum?\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero. Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at nibh elementum imperdiet. Duis sagittis ipsum. Praesent mauris. Fusce nec tellus sed augue semper porta.\n\nKey Highlights\nLorem ipsum dolor sit amet\nConsectetur adipiscing elit\nSed do eiusmod tempor incididunt\nUt labore et dolore magna aliqua\nUt enim ad minim veniam",
+      "cover_image": "/uploads/1785677030410-desti.png",
+      "author": "",
+      "tags": [],
+      "meta_title": "Lorem Ipsum Blog",
+      "meta_description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
+      "is_active": 1,
+      "created_at": "2026-08-02T13:24:08.159Z",
+      "updated_at": "2026-08-02T13:24:08.159Z",
+      "id": 1
+    }
+  ],
+  "deals_settings": [
+    {
+      "id": 1,
+      "tagline": "Travel offers",
+      "heading": "Make more of every journey.",
+      "description": "Discover current seasonal offers and speak with our team to find the journey that suits your plans.",
+      "button_text": "Ask about offers",
+      "button_link": "/contact?subject=Offer%20enquiry",
+      "card_tagline": "Planning made personal",
+      "card_heading": "Get a tailored recommendation, clear inclusions, and expert support before you book.",
+      "card_description": "Offer availability and final pricing are confirmed by the travel team.",
+      "is_active": 1
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+import { NextResponse } from 'next/server';
+
+// Path prefix -> permission key mapping for admin pages
+const PERMISSION_BY_PATH = [
+  { prefix: '/dashboard', permission: 'dashboard' },
+  { prefix: '/banner', permission: 'banner' },
+  { prefix: '/trending', permission: 'trending' },
+  { prefix: '/pricing', permission: 'pricing' },
+  { prefix: '/destinations', permission: 'destinations' },
+  { prefix: '/packages', permission: 'packages' },
+  { prefix: '/spiritual', permission: 'spiritual' },
+  { prefix: '/about', permission: 'about' },
+  { prefix: '/features', permission: 'features' },
+  { prefix: '/testimonials', permission: 'testimonials' },
+  { prefix: '/page-banners', permission: 'page-banners' },
+  { prefix: '/gallery', permission: 'gallery' },
+  { prefix: '/team-members', permission: 'team-members' },
+  { prefix: '/deals', permission: 'deals' },
+  { prefix: '/sections', permission: 'sections' },
+  { prefix: '/trips', permission: 'trips' },
+  { prefix: '/blog', permission: 'blog' },
+  { prefix: '/staff', permission: 'staff' },
+];
+
+// API prefix -> permission key mapping
+const API_PERMISSION_BY_PATH = {
+  '/api/banner': 'banner',
+  '/api/trending': 'trending',
+  '/api/trending/items': 'trending',
+  '/api/trending/toggle': 'trending',
+  '/api/pricing': 'pricing',
+  '/api/destinations': 'destinations',
+  '/api/destination-packages': 'packages',
+  '/api/packages': 'packages',
+  '/api/trips': 'trips',
+  '/api/about': 'about',
+  '/api/features': 'features',
+  '/api/testimonials': 'testimonials',
+  '/api/page-banners': 'page-banners',
+  '/api/gallery': 'gallery',
+  '/api/team-members': 'team-members',
+  '/api/deals': 'deals',
+  '/api/sections': 'sections',
+  '/api/blog': 'blog',
+};
+
+// Decode JWT payload without verification (verification happens in the route handlers)
+function decodeTokenPayload(token) {
+  try {
+    if (!token) return null;
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = payload + '='.repeat((4 - (payload.length % 4)) % 4);
+    return JSON.parse(atob(padded));
+  } catch {
+    return null;
+  }
+}
+
+export function middleware(request) {
+  const { pathname } = request.nextUrl;
+  const method = request.method;
+
+  // Allow public GET requests to API (for frontend integration)
+  if (pathname.startsWith('/api/') && method === 'GET') {
+    return NextResponse.next();
+  }
+
+  // Always allow login page, API login route, setup, seed, and uploaded files
+  if (
+    pathname === '/login' ||
+    pathname === '/api/auth/login' ||
+    pathname === '/api/setup' ||
+    pathname === '/api/seed' ||
+    pathname.startsWith('/uploads/')
+  ) {
+    return NextResponse.next();
+  }
+
+  // Extract token from cookie
+  const token = request.cookies.get('token')?.value;
+  const payload = token ? decodeTokenPayload(token) : null;
+
+  // Protect all write API routes (POST, PUT, DELETE)
+  if (pathname.startsWith('/api/')) {
+    // Staff management API does its own auth checks
+    if (pathname === '/api/auth/staff') {
+      return NextResponse.next();
+    }
+
+    if (!payload) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Admin / super_admin bypass permission checks
+    if (payload.role === 'admin' || payload.role === 'super_admin') {
+      return NextResponse.next();
+    }
+
+    // Staff: check permission for this API route
+    if (payload.role === 'staff') {
+      const apiPath = Object.keys(API_PERMISSION_BY_PATH).find((prefix) =>
+        pathname.startsWith(prefix)
+      );
+      if (apiPath) {
+        const required = API_PERMISSION_BY_PATH[apiPath];
+        const userPerms = payload.permissions || [];
+        if (!userPerms.includes(required)) {
+          return NextResponse.json(
+            { error: 'Forbidden: You do not have access to this section' },
+            { status: 403 }
+          );
+        }
+      }
+    }
+
+    return NextResponse.next();
+  }
+
+  // Protect admin page routes
+  if (!pathname.startsWith('/api/') && pathname !== '/login') {
+    if (!payload) {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+
+    // Admin / super_admin bypass permission checks
+    if (payload.role === 'admin' || payload.role === 'super_admin') {
+      return NextResponse.next();
+    }
+
+    // Staff: restrict pages based on permissions
+    if (payload.role === 'staff') {
+      const matched = PERMISSION_BY_PATH.find((item) =>
+        pathname.startsWith(item.prefix)
+      );
+      if (!matched) return NextResponse.next();
+
+      const userPerms = payload.permissions || [];
+      if (!userPerms.includes(matched.permission)) {
+        return NextResponse.redirect(new URL('/dashboard', request.url));
+      }
+    }
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+};
