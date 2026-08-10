@@ -43,6 +43,18 @@ if (!useJsonFallback && process.env.DATABASE_URL) {
   }
 }
 
+// Check if PostgreSQL is actually reachable (not just configured)
+const isPostgresAvailable = async () => {
+  if (!pgAvailable || !pool) return false;
+  try {
+    await pool.query('SELECT 1');
+    return true;
+  } catch (error) {
+    console.warn('PostgreSQL connection check failed:', error.message);
+    return false;
+  }
+};
+
 // Convert MySQL-style ? placeholders to PostgreSQL $1, $2, ... format
 const convertPlaceholders = (sql) => {
   let paramIndex = 0;
@@ -162,19 +174,22 @@ const query = async (sql, params = []) => {
     }
   }
 
-  // SELECT queries - can use JSON fallback
+  // SELECT queries - use PostgreSQL if available, otherwise JSON fallback
   if (pgAvailable && pool) {
     try {
       const pgSql = convertPlaceholders(sql);
       const result = await pool.query(pgSql, params);
       return processRows(result.rows || []);
     } catch (error) {
-      console.error('Database query error, falling back to JSON:', error.message);
-      // Fall through to JSON fallback
+      // If PostgreSQL is configured but query fails (e.g. table doesn't exist),
+      // throw the error instead of silently falling back to JSON.
+      // This ensures the setup route can properly create tables.
+      console.error('PostgreSQL query error:', error.message);
+      throw error;
     }
   }
 
-  // Fallback to JSON file for SELECT queries
+  // Fallback to JSON file for SELECT queries (only when PostgreSQL is NOT available)
   const data = loadJsonData();
   if (!data) {
     throw new Error('No database available (PostgreSQL connection failed and no JSON fallback)');
@@ -273,5 +288,6 @@ export default {
   // Export helpers too
   processRows,
   processImageFields,
-  localPathToBase64
+  localPathToBase64,
+  isPostgresAvailable
 };

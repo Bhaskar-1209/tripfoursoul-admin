@@ -12,8 +12,11 @@ export async function GET() {
 
     // Check if PostgreSQL is available
     try {
-      await db.query('SELECT 1');
-      results.postgresUsed = true;
+      results.postgresUsed = await db.isPostgresAvailable();
+      if (!results.postgresUsed) {
+        results.message = 'PostgreSQL not available. Using JSON fallback mode.';
+        results.errors.push('PostgreSQL connection failed: DATABASE_URL not configured or unreachable');
+      }
     } catch (e) {
       results.message = 'PostgreSQL not available. Using JSON fallback mode.';
       results.errors.push('PostgreSQL connection failed: ' + e.message);
