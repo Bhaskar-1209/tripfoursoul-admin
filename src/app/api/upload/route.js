@@ -114,42 +114,50 @@ export async function POST(request) {
             message: 'Image uploaded to Cloudinary successfully',
           });
         } catch (cloudinaryError) {
-          console.warn('Cloudinary upload failed, saving locally:', cloudinaryError.message);
+          console.error('Cloudinary upload failed:', cloudinaryError.message);
+          return NextResponse.json(
+            { error: 'Cloudinary upload failed: ' + cloudinaryError.message },
+            { status: 500 }
+          );
         }
       }
 
-      // Save base64 image locally to /public/uploads/
-      try {
-        const fs = await import('fs').then(m => m.promises);
-        const path = await import('path');
-        
-        // Create uploads directory if it doesn't exist
-        const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+      // For local development only (not on Vercel)
+      if (process.env.NODE_ENV === 'development') {
         try {
+          const fs = await import('fs').then(m => m.promises);
+          const path = await import('path');
+          
+          // Create uploads directory if it doesn't exist
+          const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
           await fs.mkdir(uploadsDir, { recursive: true });
-        } catch (e) {
-          // Directory might already exist
+
+          // Generate filename with timestamp
+          const filename = `${Date.now()}-base64.png`;
+          const filepath = path.join(uploadsDir, filename);
+
+          // Write file
+          await fs.writeFile(filepath, buffer);
+
+          return NextResponse.json({
+            success: true,
+            imageUrl: `/uploads/${filename}`,
+            message: 'Image uploaded and saved locally successfully',
+          });
+        } catch (localError) {
+          console.error('Local upload failed:', localError);
+          return NextResponse.json(
+            { error: 'Failed to save image: ' + localError.message },
+            { status: 500 }
+          );
         }
-
-        // Generate filename with timestamp
-        const filename = `${Date.now()}-base64.png`;
-        const filepath = path.join(uploadsDir, filename);
-
-        // Write file
-        await fs.writeFile(filepath, buffer);
-
-        return NextResponse.json({
-          success: true,
-          imageUrl: `/uploads/${filename}`,
-          message: 'Image uploaded and saved locally successfully',
-        });
-      } catch (localError) {
-        console.error('Local upload failed:', localError);
-        return NextResponse.json(
-          { error: 'Failed to save image: ' + localError.message },
-          { status: 500 }
-        );
       }
+
+      // Production environment without Cloudinary - not supported
+      return NextResponse.json(
+        { error: 'Please configure Cloudinary environment variables for production uploads' },
+        { status: 500 }
+      );
     }
 
     // ==================== Handle multipart/form-data file upload ====================
@@ -192,43 +200,51 @@ export async function POST(request) {
           message: 'Image uploaded to Cloudinary successfully',
         });
       } catch (cloudinaryError) {
-        console.warn('Cloudinary upload failed, saving locally:', cloudinaryError.message);
+        console.error('Cloudinary upload failed:', cloudinaryError.message);
+        return NextResponse.json(
+          { error: 'Cloudinary upload failed: ' + cloudinaryError.message },
+          { status: 500 }
+        );
       }
     }
 
-    // Save file locally to /public/uploads/
-    try {
-      const fs = await import('fs').then(m => m.promises);
-      const path = await import('path');
-      
-      // Create uploads directory if it doesn't exist
-      const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+    // For local development only (not on Vercel)
+    if (process.env.NODE_ENV === 'development') {
       try {
+        const fs = await import('fs').then(m => m.promises);
+        const path = await import('path');
+        
+        // Create uploads directory if it doesn't exist
+        const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
         await fs.mkdir(uploadsDir, { recursive: true });
-      } catch (e) {
-        // Directory might already exist
+
+        // Generate filename with timestamp
+        const ext = file.name.split('.').pop() || 'jpg';
+        const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+        const filepath = path.join(uploadsDir, filename);
+
+        // Write file
+        await fs.writeFile(filepath, buffer);
+
+        return NextResponse.json({
+          success: true,
+          imageUrl: `/uploads/${filename}`,
+          message: 'Image uploaded and saved locally successfully',
+        });
+      } catch (localError) {
+        console.error('Local upload failed:', localError);
+        return NextResponse.json(
+          { error: 'Failed to save image: ' + localError.message },
+          { status: 500 }
+        );
       }
-
-      // Generate filename with timestamp
-      const ext = file.name.split('.').pop() || 'jpg';
-      const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-      const filepath = path.join(uploadsDir, filename);
-
-      // Write file
-      await fs.writeFile(filepath, buffer);
-
-      return NextResponse.json({
-        success: true,
-        imageUrl: `/uploads/${filename}`,
-        message: 'Image uploaded and saved locally successfully',
-      });
-    } catch (localError) {
-      console.error('Local upload failed:', localError);
-      return NextResponse.json(
-        { error: 'Failed to save image: ' + localError.message },
-        { status: 500 }
-      );
     }
+
+    // Production environment without Cloudinary - not supported
+    return NextResponse.json(
+      { error: 'Please configure Cloudinary environment variables for production uploads' },
+      { status: 500 }
+    );
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json({ error: 'Failed to upload image: ' + error.message }, { status: 500 });
