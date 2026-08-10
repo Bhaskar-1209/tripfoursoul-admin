@@ -506,6 +506,14 @@ export async function GET() {
         }
       }
 
+      // Add page_banners heading/subheading columns
+      // Legacy schema used title/subtitle, API and frontend use heading/subheading
+      try { await db.query(`ALTER TABLE page_banners ADD COLUMN IF NOT EXISTS heading VARCHAR(255) DEFAULT ''`); } catch (e) {}
+      try { await db.query(`ALTER TABLE page_banners ADD COLUMN IF NOT EXISTS subheading TEXT DEFAULT ''`); } catch (e) {}
+      // Migrate data from legacy title/subtitle columns to heading/subheading
+      try { await db.query(`UPDATE page_banners SET heading = title WHERE (heading = '' OR heading IS NULL) AND title IS NOT NULL AND title != ''`); } catch (e) {}
+      try { await db.query(`UPDATE page_banners SET subheading = subtitle WHERE (subheading = '' OR subheading IS NULL) AND subtitle IS NOT NULL`); } catch (e) {}
+
       // Add missing columns to existing tables (for migrations from older schemas)
       const alterColumns = [
         ['destinations', 'is_trending', 'BOOLEAN DEFAULT false'],

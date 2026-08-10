@@ -363,6 +363,8 @@ CREATE TABLE IF NOT EXISTS page_banners (
   page_key VARCHAR(100) NOT NULL UNIQUE,
   title VARCHAR(255) DEFAULT '',
   subtitle TEXT,
+  heading VARCHAR(255) DEFAULT '',
+  subheading TEXT DEFAULT '',
   background_image VARCHAR(500) DEFAULT '',
   is_active BOOLEAN DEFAULT true,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
