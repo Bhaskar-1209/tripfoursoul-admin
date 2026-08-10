@@ -18,26 +18,41 @@ const loadJsonData = () => {
 };
 
 // Initialize PostgreSQL pool only if connection string is available
+// Use globalThis to cache the pool across serverless invocations (Vercel)
+// This prevents connection exhaustion on Aiven PostgreSQL
 let pool = null;
 let pgAvailable = false;
 
 if (!useJsonFallback && process.env.DATABASE_URL) {
   try {
-    // Strip sslmode from connection string to avoid conflicts with ssl option
-    let connectionString = process.env.DATABASE_URL;
-    if (connectionString.includes('?sslmode=')) {
-      connectionString = connectionString.split('?')[0];
-    }
+    // Reuse existing pool from global cache if available
+    if (globalThis.__pgPool) {
+      pool = globalThis.__pgPool;
+      pgAvailable = true;
+    } else {
+      // Strip sslmode from connection string to avoid conflicts with ssl option
+      let connectionString = process.env.DATABASE_URL;
+      if (connectionString.includes('?sslmode=')) {
+        connectionString = connectionString.split('?')[0];
+      }
 
-    pool = new Pool({
-      connectionString: connectionString,
-      ssl: process.env.PGSSL === 'true' ? { rejectUnauthorized: false } : undefined,
-      max: 3,
-      idleTimeoutMillis: 15000,
-      connectionTimeoutMillis: 15000,
-      query_timeout: 15000
-    });
-    pgAvailable = true;
+      pool = new Pool({
+        connectionString: connectionString,
+        ssl: process.env.PGSSL === 'true' ? { rejectUnauthorized: false } : undefined,
+        max: 1,
+        idleTimeoutMillis: 5000,
+        connectionTimeoutMillis: 10000,
+        query_timeout: 10000,
+        allowExitOnIdle: true
+      });
+      // Handle idle client errors to prevent crashes
+      pool.on('error', (err) => {
+        console.warn('PostgreSQL pool idle client error:', err.message);
+      });
+      // Cache pool globally for reuse across serverless invocations
+      globalThis.__pgPool = pool;
+      pgAvailable = true;
+    }
   } catch (error) {
     console.warn('PostgreSQL pool creation failed, using JSON fallback:', error.message);
   }
