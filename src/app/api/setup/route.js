@@ -475,6 +475,37 @@ export async function GET() {
         )
       `);
 
+      // Convert image columns to TEXT type to support base64 data URLs
+      // Base64 images can be hundreds of KB/MB, VARCHAR(500) is too small
+      const alterImageColumns = [
+        ['banner_images', 'image_url'],
+        ['trending_items', 'image_url'],
+        ['popular_destinations', 'image_url'],
+        ['trips', 'image_url'],
+        ['destinations', 'image_url'],
+        ['packages', 'image_url'],
+        ['testimonials', 'image_url'],
+        ['about_us', 'image_url'],
+        ['about_us', 'experience_image'],
+        ['about_us', 'why_image'],
+        ['about_us', 'promise_image'],
+        ['about_us', 'difference_image'],
+        ['page_banners', 'background_image'],
+        ['team_members', 'image_url'],
+        ['gallery_images', 'image_url'],
+        ['blogs', 'cover_image'],
+        ['services', 'image_url'],
+        ['offers', 'image_url'],
+      ];
+
+      for (const [table, column] of alterImageColumns) {
+        try {
+          await db.query(`ALTER TABLE ${table} ALTER COLUMN ${column} TYPE TEXT`);
+        } catch (e) {
+          // Column might not exist yet - skip silently
+        }
+      }
+
       // Add missing columns to existing tables (for migrations from older schemas)
       const alterColumns = [
         ['destinations', 'is_trending', 'BOOLEAN DEFAULT false'],
