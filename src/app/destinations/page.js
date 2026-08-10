@@ -27,8 +27,6 @@ export default function DestinationsPage() {
     } catch (error) { console.error(error); }
   };
 
-  const handleSave = async () => {
-
   const togglePublish = async (item) => {
     try {
       await fetch("/api/destinations", {
@@ -44,6 +42,8 @@ export default function DestinationsPage() {
       console.error(error);
     }
   };
+
+  const handleSave = async () => {
     setSaving(true);
     try {
       if (editingItem) {

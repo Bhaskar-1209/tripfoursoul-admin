@@ -1,9 +1,9 @@
-import mysql from 'mysql2/promise';
+import { Pool } from 'pg';
 import fs from 'fs';
 import path from 'path';
 
-// Fallback to JSON file when MySQL is not available
-const useJsonFallback = process.env.USE_JSON_DB === 'true' || !process.env.MYSQL_HOST;
+// Fallback to JSON file when PostgreSQL is not available
+const useJsonFallback = process.env.USE_JSON_DB === 'true' || !process.env.DATABASE_URL;
 let jsonData = null;
 
 const loadJsonData = () => {
@@ -17,66 +17,157 @@ const loadJsonData = () => {
   return jsonData;
 };
 
-// Initialize MySQL pool only if host is available
+// Initialize PostgreSQL pool only if connection string is available
 let pool = null;
-let mysqlAvailable = false;
+let pgAvailable = false;
 
-if (!useJsonFallback && process.env.MYSQL_HOST) {
+if (!useJsonFallback && process.env.DATABASE_URL) {
   try {
-    pool = mysql.createPool({
-      host: process.env.MYSQL_HOST,
-      port: parseInt(process.env.MYSQL_PORT || '3306'),
-      user: process.env.MYSQL_USER,
-      password: process.env.MYSQL_PASSWORD,
-      database: process.env.MYSQL_DB,
-      ssl: process.env.MYSQL_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
-      waitForConnections: true,
-      connectionLimit: 3,
-      queueLimit: 0,
-      connectTimeout: 15000,
-      acquireTimeout: 15000,
-      timeout: 15000
+    // Strip sslmode from connection string to avoid conflicts with ssl option
+    let connectionString = process.env.DATABASE_URL;
+    if (connectionString.includes('?sslmode=')) {
+      connectionString = connectionString.split('?')[0];
+    }
+
+    pool = new Pool({
+      connectionString: connectionString,
+      ssl: process.env.PGSSL === 'true' ? { rejectUnauthorized: false } : undefined,
+      max: 3,
+      idleTimeoutMillis: 15000,
+      connectionTimeoutMillis: 15000,
+      query_timeout: 15000
     });
-    mysqlAvailable = true;
+    pgAvailable = true;
   } catch (error) {
-    console.warn('MySQL pool creation failed, using JSON fallback:', error.message);
+    console.warn('PostgreSQL pool creation failed, using JSON fallback:', error.message);
   }
 }
+
+// Convert MySQL-style ? placeholders to PostgreSQL $1, $2, ... format
+const convertPlaceholders = (sql) => {
+  let paramIndex = 0;
+  return sql.replace(/\?/g, () => {
+    paramIndex += 1;
+    return `$${paramIndex}`;
+  });
+};
+
+// ========== Base64 Image Helpers ==========
+
+const isBase64Image = (url = '') => {
+  return typeof url === 'string' && url.startsWith('data:image');
+};
+
+const isExternalUrl = (url = '') => {
+  return typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'));
+};
+
+const isLocalPath = (url = '') => {
+  return typeof url === 'string' && url.startsWith('/') && !isBase64Image(url);
+};
+
+const localPathToBase64 = (filePath = '') => {
+  try {
+    if (!filePath || !isLocalPath(filePath)) return null;
+    const cleanPath = filePath.startsWith('/') ? filePath.slice(1) : filePath;
+    const fullPath = path.join(process.cwd(), 'public', cleanPath);
+
+    if (!fs.existsSync(fullPath)) return null;
+
+    const buffer = fs.readFileSync(fullPath);
+    const ext = path.extname(fullPath).toLowerCase();
+    let contentType = 'image/jpeg';
+    if (ext === '.png') contentType = 'image/png';
+    else if (ext === '.gif') contentType = 'image/gif';
+    else if (ext === '.webp') contentType = 'image/webp';
+    else if (ext === '.svg') contentType = 'image/svg+xml';
+
+    return `data:${contentType};base64,${buffer.toString('base64')}`;
+  } catch (error) {
+    console.warn(`Failed to convert local image to base64: ${filePath}`, error.message);
+    return null;
+  }
+};
+
+// Fields that may contain image URLs
+const IMAGE_FIELDS = [
+  'image_url', 'background_image', 'cover_image', 'image',
+  'experience_image', 'why_image', 'promise_image', 'difference_image',
+  'icon', 'video_url', 'influencer_video_url'
+];
+
+// Process a row to convert local image paths to base64 data URLs
+const processImageFields = (row) => {
+  if (!row || typeof row !== 'object') return row;
+
+  const processed = { ...row };
+  for (const field of IMAGE_FIELDS) {
+    if (processed[field] && typeof processed[field] === 'string' && isLocalPath(processed[field])) {
+      const base64 = localPathToBase64(processed[field]);
+      if (base64) {
+        processed[field] = base64;
+      }
+    }
+  }
+  return processed;
+};
+
+// Process an array of row objects to convert local paths
+const processRows = (rows) => {
+  if (!Array.isArray(rows)) return rows;
+  return rows.map(row => processImageFields(row));
+};
+
+// ========== Query Functions ==========
 
 // Generic query function with fallback
 const query = async (sql, params = []) => {
   const sqlLower = sql.toLowerCase().trim();
-  
-  // CREATE/ALTER/INSERT/UPDATE/DELETE queries - only work with MySQL
-  const isDDL = sqlLower.startsWith('create') || sqlLower.startsWith('alter') || 
-                sqlLower.startsWith('insert') || sqlLower.startsWith('update') || 
-                sqlLower.startsWith('delete');
-  
+
+  // CREATE/ALTER/INSERT/UPDATE/DELETE queries - only work with PostgreSQL
+  const isDDL = sqlLower.startsWith('create') || sqlLower.startsWith('alter') ||
+                sqlLower.startsWith('insert') || sqlLower.startsWith('update') ||
+                sqlLower.startsWith('delete') || sqlLower.startsWith('truncate') ||
+                sqlLower.startsWith('drop');
+
   if (isDDL) {
-    // These queries require MySQL
-    if (!mysqlAvailable || !pool) {
-      console.warn('DDL query skipped - MySQL not available:', sql);
+    // These queries require PostgreSQL
+    if (!pgAvailable || !pool) {
+      console.warn('DDL query skipped - PostgreSQL not available:', sql);
       // Return dummy result for INSERT (to get insertId)
       if (sqlLower.startsWith('insert')) {
-        return { insertId: Date.now() };
+        return { id: Date.now() };
       }
       return [];
     }
-    
+
     try {
-      const [results] = await pool.execute(sql, params);
-      return results;
+      const pgSql = convertPlaceholders(sql);
+      const result = await pool.query(pgSql, params);
+
+      // For INSERT with RETURNING, return the row
+      if (result.rows && result.rows.length > 0) {
+        return result.rows[0];
+      }
+
+      // For INSERT without RETURNING, return insertId
+      if (sqlLower.startsWith('insert')) {
+        return { id: Date.now() };
+      }
+
+      return result.rows || [];
     } catch (error) {
       console.error('Database query error:', error);
       throw error;
     }
   }
-  
+
   // SELECT queries - can use JSON fallback
-  if (mysqlAvailable && pool) {
+  if (pgAvailable && pool) {
     try {
-      const [results] = await pool.execute(sql, params);
-      return results;
+      const pgSql = convertPlaceholders(sql);
+      const result = await pool.query(pgSql, params);
+      return processRows(result.rows || []);
     } catch (error) {
       console.error('Database query error, falling back to JSON:', error.message);
       // Fall through to JSON fallback
@@ -86,31 +177,31 @@ const query = async (sql, params = []) => {
   // Fallback to JSON file for SELECT queries
   const data = loadJsonData();
   if (!data) {
-    throw new Error('No database available (MySQL connection failed and no JSON fallback)');
+    throw new Error('No database available (PostgreSQL connection failed and no JSON fallback)');
   }
 
   // Parse SQL to determine which table to query
   const fromMatch = sqlLower.match(/from\s+(\w+)/);
   const whereMatch = sqlLower.match(/where\s+(.+?)(?:\s+order|\s+limit|\s+group|$)/i);
-  
+
   if (!fromMatch) {
     throw new Error('Invalid SQL query for JSON fallback');
   }
-  
+
   const tableName = fromMatch[1];
   let results = data[tableName] || [];
-  
+
   // Handle WHERE conditions (simple cases only)
   if (whereMatch && results.length > 0) {
     const whereClause = whereMatch[1];
-    
-    // Handle is_active = 1
-    const isActiveMatch = whereClause.match(/is_active\s*=\s*(\d+)/);
+
+    // Handle is_active = true/false
+    const isActiveMatch = whereClause.match(/is_active\s*=\s*(true|false)/i);
     if (isActiveMatch) {
-      const isActiveValue = parseInt(isActiveMatch[1]);
-      results = results.filter(item => item.is_active === isActiveValue);
+      const isActiveValue = isActiveMatch[1].toLowerCase() === 'true';
+      results = results.filter(item => item.is_active === (isActiveValue ? 1 : 0));
     }
-    
+
     // Handle id = ?
     if (whereClause.includes('= ?') || whereClause.includes('=?')) {
       const paramValue = params[0];
@@ -123,13 +214,13 @@ const query = async (sql, params = []) => {
       }
     }
   }
-  
-  return results;
+
+  return processRows(results);
 };
 
 // Generic get one
 const getOne = async (table, id) => {
-  const results = await query(`SELECT * FROM ${table} WHERE id = ?`, [id]);
+  const results = await query(`SELECT * FROM ${table} WHERE id = $1`, [id]);
   return results[0] || null;
 };
 
@@ -137,33 +228,33 @@ const getOne = async (table, id) => {
 const insert = async (table, data) => {
   const keys = Object.keys(data);
   const values = Object.values(data);
-  const placeholders = keys.map(() => '?').join(', ');
-  
+  const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
+
   const result = await query(
-    `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders})`,
+    `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders}) RETURNING id`,
     values
   );
-  
-  return { ...data, id: result.insertId };
+
+  return { ...data, id: result.id };
 };
 
 // Generic update
 const update = async (table, id, data) => {
   const keys = Object.keys(data);
   const values = Object.values(data);
-  const setClause = keys.map(key => `${key} = ?`).join(', ');
-  
+  const setClause = keys.map((key, i) => `${key} = $${i + 1}`).join(', ');
+
   await query(
-    `UPDATE ${table} SET ${setClause} WHERE id = ?`,
+    `UPDATE ${table} SET ${setClause} WHERE id = $${keys.length + 1}`,
     [...values, id]
   );
-  
+
   return { ...data, id };
 };
 
 // Generic delete
 const remove = async (table, id) => {
-  await query(`DELETE FROM ${table} WHERE id = ?`, [id]);
+  await query(`DELETE FROM ${table} WHERE id = $1`, [id]);
   return true;
 };
 
@@ -178,5 +269,9 @@ export default {
   insert,
   update,
   delete: remove,
-  run
+  run,
+  // Export helpers too
+  processRows,
+  processImageFields,
+  localPathToBase64
 };

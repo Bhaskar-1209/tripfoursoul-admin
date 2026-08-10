@@ -11,13 +11,13 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const destinationId = searchParams.get('destination_id');
-    let packages = db.query('packages', { is_active: 1 });
+    let packages = await db.query('SELECT * FROM packages WHERE is_active = true');
 
     if (destinationId) {
       packages = packages.filter((item) => item.destination_id === Number(destinationId));
     }
 
-    const destinations = db.query('destinations');
+    const destinations = await db.query('SELECT * FROM destinations');
     const destinationNames = new Map(destinations.map((item) => [item.id, item.name]));
     packages = packages
       .map((item) => ({ ...item, destination_name: destinationNames.get(item.destination_id) || 'Unassigned' }))
@@ -36,10 +36,10 @@ export async function POST(request) {
     if (!destination_id || !title) {
       return NextResponse.json({ error: 'Destination and package title are required' }, { status: 400 });
     }
-    const packageItem = db.insert('packages', {
+    const packageItem = await db.insert('packages', {
       destination_id: Number(destination_id), title, slug: makeSlug(title), days, meals,
       short_description, long_description, sub_heading, itinerary, additional_info, image_url,
-      inclusives, exclusives, price, sort_order: Number(sort_order), is_active: 1,
+      inclusives, exclusives, price, sort_order: Number(sort_order), is_active: true,
     });
     return NextResponse.json({ success: true, id: packageItem.id });
   } catch (error) {
@@ -54,10 +54,10 @@ export async function PUT(request) {
     if (!id || !destination_id || !title) {
       return NextResponse.json({ error: 'Package ID, destination and title are required' }, { status: 400 });
     }
-    const updated = db.update('packages', Number(id), {
+    const updated = await db.update('packages', Number(id), {
       destination_id: Number(destination_id), title, slug: makeSlug(title), days, meals,
       short_description, long_description, sub_heading, itinerary, additional_info, image_url,
-      inclusives, exclusives, price, sort_order: Number(sort_order), is_active: 1,
+      inclusives, exclusives, price, sort_order: Number(sort_order), is_active: true,
     });
     if (!updated) return NextResponse.json({ error: 'Package not found' }, { status: 404 });
     return NextResponse.json({ success: true });
@@ -70,7 +70,7 @@ export async function DELETE(request) {
   try {
     const id = Number(new URL(request.url).searchParams.get('id'));
     if (!id) return NextResponse.json({ error: 'Package ID required' }, { status: 400 });
-    db.delete('packages', id);
+    await db.delete('packages', id);
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

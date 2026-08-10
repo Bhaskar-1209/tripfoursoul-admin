@@ -5,7 +5,8 @@ import { signToken } from '@/lib/auth';
 
 const AVAILABLE_PERMISSIONS = [
   'dashboard', 'banner', 'trending', 'pricing', 'destinations', 'packages',
-  'spiritual', 'about', 'features', 'testimonials', 'page-banners', 'gallery',
+  'offers',
+  'spiritual', 'about', 'features', 'services', 'testimonials', 'page-banners', 'gallery',
   'team-members', 'deals', 'sections', 'trips', 'blog', 'staff'
 ];
 
@@ -53,7 +54,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Username and password are required' }, { status: 400 });
     }
     
-    const existing = await db.query('SELECT * FROM admins WHERE username = ?', [username]);
+    const existing = await db.query('SELECT * FROM admins WHERE username = $1', [username]);
     if (existing.length > 0) {
       return NextResponse.json({ error: 'Username already exists' }, { status: 400 });
     }
@@ -67,7 +68,7 @@ export async function POST(request) {
       password: hashedPassword,
       role: role || 'staff',
       permissions: cleanPermissions,
-      is_active: 1,
+      is_active: true,
       created_at: new Date().toISOString().replace('T', ' ').split('.')[0],
     });
     
@@ -95,7 +96,7 @@ export async function PUT(request) {
     
     if (!id) return NextResponse.json({ error: 'Staff ID required' }, { status: 400 });
     
-    const existing = await db.query('SELECT * FROM admins WHERE id = ?', [Number(id)]);
+    const existing = await db.query('SELECT * FROM admins WHERE id = $1', [Number(id)]);
     if (existing.length === 0) return NextResponse.json({ error: 'Staff member not found' }, { status: 404 });
     
     // Cannot modify the primary admin account
@@ -137,7 +138,7 @@ export async function DELETE(request) {
     const id = Number(searchParams.get('id'));
     if (!id) return NextResponse.json({ error: 'Staff ID required' }, { status: 400 });
     
-    const existing = await db.query('SELECT * FROM admins WHERE id = ?', [id]);
+    const existing = await db.query('SELECT * FROM admins WHERE id = $1', [id]);
     if (existing.length === 0) return NextResponse.json({ error: 'Staff member not found' }, { status: 404 });
     if (existing[0].username === 'admin') {
       return NextResponse.json({ error: 'Cannot delete the primary admin account' }, { status: 403 });

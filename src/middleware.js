@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 // Path prefix -> permission key mapping for admin pages
 const PERMISSION_BY_PATH = [
   { prefix: '/dashboard', permission: 'dashboard' },
+  { prefix: '/homepage', permission: 'homepage' },
+  { prefix: '/offers', permission: 'offers' },
   { prefix: '/banner', permission: 'banner' },
   { prefix: '/trending', permission: 'trending' },
   { prefix: '/pricing', permission: 'pricing' },
@@ -11,6 +13,7 @@ const PERMISSION_BY_PATH = [
   { prefix: '/spiritual', permission: 'spiritual' },
   { prefix: '/about', permission: 'about' },
   { prefix: '/features', permission: 'features' },
+  { prefix: '/services', permission: 'services' },
   { prefix: '/testimonials', permission: 'testimonials' },
   { prefix: '/page-banners', permission: 'page-banners' },
   { prefix: '/gallery', permission: 'gallery' },
@@ -25,6 +28,7 @@ const PERMISSION_BY_PATH = [
 // API prefix -> permission key mapping
 const API_PERMISSION_BY_PATH = {
   '/api/banner': 'banner',
+  '/api/offers': 'offers',
   '/api/trending': 'trending',
   '/api/trending/items': 'trending',
   '/api/trending/toggle': 'trending',
@@ -35,6 +39,7 @@ const API_PERMISSION_BY_PATH = {
   '/api/trips': 'trips',
   '/api/about': 'about',
   '/api/features': 'features',
+  '/api/services': 'services',
   '/api/testimonials': 'testimonials',
   '/api/page-banners': 'page-banners',
   '/api/gallery': 'gallery',
@@ -58,9 +63,17 @@ function decodeTokenPayload(token) {
   }
 }
 
+// Routes that have been consolidated into /homepage
+const REDIRECT_TO_HOMEPAGE = ['/banner', '/trending', '/features', '/testimonials', '/deals', '/sections'];
+
 export function middleware(request) {
   const { pathname } = request.nextUrl;
   const method = request.method;
+
+  // Redirect old homepage section routes to /homepage
+  if (REDIRECT_TO_HOMEPAGE.includes(pathname)) {
+    return NextResponse.redirect(new URL('/homepage', request.url));
+  }
 
   // Allow public GET requests to API (for frontend integration)
   if (pathname.startsWith('/api/') && method === 'GET') {

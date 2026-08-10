@@ -15,15 +15,11 @@ const PAGE_KEYS = [
 export default function PageBannersPage() {
   const [banners, setBanners] = useState({});
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ page_key: "", heading: "", subheading: "", image_url: "" });
+  const [form, setForm] = useState({ page_key: "", heading: "", subheading: "", background_image: "" });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
-
-  useEffect(() => {
-    fetchBanners();
-  }, []);
 
   const fetchBanners = async () => {
     try {
@@ -39,6 +35,24 @@ export default function PageBannersPage() {
     }
   };
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/page-banners");
+        const data = await res.json();
+        const bannerMap = {};
+        if (data.banners) {
+          data.banners.forEach(b => { bannerMap[b.page_key] = b; });
+        }
+        if (!cancelled) setBanners(bannerMap);
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const startEdit = (pageKey) => {
     const existing = banners[pageKey];
     setEditing(pageKey);
@@ -46,7 +60,7 @@ export default function PageBannersPage() {
       page_key: pageKey,
       heading: existing?.heading || "",
       subheading: existing?.subheading || "",
-      image_url: existing?.image_url || "",
+      background_image: existing?.background_image || existing?.image_url || "",
     });
   };
 
@@ -89,7 +103,7 @@ export default function PageBannersPage() {
       const data = await res.json();
 
       if (res.ok && data.imageUrl) {
-        setForm(prev => ({ ...prev, image_url: data.imageUrl }));
+        setForm(prev => ({ ...prev, background_image: data.imageUrl }));
         setMessage("Image uploaded successfully!");
         setTimeout(() => setMessage(""), 3000);
       } else {
@@ -169,15 +183,15 @@ export default function PageBannersPage() {
                 <div className="flex gap-2 mt-2">
                   <input
                     type="text"
-                    value={form.image_url}
-                    onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+                    value={form.background_image}
+                    onChange={(e) => setForm({ ...form, background_image: e.target.value })}
                     placeholder="Or enter image URL directly"
                     className="admin-input flex-1"
                   />
                 </div>
-                {form.image_url && (
+                {form.background_image && (
                   <div className="mt-2">
-                    <img src={form.image_url} alt="Preview" className="w-full h-32 object-cover rounded-lg border border-gray-200" />
+                    <img src={form.background_image} alt="Preview" className="w-full h-32 object-cover rounded-lg border border-gray-200" />
                   </div>
                 )}
               </div>
@@ -216,8 +230,8 @@ export default function PageBannersPage() {
                   </div>
                   {hasBanner ? (
                     <div className="p-4">
-                      {banner.image_url && (
-                        <img src={banner.image_url} alt="" className="w-full h-40 object-cover rounded-lg mb-3" />
+                      {(banner.background_image || banner.image_url) && (
+                        <img src={banner.background_image || banner.image_url} alt="" className="w-full h-40 object-cover rounded-lg mb-3" />
                       )}
                       <h4 className="font-bold text-gray-900">{banner.heading || page.defaultHeading}</h4>
                       <p className="text-sm text-gray-600 mt-1">{banner.subheading || page.defaultSubheading}</p>

@@ -6,7 +6,7 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const all = searchParams.get('all') === 'true';
-    const features = await db.query('SELECT * FROM features WHERE is_active = ? OR ? = true', [1, all]);
+    const features = await db.query('SELECT * FROM features WHERE is_active = $1 OR $2 = true', [true, all]);
     features.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
     return NextResponse.json({ features });
   } catch (error) {
@@ -20,7 +20,7 @@ export async function POST(request) {
     const body = await request.json();
     const { icon, title, description, sort_order } = body;
     
-    const feature = await db.insert('features', { icon, title, description, sort_order: sort_order || 0, is_active: 1 });
+    const feature = await db.insert('features', { icon, title, description, sort_order: sort_order || 0, is_active: true });
     return NextResponse.json({ success: true, id: feature.id });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

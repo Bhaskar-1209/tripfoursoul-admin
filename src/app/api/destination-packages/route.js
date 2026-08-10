@@ -11,9 +11,9 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Destination ID required' }, { status: 400 });
     }
     
-    const packages = db.query('packages', { is_active: 1 })
-      .filter((item) => item.destination_id === Number(destinationId));
-    return NextResponse.json({ packages });
+    const packages = await db.query('SELECT * FROM packages WHERE is_active = true');
+    const filtered = packages.filter((item) => item.destination_id === Number(destinationId));
+    return NextResponse.json({ packages: filtered });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -29,7 +29,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Destination ID and package ID required' }, { status: 400 });
     }
     
-    const updated = db.update('packages', Number(package_id), { destination_id: Number(destination_id) });
+    const updated = await db.update('packages', Number(package_id), { destination_id: Number(destination_id) });
     
     return NextResponse.json({ 
       success: true, 
@@ -52,7 +52,7 @@ export async function DELETE(request) {
       return NextResponse.json({ error: 'Destination ID and package ID required' }, { status: 400 });
     }
     
-    db.update('packages', Number(packageId), { destination_id: null });
+    await db.update('packages', Number(packageId), { destination_id: null });
     
     return NextResponse.json({ success: true, message: 'Package unlinked successfully' });
   } catch (error) {

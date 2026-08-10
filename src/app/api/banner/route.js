@@ -4,7 +4,7 @@ import db from '@/lib/db';
 export async function GET() {
   try {
     const settings = await db.query('SELECT * FROM banner_settings LIMIT 1');
-    const images = await db.query('SELECT * FROM banner_images WHERE is_active = 1');
+    const images = await db.query('SELECT * FROM banner_images WHERE is_active = true');
     images.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
     return NextResponse.json({ settings: settings[0] || null, images });
   } catch (error) {

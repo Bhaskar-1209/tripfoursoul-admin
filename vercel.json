@@ -1,0 +1,11 @@
+{
+  "functions": {
+    "src/app/api/**/*.js": {
+      "maxDuration": 60
+    },
+    "src/app/api/upload/route.js": {
+      "maxDuration": 60,
+      "maxBodySize": "8mb"
+    }
+  }
+}

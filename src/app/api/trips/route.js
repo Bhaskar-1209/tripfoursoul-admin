@@ -8,7 +8,7 @@ export async function GET(request) {
     const category = searchParams.get('category');
     
     const all = searchParams.get('all') === 'true';
-    let trips = await db.query('SELECT * FROM trips WHERE is_active = ? OR ? = true', [1, all]);
+    let trips = await db.query('SELECT * FROM trips WHERE is_active = $1 OR $2 = true', [true, all]);
     if (category && category !== 'all') trips = trips.filter((trip) => trip.category === category);
     trips.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
     return NextResponse.json({ trips });
@@ -23,7 +23,7 @@ export async function POST(request) {
     const body = await request.json();
     const { name, description, image_url, price, duration, days, location, category, badge, destination_id } = body;
     
-    const trip = await db.insert('trips', { name, description, image_url, price, duration, days, location, category, badge, destination_id: destination_id || null, is_active: 1, sort_order: 0 });
+    const trip = await db.insert('trips', { name, description, image_url, price, duration, days, location, category, badge, destination_id: destination_id || null, is_active: true, sort_order: 0 });
     
     return NextResponse.json({ 
       success: true, 

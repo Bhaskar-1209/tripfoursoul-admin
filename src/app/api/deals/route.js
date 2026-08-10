@@ -17,7 +17,7 @@ export async function GET() {
       card_tagline: 'Planning made personal',
       card_heading: 'Get a tailored recommendation, clear inclusions, and expert support before you book.',
       card_description: 'Offer availability and final pricing are confirmed by the travel team.',
-      is_active: 1
+      is_active: true
     });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

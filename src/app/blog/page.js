@@ -13,6 +13,7 @@ export default function BlogPage() {
     excerpt: "",
     content: "",
     cover_image: "",
+    gallery_images: [],
     author: "",
     tags: "",
     meta_title: "",
@@ -78,7 +79,7 @@ export default function BlogPage() {
       }
       setTimeout(() => setMessage(""), 3000);
       setForm({
-        title: "", slug: "", excerpt: "", content: "", cover_image: "",
+        title: "", slug: "", excerpt: "", content: "", cover_image: "", gallery_images: [],
         author: "", tags: "", meta_title: "", meta_description: "",
       });
       setShowForm(false);
@@ -110,6 +111,7 @@ export default function BlogPage() {
       excerpt: item.excerpt || "",
       content: item.content || "",
       cover_image: item.cover_image || "",
+      gallery_images: Array.isArray(item.gallery_images) ? item.gallery_images : (() => { try { return JSON.parse(item.gallery_images || '[]'); } catch { return []; } })(),
       author: item.author || "",
       tags: Array.isArray(item.tags) ? item.tags.join(", ") : "",
       meta_title: item.meta_title || "",
@@ -135,7 +137,7 @@ export default function BlogPage() {
       const data = await res.json();
 
       if (res.ok && data.imageUrl) {
-        setForm((prev) => ({ ...prev, cover_image: data.imageUrl }));
+        setForm((prev) => ({ ...prev, gallery_images: [...prev.gallery_images, data.imageUrl], cover_image: prev.cover_image || data.imageUrl }));
         setMessage("Image uploaded successfully!");
         setTimeout(() => setMessage(""), 3000);
       } else {
@@ -179,7 +181,7 @@ export default function BlogPage() {
                 setShowForm(true);
                 setEditingItem(null);
                 setForm({
-                  title: "", slug: "", excerpt: "", content: "", cover_image: "",
+                  title: "", slug: "", excerpt: "", content: "", cover_image: "", gallery_images: [],
                   author: "", tags: "", meta_title: "", meta_description: "",
                 });
               }}
@@ -240,7 +242,7 @@ export default function BlogPage() {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="admin-label">Cover Image</label>
+                  <label className="admin-label">Blog Images</label>
                   <div className="flex gap-2">
                     <input
                       ref={fileInputRef}
@@ -259,11 +261,8 @@ export default function BlogPage() {
                       {uploading ? "Uploading..." : "Upload"}
                     </button>
                   </div>
-                  {form.cover_image && (
-                    <div className="mt-2">
-                      <img src={form.cover_image} alt="Preview" className="w-40 h-32 object-cover rounded-lg border border-gray-200" />
-                    </div>
-                  )}
+                  <p className="text-xs text-gray-500 mt-1">Upload at least 3 images if the article needs a photo gallery. The first image becomes the cover.</p>
+                  {form.gallery_images.length > 0 && <div className="mt-3 grid grid-cols-3 gap-3">{form.gallery_images.map((url, index) => <div key={`${url}-${index}`} className="relative"><img src={url} alt="Blog upload" className="w-full h-24 object-cover rounded border" />{index === 0 && <span className="absolute top-1 left-1 rounded bg-black/60 px-1 text-[10px] text-white">Cover</span>}<button type="button" onClick={() => setForm((prev) => { const gallery_images = prev.gallery_images.filter((_, i) => i !== index); return { ...prev, gallery_images, cover_image: gallery_images[0] || '' }; })} className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 text-xs">×</button></div>)}</div>}
                 </div>
 
                 <div className="md:col-span-2">
@@ -343,6 +342,7 @@ export default function BlogPage() {
                   </div>
                   <p className="text-xs text-gray-400 mb-1">/{item.slug} · {formatDate(item.created_at)}</p>
                   {item.excerpt && <p className="text-sm text-gray-600 line-clamp-1 mb-2">{item.excerpt}</p>}
+                  {(Array.isArray(item.gallery_images) ? item.gallery_images.length : (() => { try { return JSON.parse(item.gallery_images || '[]').length; } catch { return 0; } })()) > 0 && <p className="text-xs text-teal-600">Photo gallery attached</p>}
                   {item.tags?.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {(Array.isArray(item.tags) ? item.tags : []).map((tag) => (

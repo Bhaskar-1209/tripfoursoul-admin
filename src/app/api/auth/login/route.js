@@ -51,9 +51,9 @@ export async function POST(request) {
 
     let admin = null;
     
-    // Try MySQL first
+    // Try PostgreSQL first
     try {
-      const admins = await db.query('SELECT * FROM admins WHERE username = ? OR email = ?', [username, username]);
+      const admins = await db.query('SELECT * FROM admins WHERE username = $1 OR email = $2', [username, username]);
       if (admins.length > 0) {
         const adminData = admins[0];
         const isValid = await bcrypt.compare(password, adminData.password);
@@ -67,11 +67,11 @@ export async function POST(request) {
           };
         }
       }
-    } catch (mysqlError) {
-      console.warn('MySQL login failed, trying JSON fallback:', mysqlError.message);
+    } catch (pgError) {
+      console.warn('PostgreSQL login failed, trying JSON fallback:', pgError.message);
     }
     
-    // Fallback to JSON if MySQL failed
+    // Fallback to JSON if PostgreSQL failed
     if (!admin) {
       admin = await loginWithJson(username, password);
     }

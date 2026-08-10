@@ -6,32 +6,32 @@ export async function GET() {
     const results = {
       success: true,
       message: 'Setup completed',
-      mysqlUsed: false,
+      postgresUsed: false,
       errors: []
     };
 
-    // Check if MySQL is available
+    // Check if PostgreSQL is available
     try {
       await db.query('SELECT 1');
-      results.mysqlUsed = true;
+      results.postgresUsed = true;
     } catch (e) {
-      results.message = 'MySQL not available. Using JSON fallback mode.';
-      results.errors.push('MySQL connection failed: ' + e.message);
+      results.message = 'PostgreSQL not available. Using JSON fallback mode.';
+      results.errors.push('PostgreSQL connection failed: ' + e.message);
     }
 
-    // Only run DDL queries if MySQL is available
-    if (results.mysqlUsed) {
+    // Only run DDL queries if PostgreSQL is available
+    if (results.postgresUsed) {
       // Create admins table
       try {
         await db.query(`
           CREATE TABLE IF NOT EXISTS admins (
-            id INT AUTO_INCREMENT PRIMARY KEY,
+            id SERIAL PRIMARY KEY,
             username VARCHAR(100) NOT NULL UNIQUE,
             email VARCHAR(255) NOT NULL UNIQUE,
             password VARCHAR(255) NOT NULL,
             role VARCHAR(50) DEFAULT 'staff',
-            permissions JSON,
-            is_active TINYINT(1) DEFAULT 1,
+            permissions JSONB,
+            is_active BOOLEAN DEFAULT true,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
           )
         `);
@@ -40,63 +40,47 @@ export async function GET() {
       }
 
       // Add missing columns if they don't exist
-      try {
-        await db.query(`ALTER TABLE admins ADD COLUMN role VARCHAR(50) DEFAULT 'staff'`);
-      } catch (e) {
-        // Column might already exist
-      }
-      try {
-        await db.query(`ALTER TABLE admins ADD COLUMN permissions JSON`);
-      } catch (e) {
-        // Column might already exist
-      }
-      try {
-        await db.query(`ALTER TABLE admins ADD COLUMN is_active TINYINT(1) DEFAULT 1`);
-      } catch (e) {
-        // Column might already exist
-      }
+      try { await db.query(`ALTER TABLE admins ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'staff'`); } catch (e) {}
+      try { await db.query(`ALTER TABLE admins ADD COLUMN IF NOT EXISTS permissions JSONB`); } catch (e) {}
+      try { await db.query(`ALTER TABLE admins ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true`); } catch (e) {}
 
       // Insert or update default admin (password: admin123)
       try {
         await db.query(`
-          INSERT INTO admins (username, email, password, role) VALUES 
+          INSERT INTO admins (username, email, password, role) VALUES
           ('admin', 'admin@tripforsoul.com', '$2a$10$8KzQMGx5C5Kc5Q5Q5Q5Q5u5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q', 'admin')
+          ON CONFLICT (username) DO NOTHING
         `);
       } catch (e) {
-        // Admin might already exist, update role
-        try {
-          await db.query(`UPDATE admins SET role = 'admin' WHERE username = 'admin'`);
-        } catch (e2) {
-          // Update failed, ignore
-        }
+        try { await db.query(`UPDATE admins SET role = 'admin' WHERE username = 'admin'`); } catch (e2) {}
       }
 
       // Create banner_settings table
       await db.query(`
         CREATE TABLE IF NOT EXISTS banner_settings (
-          id INT AUTO_INCREMENT PRIMARY KEY,
+          id SERIAL PRIMARY KEY,
           heading VARCHAR(255) DEFAULT 'Journeys Crafted for the Soul',
           subtitle TEXT,
           button1_text VARCHAR(100) DEFAULT 'Find Now',
           button2_text VARCHAR(100) DEFAULT 'View All Trips',
           button2_link VARCHAR(255) DEFAULT '/destinations',
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
 
       await db.query(`
-        INSERT INTO banner_settings (heading, subtitle) VALUES 
+        INSERT INTO banner_settings (heading, subtitle) VALUES
         ('Journeys Crafted for the Soul', 'Not just another trip. We design meaningful land journeys that connect you with culture, people, and places beyond the tourist trail.')
-        ON DUPLICATE KEY UPDATE id=id
+        ON CONFLICT DO NOTHING
       `);
 
       // Create banner_images table
       await db.query(`
         CREATE TABLE IF NOT EXISTS banner_images (
-          id INT AUTO_INCREMENT PRIMARY KEY,
+          id SERIAL PRIMARY KEY,
           image_url VARCHAR(500) NOT NULL,
           sort_order INT DEFAULT 0,
-          is_active TINYINT(1) DEFAULT 1,
+          is_active BOOLEAN DEFAULT true,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
@@ -104,31 +88,31 @@ export async function GET() {
       // Create trending_settings table
       await db.query(`
         CREATE TABLE IF NOT EXISTS trending_settings (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          is_enabled TINYINT(1) DEFAULT 1,
+          id SERIAL PRIMARY KEY,
+          is_enabled BOOLEAN DEFAULT true,
           heading VARCHAR(255) DEFAULT 'Trending Now',
           subtitle TEXT,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
 
       await db.query(`
-        INSERT INTO trending_settings (is_enabled, heading, subtitle) VALUES 
-        (1, 'Trending Now', 'Most sought-after destinations this season')
-        ON DUPLICATE KEY UPDATE id=id
+        INSERT INTO trending_settings (is_enabled, heading, subtitle) VALUES
+        (true, 'Trending Now', 'Most sought-after destinations this season')
+        ON CONFLICT DO NOTHING
       `);
 
       // Create trending_items table
       await db.query(`
         CREATE TABLE IF NOT EXISTS trending_items (
-          id INT AUTO_INCREMENT PRIMARY KEY,
+          id SERIAL PRIMARY KEY,
           name VARCHAR(255) NOT NULL,
           image_url VARCHAR(500) NOT NULL,
           region VARCHAR(100) DEFAULT '',
           price VARCHAR(50) DEFAULT '',
           badge VARCHAR(100) DEFAULT '',
           sort_order INT DEFAULT 0,
-          is_active TINYINT(1) DEFAULT 1,
+          is_active BOOLEAN DEFAULT true,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
@@ -136,12 +120,13 @@ export async function GET() {
       // Create region_pricing table
       await db.query(`
         CREATE TABLE IF NOT EXISTS region_pricing (
-          id INT AUTO_INCREMENT PRIMARY KEY,
+          id SERIAL PRIMARY KEY,
           region VARCHAR(100) NOT NULL UNIQUE,
           starting_price VARCHAR(50) NOT NULL,
           currency VARCHAR(10) DEFAULT 'USD',
-          is_active TINYINT(1) DEFAULT 1,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+          usd_price VARCHAR(50) DEFAULT '',
+          is_active BOOLEAN DEFAULT true,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
 
@@ -152,19 +137,19 @@ export async function GET() {
         ('Middle East', '$999', 'USD'),
         ('Africa', '$1,299', 'USD'),
         ('Americas', '$1,199', 'USD')
-        ON DUPLICATE KEY UPDATE id=id
+        ON CONFLICT (region) DO NOTHING
       `);
 
       // Create popular_destinations table
       await db.query(`
         CREATE TABLE IF NOT EXISTS popular_destinations (
-          id INT AUTO_INCREMENT PRIMARY KEY,
+          id SERIAL PRIMARY KEY,
           name VARCHAR(255) NOT NULL,
           image_url VARCHAR(500) NOT NULL,
           region VARCHAR(100) DEFAULT '',
           price VARCHAR(50) DEFAULT '',
           sort_order INT DEFAULT 0,
-          is_active TINYINT(1) DEFAULT 1,
+          is_active BOOLEAN DEFAULT true,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
@@ -172,12 +157,12 @@ export async function GET() {
       // Create homepage_sections table
       await db.query(`
         CREATE TABLE IF NOT EXISTS homepage_sections (
-          id INT AUTO_INCREMENT PRIMARY KEY,
+          id SERIAL PRIMARY KEY,
           section_key VARCHAR(100) NOT NULL UNIQUE,
           section_name VARCHAR(255) NOT NULL,
-          is_visible TINYINT(1) DEFAULT 1,
+          is_visible BOOLEAN DEFAULT true,
           sort_order INT DEFAULT 0,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
 
@@ -193,13 +178,13 @@ export async function GET() {
         ('gallery', 'Gallery', 8),
         ('deals', 'Deals', 9),
         ('footer', 'Footer', 10)
-        ON DUPLICATE KEY UPDATE id=id
+        ON CONFLICT (section_key) DO NOTHING
       `);
 
       // Create deals_settings table
       await db.query(`
         CREATE TABLE IF NOT EXISTS deals_settings (
-          id INT AUTO_INCREMENT PRIMARY KEY,
+          id SERIAL PRIMARY KEY,
           tagline VARCHAR(255) DEFAULT 'Travel offers',
           heading VARCHAR(255) DEFAULT 'Make more of every journey.',
           description TEXT,
@@ -208,51 +193,61 @@ export async function GET() {
           card_tagline VARCHAR(255) DEFAULT 'Planning made personal',
           card_heading TEXT,
           card_description TEXT,
-          is_active TINYINT(1) DEFAULT 1,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+          is_active BOOLEAN DEFAULT true,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
 
       await db.query(`
         INSERT INTO deals_settings (tagline, heading, description, button_text, button_link, card_tagline, card_heading, card_description, is_active) VALUES
-        ('Travel offers', 'Make more of every journey.', 'Discover current seasonal offers and speak with our team to find the journey that suits your plans.', 'Ask about offers', '/contact?subject=Offer%20enquiry', 'Planning made personal', 'Get a tailored recommendation, clear inclusions, and expert support before you book.', 'Offer availability and final pricing are confirmed by the travel team.', 1)
-        ON DUPLICATE KEY UPDATE id=id
+        ('Travel offers', 'Make more of every journey.', 'Discover current seasonal offers and speak with our team to find the journey that suits your plans.', 'Ask about offers', '/contact?subject=Offer%20enquiry', 'Planning made personal', 'Get a tailored recommendation, clear inclusions, and expert support before you book.', 'Offer availability and final pricing are confirmed by the travel team.', true)
+        ON CONFLICT DO NOTHING
+      `);
+
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS offers (
+          id SERIAL PRIMARY KEY,
+          title VARCHAR(255) NOT NULL,
+          description TEXT DEFAULT '',
+          image_url VARCHAR(500) DEFAULT '',
+          button_text VARCHAR(100) DEFAULT 'Explore offer',
+          button_link VARCHAR(500) DEFAULT '/contact',
+          badge VARCHAR(100) DEFAULT '',
+          sort_order INT DEFAULT 0,
+          is_active BOOLEAN DEFAULT true,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
       `);
 
       // Create trips table
       await db.query(`
         CREATE TABLE IF NOT EXISTS trips (
-          id INT AUTO_INCREMENT PRIMARY KEY,
+          id SERIAL PRIMARY KEY,
           name VARCHAR(255) NOT NULL,
           description TEXT,
           image_url VARCHAR(500) NOT NULL,
           price VARCHAR(50) NOT NULL,
           duration VARCHAR(100) DEFAULT '',
+          days VARCHAR(100) DEFAULT '',
           location VARCHAR(255) DEFAULT '',
           category VARCHAR(100) DEFAULT 'general',
           badge VARCHAR(100) DEFAULT '',
-          is_active TINYINT(1) DEFAULT 1,
+          destination_id INT,
+          is_active BOOLEAN DEFAULT true,
           sort_order INT DEFAULT 0,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
 
-      try {
-        await db.query(`CREATE INDEX idx_category ON trips(category)`);
-      } catch (e) {
-        // Index might already exist
-      }
-      try {
-        await db.query(`CREATE INDEX idx_is_active ON trips(is_active)`);
-      } catch (e) {
-        // Index might already exist
-      }
+      try { await db.query(`CREATE INDEX IF NOT EXISTS idx_category ON trips(category)`); } catch (e) {}
+      try { await db.query(`CREATE INDEX IF NOT EXISTS idx_is_active ON trips(is_active)`); } catch (e) {}
 
       // Create about_us table
       await db.query(`
         CREATE TABLE IF NOT EXISTS about_us (
-          id INT AUTO_INCREMENT PRIMARY KEY,
+          id SERIAL PRIMARY KEY,
           heading VARCHAR(255) DEFAULT 'Travel that Touches the Soul',
           subheading TEXT,
           description TEXT,
@@ -260,26 +255,53 @@ export async function GET() {
           cta_text VARCHAR(255) DEFAULT 'Begin Your Journey',
           cta_link VARCHAR(255) DEFAULT '/enquire-now',
           image_url VARCHAR(500) DEFAULT '',
-          is_active TINYINT(1) DEFAULT 1,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+          premium_heading VARCHAR(255) DEFAULT '',
+          premium_description TEXT DEFAULT '',
+          premium_button_text VARCHAR(255) DEFAULT '',
+          premium_button_link VARCHAR(255) DEFAULT '',
+          experience_heading VARCHAR(255) DEFAULT '',
+          experience_description_title VARCHAR(255) DEFAULT '',
+          experience_description TEXT DEFAULT '',
+          experience_subheading VARCHAR(255) DEFAULT '',
+          experience_list TEXT DEFAULT '',
+          experience_image VARCHAR(500) DEFAULT '',
+          why_heading VARCHAR(255) DEFAULT '',
+          why_description TEXT DEFAULT '',
+          why_image VARCHAR(500) DEFAULT '',
+          promise_heading VARCHAR(255) DEFAULT '',
+          promise_subheading VARCHAR(255) DEFAULT '',
+          promise_description TEXT DEFAULT '',
+          promise_list TEXT DEFAULT '',
+          promise_image VARCHAR(500) DEFAULT '',
+          difference_heading VARCHAR(255) DEFAULT '',
+          difference_description TEXT DEFAULT '',
+          difference_subheading VARCHAR(255) DEFAULT '',
+          difference_list TEXT DEFAULT '',
+          difference_image VARCHAR(500) DEFAULT '',
+          cta_heading VARCHAR(255) DEFAULT '',
+          cta_description TEXT DEFAULT '',
+          cta_button_text VARCHAR(255) DEFAULT '',
+          cta_button_link VARCHAR(255) DEFAULT '',
+          is_active BOOLEAN DEFAULT true,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
 
       await db.query(`
-        INSERT INTO about_us (heading, subheading, description) VALUES 
+        INSERT INTO about_us (heading, subheading, description) VALUES
         ('Travel that Touches the Soul', 'Curated Travel. Authentic Moments. Lasting Impact.', 'At Trip For Soul, we craft meaningful land journeys that are soulful, sustainable, and deeply personal.')
-        ON DUPLICATE KEY UPDATE id=id
+        ON CONFLICT DO NOTHING
       `);
 
       // Create features table
       await db.query(`
         CREATE TABLE IF NOT EXISTS features (
-          id INT AUTO_INCREMENT PRIMARY KEY,
+          id SERIAL PRIMARY KEY,
           icon VARCHAR(100) NOT NULL,
           title VARCHAR(255) NOT NULL,
           description TEXT NOT NULL,
           sort_order INT DEFAULT 0,
-          is_active TINYINT(1) DEFAULT 1,
+          is_active BOOLEAN DEFAULT true,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
@@ -289,13 +311,29 @@ export async function GET() {
         ('best-price', 'Best Price Guarantee', 'We ensure you get the most value for your journey with competitive pricing on every package.', 1),
         ('easy-booking', 'Easy & Quick Booking', 'Book your dream trips in minutes with our simple and hassle-free booking system.', 2),
         ('support', 'Customer Care 24/7', 'Our dedicated support team is available around the clock to ensure a seamless travel experience.', 3)
-        ON DUPLICATE KEY UPDATE id=id
+        ON CONFLICT DO NOTHING
+      `);
+
+      // Create services table
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS services (
+          id SERIAL PRIMARY KEY,
+          title VARCHAR(255) NOT NULL,
+          slug VARCHAR(255) NOT NULL UNIQUE,
+          description TEXT DEFAULT '',
+          image_url VARCHAR(500) DEFAULT '',
+          icon VARCHAR(100) DEFAULT '',
+          sort_order INT DEFAULT 0,
+          is_active BOOLEAN DEFAULT true,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
       `);
 
       // Create testimonials table
       await db.query(`
         CREATE TABLE IF NOT EXISTS testimonials (
-          id INT AUTO_INCREMENT PRIMARY KEY,
+          id SERIAL PRIMARY KEY,
           name VARCHAR(255) NOT NULL,
           image_url VARCHAR(500) DEFAULT '',
           rating INT DEFAULT 5,
@@ -303,7 +341,7 @@ export async function GET() {
           video_url VARCHAR(500) DEFAULT '',
           influencer_video_url VARCHAR(500) DEFAULT '',
           sort_order INT DEFAULT 0,
-          is_active TINYINT(1) DEFAULT 1,
+          is_active BOOLEAN DEFAULT true,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
@@ -314,13 +352,13 @@ export async function GET() {
         ('Sohan Sharma', 'https://tripforsoul.com/public/img/gallery/b-1.png', 5, 'We booked Vietnam with TripForSoul. It was so much enchanting. From the moment we landed in Hanoi to the cruise in Ha Long Bay, everything was organised to perfection.', 2),
         ('Rakesh Singh', 'https://tripforsoul.com/public/img/gallery/b-2.png', 5, 'Europe package (Paris, Amsterdam, Barcelona) was a dream, with TripForSoul. Hotels: well-situated and clean. Tours: insightful. The small touch-ups (local restaurant recommendations, optional side-trips) made it feel bespoke rather than just a "standard package." Worth every penny.', 3),
         ('Vishnu Kumar', 'https://tripforsoul.com/public/img/gallery/b-3.png', 5, 'Our UK tour was absolutely unforgettable. From the busy streets of London to the serene landscapes of the Cotswolds, everything was organised flawlessly. The coach was clean and comfortable, accommodations exceeded expectations. Thanks tripforsoul. Highly recommend them for holidays.', 4)
-        ON DUPLICATE KEY UPDATE id=id
+        ON CONFLICT DO NOTHING
       `);
 
       // Create destinations table
       await db.query(`
         CREATE TABLE IF NOT EXISTS destinations (
-          id INT AUTO_INCREMENT PRIMARY KEY,
+          id SERIAL PRIMARY KEY,
           name VARCHAR(255) NOT NULL,
           slug VARCHAR(255) NOT NULL UNIQUE,
           description TEXT,
@@ -329,17 +367,18 @@ export async function GET() {
           price VARCHAR(50) DEFAULT '',
           duration VARCHAR(100) DEFAULT '',
           highlights TEXT,
-          is_active TINYINT(1) DEFAULT 1,
+          is_trending BOOLEAN DEFAULT false,
+          is_active BOOLEAN DEFAULT true,
           sort_order INT DEFAULT 0,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
 
       // Create packages table
       await db.query(`
         CREATE TABLE IF NOT EXISTS packages (
-          id INT AUTO_INCREMENT PRIMARY KEY,
+          id SERIAL PRIMARY KEY,
           destination_id INT,
           title VARCHAR(255) NOT NULL,
           slug VARCHAR(255) NOT NULL UNIQUE,
@@ -351,37 +390,39 @@ export async function GET() {
           image_url VARCHAR(500) DEFAULT '',
           inclusives TEXT,
           exclusives TEXT,
+          itinerary TEXT,
+          additional_info TEXT,
           price VARCHAR(50) DEFAULT '',
           sort_order INT DEFAULT 0,
-          is_active TINYINT(1) DEFAULT 1,
+          is_active BOOLEAN DEFAULT true,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
 
       // Create page_banners table
       await db.query(`
         CREATE TABLE IF NOT EXISTS page_banners (
-          id INT AUTO_INCREMENT PRIMARY KEY,
+          id SERIAL PRIMARY KEY,
           page_key VARCHAR(100) NOT NULL UNIQUE,
           title VARCHAR(255) DEFAULT '',
           subtitle TEXT,
           background_image VARCHAR(500) DEFAULT '',
-          is_active TINYINT(1) DEFAULT 1,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+          is_active BOOLEAN DEFAULT true,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
 
       // Create team_members table
       await db.query(`
         CREATE TABLE IF NOT EXISTS team_members (
-          id INT AUTO_INCREMENT PRIMARY KEY,
+          id SERIAL PRIMARY KEY,
           name VARCHAR(255) NOT NULL,
           designation VARCHAR(255) NOT NULL,
           image_url VARCHAR(500) DEFAULT '',
           bio TEXT,
           sort_order INT DEFAULT 0,
-          is_active TINYINT(1) DEFAULT 1,
+          is_active BOOLEAN DEFAULT true,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
@@ -389,12 +430,15 @@ export async function GET() {
       // Create gallery_images table
       await db.query(`
         CREATE TABLE IF NOT EXISTS gallery_images (
-          id INT AUTO_INCREMENT PRIMARY KEY,
+          id SERIAL PRIMARY KEY,
           image_url VARCHAR(500) NOT NULL,
+          video_url VARCHAR(500) DEFAULT '',
+          media_type VARCHAR(20) DEFAULT 'image',
+          title VARCHAR(255) DEFAULT '',
           caption VARCHAR(255) DEFAULT '',
           category VARCHAR(100) DEFAULT '',
           sort_order INT DEFAULT 0,
-          is_active TINYINT(1) DEFAULT 1,
+          is_active BOOLEAN DEFAULT true,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
@@ -402,27 +446,82 @@ export async function GET() {
       // Create blogs table
       await db.query(`
         CREATE TABLE IF NOT EXISTS blogs (
-          id INT AUTO_INCREMENT PRIMARY KEY,
+          id SERIAL PRIMARY KEY,
           title VARCHAR(255) NOT NULL,
           slug VARCHAR(255) NOT NULL UNIQUE,
           excerpt TEXT,
-          content LONGTEXT,
+          content TEXT,
           cover_image VARCHAR(500) DEFAULT '',
+          gallery_images JSONB,
           author VARCHAR(255) DEFAULT '',
-          tags JSON,
+          tags JSONB,
           meta_title VARCHAR(255) DEFAULT '',
           meta_description TEXT,
-          is_active TINYINT(1) DEFAULT 1,
+          is_active BOOLEAN DEFAULT true,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
-    } // end if mysqlUsed
 
-    return NextResponse.json({ 
-      success: true, 
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS site_settings (
+          id SERIAL PRIMARY KEY,
+          setting_key VARCHAR(100) NOT NULL UNIQUE,
+          setting_value JSONB NOT NULL,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      // Add missing columns to existing tables (for migrations from older schemas)
+      const alterColumns = [
+        ['destinations', 'is_trending', 'BOOLEAN DEFAULT false'],
+        ['trips', 'days', 'VARCHAR(100) DEFAULT \'\''],
+        ['trips', 'destination_id', 'INT'],
+        ['packages', 'itinerary', 'TEXT'],
+        ['packages', 'additional_info', 'TEXT'],
+        ['region_pricing', 'usd_price', 'VARCHAR(50) DEFAULT \'\''],
+        ['about_us', 'premium_heading', 'VARCHAR(255) DEFAULT \'\''],
+        ['about_us', 'premium_description', 'TEXT DEFAULT \'\''],
+        ['about_us', 'premium_button_text', 'VARCHAR(255) DEFAULT \'\''],
+        ['about_us', 'premium_button_link', 'VARCHAR(255) DEFAULT \'\''],
+        ['about_us', 'experience_heading', 'VARCHAR(255) DEFAULT \'\''],
+        ['about_us', 'experience_description_title', 'VARCHAR(255) DEFAULT \'\''],
+        ['about_us', 'experience_description', 'TEXT DEFAULT \'\''],
+        ['about_us', 'experience_subheading', 'VARCHAR(255) DEFAULT \'\''],
+        ['about_us', 'experience_list', 'TEXT DEFAULT \'\''],
+        ['about_us', 'experience_image', 'VARCHAR(500) DEFAULT \'\''],
+        ['about_us', 'why_heading', 'VARCHAR(255) DEFAULT \'\''],
+        ['about_us', 'why_description', 'TEXT DEFAULT \'\''],
+        ['about_us', 'why_image', 'VARCHAR(500) DEFAULT \'\''],
+        ['about_us', 'promise_heading', 'VARCHAR(255) DEFAULT \'\''],
+        ['about_us', 'promise_subheading', 'VARCHAR(255) DEFAULT \'\''],
+        ['about_us', 'promise_description', 'TEXT DEFAULT \'\''],
+        ['about_us', 'promise_list', 'TEXT DEFAULT \'\''],
+        ['about_us', 'promise_image', 'VARCHAR(500) DEFAULT \'\''],
+        ['about_us', 'difference_heading', 'VARCHAR(255) DEFAULT \'\''],
+        ['about_us', 'difference_description', 'TEXT DEFAULT \'\''],
+        ['about_us', 'difference_subheading', 'VARCHAR(255) DEFAULT \'\''],
+        ['about_us', 'difference_list', 'TEXT DEFAULT \'\''],
+        ['about_us', 'difference_image', 'VARCHAR(500) DEFAULT \'\''],
+        ['about_us', 'cta_heading', 'VARCHAR(255) DEFAULT \'\''],
+        ['about_us', 'cta_description', 'TEXT DEFAULT \'\''],
+        ['about_us', 'cta_button_text', 'VARCHAR(255) DEFAULT \'\''],
+        ['about_us', 'cta_button_link', 'VARCHAR(255) DEFAULT \'\''],
+      ];
+
+      for (const [table, column, definition] of alterColumns) {
+        try {
+          await db.query(`ALTER TABLE ${table} ADD COLUMN IF NOT EXISTS ${column} ${definition}`);
+        } catch (e) {
+          // Column might already exist or table doesn't exist yet
+        }
+      }
+    } // end if postgresUsed
+
+    return NextResponse.json({
+      success: true,
       message: results.message,
-      mysqlUsed: results.mysqlUsed,
+      postgresUsed: results.postgresUsed,
       errors: results.errors
     });
   } catch (error) {

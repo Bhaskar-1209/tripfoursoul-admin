@@ -14,25 +14,23 @@ import {
   Star,
   Tag,
   Users,
+  Settings,
   LogOut,
 } from "lucide-react";
 
 const allMenuItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: "dashboard" },
-  { href: "/banner", label: "Banner", icon: Image, permission: "banner" },
-  { href: "/trending", label: "Trending", icon: TrendingUp, permission: "trending" },
-  { href: "/pricing", label: "Region Pricing", icon: DollarSign, permission: "pricing" },
+  { href: "/homepage", label: "Homepage Settings", icon: Settings, permission: "homepage" },
+  { href: "/offers", label: "Sticky Offers", icon: Tag, permission: "offers" },
   { href: "/destinations", label: "Popular Destinations", icon: MapPin, permission: "destinations" },
-  { href: "/packages", label: "Packages", icon: Layers, permission: "packages" },
   { href: "/spiritual", label: "Spiritual Escape", icon: MapPin, permission: "spiritual" },
+  { href: "/pricing", label: "Region Pricing", icon: DollarSign, permission: "pricing" },
+  { href: "/packages", label: "Packages", icon: Layers, permission: "packages" },
   { href: "/about", label: "About Us", icon: Info, permission: "about" },
-  { href: "/features", label: "Features", icon: Star, permission: "features" },
-  { href: "/testimonials", label: "Testimonials", icon: Star, permission: "testimonials" },
+  { href: "/services", label: "Services", icon: Layers, permission: "services" },
   { href: "/page-banners", label: "Page Banners", icon: Image, permission: "page-banners" },
   { href: "/gallery", label: "Gallery", icon: Image, permission: "gallery" },
-  { href: "/team-members", label: "Team Members", icon: Star, permission: "team-members" },
-  { href: "/deals", label: "Deals", icon: Tag, permission: "deals" },
-  { href: "/sections", label: "Homepage Sections", icon: Layers, permission: "sections" },
+  // { href: "/team-members", label: "Team Members", icon: Star, permission: "team-members" },
   { href: "/trips", label: "Trips & Packages", icon: Layers, permission: "trips" },
   { href: "/blog", label: "Blog", icon: Layers, permission: "blog" },
   { href: "/staff", label: "Staff", icon: Users, permission: "staff" },
@@ -70,13 +68,13 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 min-h-screen flex flex-col">
+    <aside className="sticky top-0 left-0 w-64 h-screen shrink-0 bg-white border-r border-gray-200 flex flex-col overflow-hidden">
       <div className="p-6 border-b border-gray-100">
         <h1 className="text-xl font-bold text-teal-700">TripForSoul</h1>
         <p className="text-xs text-gray-400 mt-1">Admin Panel</p>
       </div>
 
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {menuItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;

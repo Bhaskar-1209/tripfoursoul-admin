@@ -6,6 +6,7 @@ import Sidebar from "@/components/Sidebar";
 const PERMISSION_OPTIONS = [
   { value: "dashboard", label: "Dashboard" },
   { value: "banner", label: "Banner" },
+  { value: "offers", label: "Sticky Offers" },
   { value: "trending", label: "Trending" },
   { value: "pricing", label: "Region Pricing" },
   { value: "destinations", label: "Popular Destinations" },
@@ -13,6 +14,7 @@ const PERMISSION_OPTIONS = [
   { value: "spiritual", label: "Spiritual Escape" },
   { value: "about", label: "About Us" },
   { value: "features", label: "Features" },
+  { value: "services", label: "Services" },
   { value: "testimonials", label: "Testimonials" },
   { value: "page-banners", label: "Page Banners" },
   { value: "gallery", label: "Gallery" },

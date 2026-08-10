@@ -4,7 +4,7 @@ import db from '@/lib/db';
 export async function GET() {
   try {
     const settings = await db.query('SELECT * FROM trending_settings LIMIT 1');
-    const items = await db.query('SELECT * FROM trending_items WHERE is_active = 1');
+    const items = await db.query('SELECT * FROM trending_items WHERE is_active = true');
     items.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
     return NextResponse.json({ settings: settings[0] || null, items });
   } catch (error) {

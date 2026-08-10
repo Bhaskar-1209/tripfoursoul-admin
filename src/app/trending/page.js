@@ -22,8 +22,6 @@ export default function TrendingPage() {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  useEffect(() => { fetchData(); }, []);
-
   const fetchData = async () => {
     try {
       const [settingsRes, tripsRes] = await Promise.all([
@@ -38,6 +36,8 @@ export default function TrendingPage() {
       if (tripsData.trips) setTrips(tripsData.trips);
     } catch (error) { console.error(error); }
   };
+
+  useEffect(() => { fetchData(); }, []);
 
   const handleSaveSettings = async () => {
     setSaving(true);
@@ -220,7 +220,7 @@ export default function TrendingPage() {
         <div className="admin-card">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Trending Items</h2>
-            <button onClick={() => { setShowForm(true); setEditingItem(null); setForm({ name: "", image_url: "", region: "", price: "", badge: "" }); }} className="admin-btn">
+            <button onClick={() => { setShowForm(true); setEditingTrip(null); setForm({ name: "", image_url: "", region: "", price: "", badge: "" }); }} className="admin-btn">
               Add New Item
             </button>
           </div>

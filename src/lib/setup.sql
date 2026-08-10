@@ -1,77 +1,100 @@
--- Database: tripforsoul-admin
+-- Database: tripforsoul-admin (PostgreSQL)
 
 -- Admin users table
 CREATE TABLE IF NOT EXISTS admins (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   username VARCHAR(100) NOT NULL UNIQUE,
   email VARCHAR(255) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
+  role VARCHAR(50) DEFAULT 'staff',
+  permissions JSONB,
+  is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Insert default admin (password: admin123)
-INSERT INTO admins (username, email, password) VALUES 
-('admin', 'admin@tripforsoul.com', '$2a$10$8KzQMGx5C5Kc5Q5Q5Q5Q5u5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q')
-ON DUPLICATE KEY UPDATE id=id;
+INSERT INTO admins (username, email, password, role) VALUES
+('admin', 'admin@tripforsoul.com', '$2a$10$8KzQMGx5C5Kc5Q5Q5Q5Q5u5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q', 'admin')
+ON CONFLICT (username) DO NOTHING;
 
 -- Banner settings
 CREATE TABLE IF NOT EXISTS banner_settings (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   heading VARCHAR(255) DEFAULT 'Journeys Crafted for the Soul',
   subtitle TEXT DEFAULT 'Not just another trip. We design meaningful land journeys that connect you with culture, people, and places beyond the tourist trail.',
   button1_text VARCHAR(100) DEFAULT 'Find Now',
   button2_text VARCHAR(100) DEFAULT 'View All Trips',
   button2_link VARCHAR(255) DEFAULT '/destinations',
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO banner_settings (heading, subtitle) VALUES 
+INSERT INTO banner_settings (heading, subtitle) VALUES
 ('Journeys Crafted for the Soul', 'Not just another trip. We design meaningful land journeys that connect you with culture, people, and places beyond the tourist trail.')
-ON DUPLICATE KEY UPDATE id=id;
+ON CONFLICT DO NOTHING;
 
 -- Banner images
 CREATE TABLE IF NOT EXISTS banner_images (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  image_url VARCHAR(500) NOT NULL,
+  id SERIAL PRIMARY KEY,
+  image_url TEXT NOT NULL,
   sort_order INT DEFAULT 0,
-  is_active TINYINT(1) DEFAULT 1,
+  is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Alter existing tables to support base64 images (TEXT instead of VARCHAR)
+ALTER TABLE IF EXISTS banner_images ALTER COLUMN image_url TYPE TEXT;
+ALTER TABLE IF EXISTS trending_items ALTER COLUMN image_url TYPE TEXT;
+ALTER TABLE IF EXISTS popular_destinations ALTER COLUMN image_url TYPE TEXT;
+ALTER TABLE IF EXISTS trips ALTER COLUMN image_url TYPE TEXT;
+ALTER TABLE IF EXISTS destinations ALTER COLUMN image_url TYPE TEXT;
+ALTER TABLE IF EXISTS packages ALTER COLUMN image_url TYPE TEXT;
+ALTER TABLE IF EXISTS testimonials ALTER COLUMN image_url TYPE TEXT;
+ALTER TABLE IF EXISTS about_us ALTER COLUMN image_url TYPE TEXT;
+ALTER TABLE IF EXISTS about_us ALTER COLUMN experience_image TYPE TEXT;
+ALTER TABLE IF EXISTS about_us ALTER COLUMN why_image TYPE TEXT;
+ALTER TABLE IF EXISTS about_us ALTER COLUMN promise_image TYPE TEXT;
+ALTER TABLE IF EXISTS about_us ALTER COLUMN difference_image TYPE TEXT;
+ALTER TABLE IF EXISTS page_banners ALTER COLUMN background_image TYPE TEXT;
+ALTER TABLE IF EXISTS team_members ALTER COLUMN image_url TYPE TEXT;
+ALTER TABLE IF EXISTS gallery_images ALTER COLUMN image_url TYPE TEXT;
+ALTER TABLE IF EXISTS blogs ALTER COLUMN cover_image TYPE TEXT;
+ALTER TABLE IF EXISTS services ALTER COLUMN image_url TYPE TEXT;
+
 -- Trending section control
 CREATE TABLE IF NOT EXISTS trending_settings (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  is_enabled TINYINT(1) DEFAULT 1,
+  id SERIAL PRIMARY KEY,
+  is_enabled BOOLEAN DEFAULT true,
   heading VARCHAR(255) DEFAULT 'Trending Now',
   subtitle TEXT DEFAULT 'Most sought-after destinations this season',
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO trending_settings (is_enabled, heading, subtitle) VALUES 
-(1, 'Trending Now', 'Most sought-after destinations this season')
-ON DUPLICATE KEY UPDATE id=id;
+INSERT INTO trending_settings (is_enabled, heading, subtitle) VALUES
+(true, 'Trending Now', 'Most sought-after destinations this season')
+ON CONFLICT DO NOTHING;
 
 -- Trending items
 CREATE TABLE IF NOT EXISTS trending_items (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   image_url VARCHAR(500) NOT NULL,
   region VARCHAR(100) DEFAULT '',
   price VARCHAR(50) DEFAULT '',
   badge VARCHAR(100) DEFAULT '',
   sort_order INT DEFAULT 0,
-  is_active TINYINT(1) DEFAULT 1,
+  is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Region pricing
 CREATE TABLE IF NOT EXISTS region_pricing (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   region VARCHAR(100) NOT NULL UNIQUE,
   starting_price VARCHAR(50) NOT NULL,
   currency VARCHAR(10) DEFAULT 'USD',
-  is_active TINYINT(1) DEFAULT 1,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  usd_price VARCHAR(50) DEFAULT '',
+  is_active BOOLEAN DEFAULT true,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 INSERT INTO region_pricing (region, starting_price, currency) VALUES
@@ -80,28 +103,28 @@ INSERT INTO region_pricing (region, starting_price, currency) VALUES
 ('Middle East', '$999', 'USD'),
 ('Africa', '$1,299', 'USD'),
 ('Americas', '$1,199', 'USD')
-ON DUPLICATE KEY UPDATE id=id;
+ON CONFLICT (region) DO NOTHING;
 
 -- Popular destinations
 CREATE TABLE IF NOT EXISTS popular_destinations (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   image_url VARCHAR(500) NOT NULL,
   region VARCHAR(100) DEFAULT '',
   price VARCHAR(50) DEFAULT '',
   sort_order INT DEFAULT 0,
-  is_active TINYINT(1) DEFAULT 1,
+  is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Homepage sections
 CREATE TABLE IF NOT EXISTS homepage_sections (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   section_key VARCHAR(100) NOT NULL UNIQUE,
   section_name VARCHAR(255) NOT NULL,
-  is_visible TINYINT(1) DEFAULT 1,
+  is_visible BOOLEAN DEFAULT true,
   sort_order INT DEFAULT 0,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 INSERT INTO homepage_sections (section_key, section_name, sort_order) VALUES
@@ -111,68 +134,86 @@ INSERT INTO homepage_sections (section_key, section_name, sort_order) VALUES
 ('popular_destinations', 'Popular Destinations', 4),
 ('spiritual_escape', 'Spiritual Escape', 5),
 ('features', 'Features', 6),
-  ('testimonials', 'Testimonials', 7),
-  ('gallery', 'Gallery', 8),
-  ('deals', 'Deals', 9),
-  ('footer', 'Footer', 10)
-  ON DUPLICATE KEY UPDATE id=id;
+('testimonials', 'Testimonials', 7),
+('gallery', 'Gallery', 8),
+('deals', 'Deals', 9),
+('footer', 'Footer', 10)
+ON CONFLICT (section_key) DO NOTHING;
 
-  -- Deals section
-  CREATE TABLE IF NOT EXISTS deals_settings (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    tagline VARCHAR(255) DEFAULT 'Travel offers',
-    heading VARCHAR(255) DEFAULT 'Make more of every journey.',
-    description TEXT DEFAULT 'Discover current seasonal offers and speak with our team to find the journey that suits your plans.',
-    button_text VARCHAR(100) DEFAULT 'Ask about offers',
-    button_link VARCHAR(255) DEFAULT '/contact?subject=Offer%20enquiry',
-    card_tagline VARCHAR(255) DEFAULT 'Planning made personal',
-    card_heading TEXT DEFAULT 'Get a tailored recommendation, clear inclusions, and expert support before you book.',
-    card_description TEXT DEFAULT 'Offer availability and final pricing are confirmed by the travel team.',
-    is_active TINYINT(1) DEFAULT 1,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-  );
+-- Deals section
+CREATE TABLE IF NOT EXISTS deals_settings (
+  id SERIAL PRIMARY KEY,
+  tagline VARCHAR(255) DEFAULT 'Travel offers',
+  heading VARCHAR(255) DEFAULT 'Make more of every journey.',
+  description TEXT DEFAULT 'Discover current seasonal offers and speak with our team to find the journey that suits your plans.',
+  button_text VARCHAR(100) DEFAULT 'Ask about offers',
+  button_link VARCHAR(255) DEFAULT '/contact?subject=Offer%20enquiry',
+  card_tagline VARCHAR(255) DEFAULT 'Planning made personal',
+  card_heading TEXT DEFAULT 'Get a tailored recommendation, clear inclusions, and expert support before you book.',
+  card_description TEXT DEFAULT 'Offer availability and final pricing are confirmed by the travel team.',
+  is_active BOOLEAN DEFAULT true,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-  INSERT INTO deals_settings (tagline, heading, description, button_text, button_link, card_tagline, card_heading, card_description, is_active) VALUES
-  ('Travel offers', 'Make more of every journey.', 'Discover current seasonal offers and speak with our team to find the journey that suits your plans.', 'Ask about offers', '/contact?subject=Offer%20enquiry', 'Planning made personal', 'Get a tailored recommendation, clear inclusions, and expert support before you book.', 'Offer availability and final pricing are confirmed by the travel team.', 1)
-  ON DUPLICATE KEY UPDATE id=id;
+INSERT INTO deals_settings (tagline, heading, description, button_text, button_link, card_tagline, card_heading, card_description, is_active) VALUES
+('Travel offers', 'Make more of every journey.', 'Discover current seasonal offers and speak with our team to find the journey that suits your plans.', 'Ask about offers', '/contact?subject=Offer%20enquiry', 'Planning made personal', 'Get a tailored recommendation, clear inclusions, and expert support before you book.', 'Offer availability and final pricing are confirmed by the travel team.', true)
+ON CONFLICT DO NOTHING;
+
+-- Sticky offers shown across the customer-facing website
+CREATE TABLE IF NOT EXISTS offers (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  description TEXT DEFAULT '',
+  image_url VARCHAR(500) DEFAULT '',
+  button_text VARCHAR(100) DEFAULT 'Explore offer',
+  button_link VARCHAR(500) DEFAULT '/contact',
+  badge VARCHAR(100) DEFAULT '',
+  sort_order INT DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 -- Blog posts table
 CREATE TABLE IF NOT EXISTS blogs (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
   slug VARCHAR(255) NOT NULL UNIQUE,
   excerpt TEXT DEFAULT '',
-  content LONGTEXT,
+  content TEXT,
   cover_image VARCHAR(500) DEFAULT '',
+  gallery_images JSONB,
   author VARCHAR(255) DEFAULT '',
-  tags JSON,
+  tags JSONB,
   meta_title VARCHAR(255) DEFAULT '',
   meta_description TEXT DEFAULT '',
-  is_active TINYINT(1) DEFAULT 1,
+  is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Trips/Packages table
 CREATE TABLE IF NOT EXISTS trips (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   description TEXT,
   image_url VARCHAR(500) NOT NULL,
   price VARCHAR(50) NOT NULL,
   duration VARCHAR(100) DEFAULT '',
+  days VARCHAR(100) DEFAULT '',
   location VARCHAR(255) DEFAULT '',
   category VARCHAR(100) DEFAULT 'general',
   badge VARCHAR(100) DEFAULT '',
-  is_active TINYINT(1) DEFAULT 1,
+  destination_id INT,
+  is_active BOOLEAN DEFAULT true,
   sort_order INT DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- About Us section
 CREATE TABLE IF NOT EXISTS about_us (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   heading VARCHAR(255) DEFAULT 'Travel that Touches the Soul',
   subheading TEXT DEFAULT 'Curated Travel. Authentic Moments. Lasting Impact.',
   description TEXT DEFAULT 'At Trip For Soul, we craft meaningful land journeys that are soulful, sustainable, and deeply personal.',
@@ -180,22 +221,49 @@ CREATE TABLE IF NOT EXISTS about_us (
   cta_text VARCHAR(255) DEFAULT 'Begin Your Journey',
   cta_link VARCHAR(255) DEFAULT '/enquire-now',
   image_url VARCHAR(500) DEFAULT '',
-  is_active TINYINT(1) DEFAULT 1,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  premium_heading VARCHAR(255) DEFAULT '',
+  premium_description TEXT DEFAULT '',
+  premium_button_text VARCHAR(255) DEFAULT '',
+  premium_button_link VARCHAR(255) DEFAULT '',
+  experience_heading VARCHAR(255) DEFAULT '',
+  experience_description_title VARCHAR(255) DEFAULT '',
+  experience_description TEXT DEFAULT '',
+  experience_subheading VARCHAR(255) DEFAULT '',
+  experience_list TEXT DEFAULT '',
+  experience_image VARCHAR(500) DEFAULT '',
+  why_heading VARCHAR(255) DEFAULT '',
+  why_description TEXT DEFAULT '',
+  why_image VARCHAR(500) DEFAULT '',
+  promise_heading VARCHAR(255) DEFAULT '',
+  promise_subheading VARCHAR(255) DEFAULT '',
+  promise_description TEXT DEFAULT '',
+  promise_list TEXT DEFAULT '',
+  promise_image VARCHAR(500) DEFAULT '',
+  difference_heading VARCHAR(255) DEFAULT '',
+  difference_description TEXT DEFAULT '',
+  difference_subheading VARCHAR(255) DEFAULT '',
+  difference_list TEXT DEFAULT '',
+  difference_image VARCHAR(500) DEFAULT '',
+  cta_heading VARCHAR(255) DEFAULT '',
+  cta_description TEXT DEFAULT '',
+  cta_button_text VARCHAR(255) DEFAULT '',
+  cta_button_link VARCHAR(255) DEFAULT '',
+  is_active BOOLEAN DEFAULT true,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO about_us (heading, subheading, description) VALUES 
+INSERT INTO about_us (heading, subheading, description) VALUES
 ('Travel that Touches the Soul', 'Curated Travel. Authentic Moments. Lasting Impact.', 'At Trip For Soul, we craft meaningful land journeys that are soulful, sustainable, and deeply personal.')
-ON DUPLICATE KEY UPDATE id=id;
+ON CONFLICT DO NOTHING;
 
 -- Features section
 CREATE TABLE IF NOT EXISTS features (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   icon VARCHAR(100) NOT NULL,
   title VARCHAR(255) NOT NULL,
   description TEXT NOT NULL,
   sort_order INT DEFAULT 0,
-  is_active TINYINT(1) DEFAULT 1,
+  is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -203,11 +271,11 @@ INSERT INTO features (icon, title, description, sort_order) VALUES
 ('best-price', 'Best Price Guarantee', 'We ensure you get the most value for your journey with competitive pricing on every package.', 1),
 ('easy-booking', 'Easy & Quick Booking', 'Book your dream trips in minutes with our simple and hassle-free booking system.', 2),
 ('support', 'Customer Care 24/7', 'Our dedicated support team is available around the clock to ensure a seamless travel experience.', 3)
-ON DUPLICATE KEY UPDATE id=id;
+ON CONFLICT DO NOTHING;
 
 -- Testimonials section
 CREATE TABLE IF NOT EXISTS testimonials (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   image_url VARCHAR(500) DEFAULT '',
   rating INT DEFAULT 5,
@@ -215,13 +283,113 @@ CREATE TABLE IF NOT EXISTS testimonials (
   video_url VARCHAR(500) DEFAULT '',
   influencer_video_url VARCHAR(500) DEFAULT '',
   sort_order INT DEFAULT 0,
-  is_active TINYINT(1) DEFAULT 1,
+  is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 INSERT INTO testimonials (name, image_url, rating, review, sort_order) VALUES
 ('Mr. Ritik Singh', 'https://tripforsoul.com/public/img/gallery/b-4.png', 5, 'We booked a 12-day tour of Italy with TripForSoul and had an absolutely remarkable experience. The itinerary was perfectly balanced — Florence, Rome, and Venice plus countryside in Tuscany. The hotels were very comfortable, the guides knowledgeable, and the logistics seamless. Highly recommend for anyone wanting to see the real Italy.', 1),
 ('Sohan Sharma', 'https://tripforsoul.com/public/img/gallery/b-1.png', 5, 'We booked Vietnam with TripForSoul. It was so much enchanting. From the moment we landed in Hanoi to the cruise in Ha Long Bay, everything was organised to perfection.', 2),
-('Rakesh Singh', 'https://tripforsoul.com/public/img/gallery/b-2.png', 5, 'Europe package (Paris, Amsterdam, Barcelona) was a dream, with TripForSoul. Hotels: well-situated and clean. Tours: insightful. The small touch-ups (local restaurant recommendations, optional side-trips) made it feel bespoke rather than just a "standard package." Worth every penny.', 3),
+('Rakesh Singh', 'https://tripforsoul.com/public/img/gallery/b-2.png', 5, 'Europe package (Paris, Amsterdam, Barcelona) was a dream, with TripForSoul. Hotels: well-situated and clean. Tours: insightful. The small touchups (local restaurant recommendations, optional side-trips) made it feel bespoke rather than just a "standard package." Worth every penny.', 3),
 ('Vishnu Kumar', 'https://tripforsoul.com/public/img/gallery/b-3.png', 5, 'Our UK tour was absolutely unforgettable. From the busy streets of London to the serene landscapes of the Cotswolds, everything was organised flawlessly. The coach was clean and comfortable, accommodations exceeded expectations. Thanks tripforsoul. Highly recommend them for holidays.', 4)
-ON DUPLICATE KEY UPDATE id=id;
+ON CONFLICT DO NOTHING;
+
+-- Admin-managed global settings (design, services, cookies, CRM handoff)
+CREATE TABLE IF NOT EXISTS site_settings (
+  id SERIAL PRIMARY KEY,
+  setting_key VARCHAR(100) NOT NULL UNIQUE,
+  setting_value JSONB NOT NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Services table
+CREATE TABLE IF NOT EXISTS services (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  slug VARCHAR(255) NOT NULL UNIQUE,
+  description TEXT DEFAULT '',
+  image_url VARCHAR(500) DEFAULT '',
+  icon VARCHAR(100) DEFAULT '',
+  sort_order INT DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Destinations table
+CREATE TABLE IF NOT EXISTS destinations (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  slug VARCHAR(255) NOT NULL UNIQUE,
+  description TEXT,
+  image_url VARCHAR(500) DEFAULT '',
+  region VARCHAR(100) DEFAULT '',
+  price VARCHAR(50) DEFAULT '',
+  duration VARCHAR(100) DEFAULT '',
+  highlights TEXT,
+  is_trending BOOLEAN DEFAULT false,
+  is_active BOOLEAN DEFAULT true,
+  sort_order INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Packages table
+CREATE TABLE IF NOT EXISTS packages (
+  id SERIAL PRIMARY KEY,
+  destination_id INT,
+  title VARCHAR(255) NOT NULL,
+  slug VARCHAR(255) NOT NULL UNIQUE,
+  days VARCHAR(50) DEFAULT '',
+  meals VARCHAR(255) DEFAULT '',
+  short_description TEXT,
+  long_description TEXT,
+  sub_heading VARCHAR(255) DEFAULT '',
+  image_url VARCHAR(500) DEFAULT '',
+  inclusives TEXT,
+  exclusives TEXT,
+  itinerary TEXT,
+  additional_info TEXT,
+  price VARCHAR(50) DEFAULT '',
+  sort_order INT DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Page banners table
+CREATE TABLE IF NOT EXISTS page_banners (
+  id SERIAL PRIMARY KEY,
+  page_key VARCHAR(100) NOT NULL UNIQUE,
+  title VARCHAR(255) DEFAULT '',
+  subtitle TEXT,
+  background_image VARCHAR(500) DEFAULT '',
+  is_active BOOLEAN DEFAULT true,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Team members table
+CREATE TABLE IF NOT EXISTS team_members (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  designation VARCHAR(255) NOT NULL,
+  image_url VARCHAR(500) DEFAULT '',
+  bio TEXT,
+  sort_order INT DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Gallery images table
+CREATE TABLE IF NOT EXISTS gallery_images (
+  id SERIAL PRIMARY KEY,
+  image_url VARCHAR(500) NOT NULL,
+  video_url VARCHAR(500) DEFAULT '',
+  media_type VARCHAR(20) DEFAULT 'image',
+  title VARCHAR(255) DEFAULT '',
+  caption VARCHAR(255) DEFAULT '',
+  category VARCHAR(100) DEFAULT '',
+  sort_order INT DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

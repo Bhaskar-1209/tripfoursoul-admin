@@ -6,7 +6,7 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const all = searchParams.get('all') === 'true';
-    const testimonials = await db.query('SELECT * FROM testimonials WHERE is_active = ? OR ? = true', [1, all]);
+    const testimonials = await db.query('SELECT * FROM testimonials WHERE is_active = $1 OR $2 = true', [true, all]);
     testimonials.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
     return NextResponse.json({ testimonials });
   } catch (error) {
@@ -24,7 +24,7 @@ export async function POST(request) {
       name, image_url, rating: rating || 5, review,
       video_url: video_url || null,
       influencer_video_url: influencer_video_url || null,
-      sort_order: sort_order || 0, is_active: 1
+      sort_order: sort_order || 0, is_active: true
     });
     return NextResponse.json({ success: true, id: testimonial.id });
   } catch (error) {

@@ -110,10 +110,10 @@ export default function PricingPage() {
   };
 
   const startEdit = (item) => {
-    setEditingItem(item.id);
+    setEditingItem(item);
     setForm({ 
       region: item.region, 
-      usd_price: item.usd_price || item.starting_price.replace(/[^0-9]/g, ''),
+      usd_price: item.usd_price || (item.starting_price ? item.starting_price.replace(/[^0-9]/g, '') : ''),
       currency: "USD" 
     });
     setShowForm(true);
