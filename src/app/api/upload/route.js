@@ -11,6 +11,27 @@ cloudinary.config({
 const isCloudinaryConfigured = () =>
   process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET;
 
+// Max file size (5MB)
+const MAX_SIZE = 5 * 1024 * 1024;
+
+// Allowed image types
+const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+
+// Upload buffer to Cloudinary
+const uploadToCloudinary = (buffer) => {
+  return new Promise((resolve, reject) => {
+    cloudinary.uploader.upload_stream(
+      { folder: 'tripforsoul-admin', resource_type: 'auto' },
+      (error, result) => (error ? reject(error) : resolve(result))
+    ).end(buffer);
+  });
+};
+
+// Upload buffer to base64 data URL (works everywhere, stored in database)
+const toBase64DataUrl = (buffer, mimeType) => {
+  return `data:${mimeType};base64,${buffer.toString('base64')}`;
+};
+
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -88,26 +109,21 @@ export async function POST(request) {
         return NextResponse.json({ error: 'No base64 image provided' }, { status: 400 });
       }
 
-    // Convert data URL to buffer for validation
+      // Convert data URL to buffer for validation
+      const mimeMatch = base64Image.match(/^data:(image\/\w+);base64,/);
+      const detectedType = mimeMatch ? mimeMatch[1] : 'image/png';
       const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
       const buffer = Buffer.from(base64Data, 'base64');
 
       // Validate file size (max 5MB)
-      const maxSize = 5 * 1024 * 1024;
-      if (buffer.length > maxSize) {
+      if (buffer.length > MAX_SIZE) {
         return NextResponse.json({ error: 'File size too large. Maximum 5MB allowed.' }, { status: 400 });
       }
 
       // If Cloudinary is configured, upload there and return URL
       if (isCloudinaryConfigured()) {
         try {
-          const result = await new Promise((resolve, reject) => {
-            cloudinary.uploader.upload_stream(
-              { folder: 'tripforsoul-admin', resource_type: 'auto' },
-              (error, result) => (error ? reject(error) : resolve(result))
-            ).end(buffer);
-          });
-
+          const result = await uploadToCloudinary(buffer);
           return NextResponse.json({
             success: true,
             imageUrl: result.secure_url,
@@ -115,25 +131,24 @@ export async function POST(request) {
           });
         } catch (cloudinaryError) {
           console.error('Cloudinary upload failed:', cloudinaryError.message);
-          return NextResponse.json(
-            { error: 'Cloudinary upload failed: ' + cloudinaryError.message },
-            { status: 500 }
-          );
+          // Fall through to base64 fallback
         }
       }
 
-      // For local development only (not on Vercel)
+      // For local development only - save to filesystem
       if (process.env.NODE_ENV === 'development') {
         try {
           const fs = await import('fs').then(m => m.promises);
           const path = await import('path');
-          
+
           // Create uploads directory if it doesn't exist
           const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
           await fs.mkdir(uploadsDir, { recursive: true });
 
-          // Generate filename with timestamp
-          const filename = `${Date.now()}-base64.png`;
+          // Generate filename - preserve original extension when possible
+          const extMap = { 'image/png': '.png', 'image/jpeg': '.jpg', 'image/jpg': '.jpg', 'image/gif': '.gif', 'image/webp': '.webp' };
+          const ext = extMap[detectedType] || '.png';
+          const filename = `${Date.now()}-upload${ext}`;
           const filepath = path.join(uploadsDir, filename);
 
           // Write file
@@ -146,18 +161,17 @@ export async function POST(request) {
           });
         } catch (localError) {
           console.error('Local upload failed:', localError);
-          return NextResponse.json(
-            { error: 'Failed to save image: ' + localError.message },
-            { status: 500 }
-          );
+          // Fall through to base64 fallback
         }
       }
 
-      // Production environment without Cloudinary - not supported
-      return NextResponse.json(
-        { error: 'Please configure Cloudinary environment variables for production uploads' },
-        { status: 500 }
-      );
+      // Universal fallback: Return base64 data URL (works on Vercel, stored in DB)
+      const dataUrl = toBase64DataUrl(buffer, detectedType);
+      return NextResponse.json({
+        success: true,
+        imageUrl: dataUrl,
+        message: 'Image converted to base64',
+      });
     }
 
     // ==================== Handle multipart/form-data file upload ====================
@@ -169,14 +183,12 @@ export async function POST(request) {
     }
 
     // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
+    if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json({ error: 'Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.' }, { status: 400 });
     }
 
     // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
+    if (file.size > MAX_SIZE) {
       return NextResponse.json({ error: 'File size too large. Maximum 5MB allowed.' }, { status: 400 });
     }
 
@@ -187,64 +199,51 @@ export async function POST(request) {
     // If Cloudinary is configured, upload there and return URL
     if (isCloudinaryConfigured()) {
       try {
-        const result = await new Promise((resolve, reject) => {
-          cloudinary.uploader.upload_stream(
-            { folder: 'tripforsoul-admin', resource_type: 'auto' },
-            (error, result) => (error ? reject(error) : resolve(result))
-          ).end(buffer);
-        });
-
+        const result = await uploadToCloudinary(buffer);
         return NextResponse.json({
           success: true,
           imageUrl: result.secure_url,
           message: 'Image uploaded to Cloudinary successfully',
         });
       } catch (cloudinaryError) {
-        console.error('Cloudinary upload failed:', cloudinaryError.message);
-        return NextResponse.json(
-          { error: 'Cloudinary upload failed: ' + cloudinaryError.message },
-          { status: 500 }
-        );
+        console.warn('Cloudinary upload failed, using base64:', cloudinaryError.message);
+        // Fall through to base64 fallback
       }
     }
 
-    // For local development only (not on Vercel)
+    // For local development - save to filesystem
     if (process.env.NODE_ENV === 'development') {
       try {
         const fs = await import('fs').then(m => m.promises);
         const path = await import('path');
-        
-        // Create uploads directory if it doesn't exist
+
         const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
         await fs.mkdir(uploadsDir, { recursive: true });
 
-        // Generate filename with timestamp
         const ext = file.name.split('.').pop() || 'jpg';
         const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
         const filepath = path.join(uploadsDir, filename);
 
-        // Write file
         await fs.writeFile(filepath, buffer);
 
         return NextResponse.json({
           success: true,
           imageUrl: `/uploads/${filename}`,
-          message: 'Image uploaded and saved locally successfully',
+          message: 'Image uploaded locally',
         });
       } catch (localError) {
-        console.error('Local upload failed:', localError);
-        return NextResponse.json(
-          { error: 'Failed to save image: ' + localError.message },
-          { status: 500 }
-        );
+        console.warn('Local save failed, using base64:', localError.message);
+        // Fall through to base64 fallback
       }
     }
 
-    // Production environment without Cloudinary - not supported
-    return NextResponse.json(
-      { error: 'Please configure Cloudinary environment variables for production uploads' },
-      { status: 500 }
-    );
+    // Universal fallback: Return base64 data URL (works everywhere, stored in database)
+    const base64Image = toBase64DataUrl(buffer, file.type);
+    return NextResponse.json({
+      success: true,
+      imageUrl: base64Image,
+      message: 'Image converted to base64',
+    });
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json({ error: 'Failed to upload image: ' + error.message }, { status: 500 });

@@ -2,8 +2,10 @@
 
 import { useEffect, useState, useRef } from "react";
 import Sidebar from "@/components/Sidebar";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function BannerPage() {
+  const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState({
     heading: "",
     subtitle: "",
@@ -18,10 +20,6 @@ export default function BannerPage() {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  useEffect(() => {
-    fetchBannerData();
-  }, []);
-
   const fetchBannerData = async () => {
     try {
       const res = await fetch("/api/banner");
@@ -30,8 +28,29 @@ export default function BannerPage() {
       if (data.images) setImages(data.images);
     } catch (error) {
       console.error("Error:", error);
+    } finally {
+      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/banner");
+        const data = await res.json();
+        if (active) {
+          if (data.settings) setSettings(data.settings);
+          if (data.images) setImages(data.images);
+        }
+      } catch (error) {
+        console.error("Error:", error);
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, []);
 
   const handleSaveSettings = async () => {
     setSaving(true);
@@ -134,6 +153,8 @@ export default function BannerPage() {
             {message}
           </div>
         )}
+
+        {loading && <LoadingSpinner text="Loading banner data..." />}
 
         {/* Banner Text Settings */}
         <div className="admin-card mb-8">

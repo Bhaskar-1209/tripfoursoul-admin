@@ -1,7 +1,8 @@
 {
   "functions": {
     "src/app/api/**/*.js": {
-      "maxDuration": 60
+      "maxDuration": 60,
+      "maxRequestBodySize": "10MB"
     }
   }
 }
