@@ -21,7 +21,6 @@ const PERMISSION_OPTIONS = [
   { value: "team-members", label: "Team Members" },
   { value: "deals", label: "Deals" },
   { value: "sections", label: "Homepage Sections" },
-  { value: "trips", label: "Trips & Packages" },
   { value: "blog", label: "Blog" },
   { value: "staff", label: "Staff Management" },
 ];

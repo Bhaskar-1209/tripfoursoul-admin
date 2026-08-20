@@ -20,7 +20,6 @@ const PERMISSION_BY_PATH = [
   { prefix: '/team-members', permission: 'team-members' },
   { prefix: '/deals', permission: 'deals' },
   { prefix: '/sections', permission: 'sections' },
-  { prefix: '/trips', permission: 'trips' },
   { prefix: '/blog', permission: 'blog' },
   { prefix: '/staff', permission: 'staff' },
 ];
@@ -36,7 +35,6 @@ const API_PERMISSION_BY_PATH = {
   '/api/destinations': 'destinations',
   '/api/destination-packages': 'packages',
   '/api/packages': 'packages',
-  '/api/trips': 'trips',
   '/api/about': 'about',
   '/api/features': 'features',
   '/api/services': 'services',

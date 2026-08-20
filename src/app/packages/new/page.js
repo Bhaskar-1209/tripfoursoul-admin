@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
+import RichTextEditor from "@/components/RichTextEditor";
 
 export default function NewPackagePage() {
   return <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}><NewPackageContent /></Suspense>;
@@ -16,7 +17,7 @@ function NewPackageContent() {
   const [form, setForm] = useState({
     destination_id: destParam, title: "", days: "", meals: "", short_description: "",
     long_description: "", sub_heading: "", itinerary: "", additional_info: "", image_url: "",
-    inclusives: "", exclusives: "", price: "", sort_order: 0,
+    inclusives: "", exclusives: "", price: "", sort_order: 0, is_trending: false, is_spiritual: false,
   });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -115,27 +116,47 @@ function NewPackageContent() {
             </div>
             <div className="md:col-span-2">
               <label className="admin-label">Short Description</label>
-              <textarea value={form.short_description} onChange={(e) => setForm({ ...form, short_description: e.target.value })} className="admin-input" rows={3} />
+              <RichTextEditor value={form.short_description} onChange={(html) => setForm({ ...form, short_description: html })} rows={3} placeholder="Short description..." />
             </div>
             <div className="md:col-span-2">
               <label className="admin-label">Package Overview</label>
-              <textarea value={form.long_description} onChange={(e) => setForm({ ...form, long_description: e.target.value })} className="admin-input" rows={4} />
+              <RichTextEditor value={form.long_description} onChange={(html) => setForm({ ...form, long_description: html })} rows={4} placeholder="Package overview..." />
             </div>
             <div className="md:col-span-2">
               <label className="admin-label">Day-wise Itinerary</label>
-              <textarea value={form.itinerary} onChange={(e) => setForm({ ...form, itinerary: e.target.value })} className="admin-input" rows={4} placeholder="Enter itinerary details here, one day per line." />
+              <RichTextEditor value={form.itinerary} onChange={(html) => setForm({ ...form, itinerary: html })} rows={4} placeholder="Enter itinerary details here, one day per line." />
             </div>
             <div className="md:col-span-2">
               <label className="admin-label">Additional Info</label>
-              <textarea value={form.additional_info} onChange={(e) => setForm({ ...form, additional_info: e.target.value })} className="admin-input" rows={3} placeholder="Extra package notes, customization details, or special instructions." />
+              <RichTextEditor value={form.additional_info} onChange={(html) => setForm({ ...form, additional_info: html })} rows={3} placeholder="Extra package notes, customization details, or special instructions." />
             </div>
             <div>
-              <label className="admin-label">Inclusions (one per line)</label>
-              <textarea value={form.inclusives} onChange={(e) => setForm({ ...form, inclusives: e.target.value })} className="admin-input" rows={3} />
+              <label className="admin-label">Inclusions</label>
+              <RichTextEditor value={form.inclusives} onChange={(html) => setForm({ ...form, inclusives: html })} rows={3} placeholder="One per line" />
             </div>
             <div>
-              <label className="admin-label">Exclusions (one per line)</label>
-              <textarea value={form.exclusives} onChange={(e) => setForm({ ...form, exclusives: e.target.value })} className="admin-input" rows={3} />
+              <label className="admin-label">Exclusions</label>
+              <RichTextEditor value={form.exclusives} onChange={(html) => setForm({ ...form, exclusives: html })} rows={3} placeholder="One per line" />
+            </div>
+            <div className="md:col-span-2 flex gap-6">
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={!!form.is_trending}
+                  onChange={(e) => setForm({ ...form, is_trending: e.target.checked })}
+                  className="h-4 w-4"
+                />
+                Trending Now
+              </label>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={!!form.is_spiritual}
+                  onChange={(e) => setForm({ ...form, is_spiritual: e.target.checked })}
+                  className="h-4 w-4"
+                />
+                Spiritual Escape
+              </label>
             </div>
             <div className="md:col-span-2">
               <label className="admin-label">Package Image</label>

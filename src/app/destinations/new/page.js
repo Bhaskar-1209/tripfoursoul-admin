@@ -3,10 +3,11 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
+import RichTextEditor from "@/components/RichTextEditor";
 
 export default function NewDestinationPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ name: "", image_url: "", region: "", price: "", description: "", sort_order: 0, is_trending: 0 });
+  const [form, setForm] = useState({ name: "", image_url: "", region: "", price: "", description: "", sort_order: 0, is_trending: 0, is_spiritual: 0 });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -99,6 +100,10 @@ export default function NewDestinationPage() {
               <input type="checkbox" checked={Boolean(form.is_trending)} onChange={(e) => setForm({ ...form, is_trending: e.target.checked ? 1 : 0 })} className="h-4 w-4 accent-teal-600" />
               Show this destination in the Trending Now section
             </label>
+            <label className="md:col-span-2 flex items-center gap-3 rounded-lg border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+              <input type="checkbox" checked={Boolean(form.is_spiritual)} onChange={(e) => setForm({ ...form, is_spiritual: e.target.checked ? 1 : 0 })} className="h-4 w-4 accent-amber-500" />
+              Show this destination in the Spiritual Escape section
+            </label>
             <div className="md:col-span-2">
               <label className="admin-label">Destination Image</label>
               <div className="flex gap-2">
@@ -116,7 +121,7 @@ export default function NewDestinationPage() {
             </div>
             <div className="md:col-span-2">
               <label className="admin-label">Description</label>
-              <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="admin-input" rows={3} placeholder="Brief description of the destination..." />
+              <RichTextEditor value={form.description} onChange={(html) => setForm({ ...form, description: html })} rows={3} placeholder="Brief description of the destination..." />
             </div>
           </div>
           <div className="flex gap-3 pt-2">

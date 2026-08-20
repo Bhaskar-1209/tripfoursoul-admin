@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import RichTextEditor from "@/components/RichTextEditor";
 
 export default function EditBlogPage() {
   const router = useRouter();
@@ -167,11 +168,11 @@ export default function EditBlogPage() {
             </div>
             <div className="md:col-span-2">
               <label className="admin-label">Excerpt</label>
-              <textarea value={form.excerpt} onChange={(e) => setForm({ ...form, excerpt: e.target.value })} className="admin-input" rows={2} placeholder="Short summary shown on blog listing page..." />
+              <RichTextEditor value={form.excerpt} onChange={(html) => setForm({ ...form, excerpt: html })} rows={2} placeholder="Short summary shown on blog listing page..." />
             </div>
             <div className="md:col-span-2">
               <label className="admin-label">Content</label>
-              <textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} className="admin-input" rows={10} placeholder="Write your blog content here..." />
+              <RichTextEditor value={form.content} onChange={(html) => setForm({ ...form, content: html })} rows={10} placeholder="Write your blog content here..." />
             </div>
             <div>
               <label className="admin-label">Meta Title (SEO)</label>

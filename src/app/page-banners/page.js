@@ -7,7 +7,7 @@ const PAGE_KEYS = [
   { key: "about", label: "About Us", defaultHeading: "About Us", defaultSubheading: "Discover our story and passion for travel" },
   { key: "contact", label: "Contact Us", defaultHeading: "Contact Us", defaultSubheading: "Get in touch with us for your dream vacation" },
   { key: "destinations", label: "Destinations", defaultHeading: "Popular Destinations", defaultSubheading: "Explore our handpicked destinations around the world" },
-  { key: "trips", label: "Trips", defaultHeading: "Our Trips", defaultSubheading: "Discover amazing journeys curated for you" },
+  { key: "packages", label: "Packages", defaultHeading: "Our Packages", defaultSubheading: "Discover amazing journeys curated for you" },
   { key: "other-services", label: "Other Services", defaultHeading: "Other Services", defaultSubheading: "Beyond travel, we offer a range of services to make your journey seamless" },
   { key: "gallery", label: "Gallery", defaultHeading: "Our Gallery", defaultSubheading: "Explore our collection of beautiful travel moments and destinations" },
 ];

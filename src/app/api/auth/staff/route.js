@@ -7,7 +7,7 @@ const AVAILABLE_PERMISSIONS = [
   'dashboard', 'banner', 'trending', 'pricing', 'destinations', 'packages',
   'offers',
   'spiritual', 'about', 'features', 'services', 'testimonials', 'page-banners', 'gallery',
-  'team-members', 'deals', 'sections', 'trips', 'blog', 'staff'
+  'team-members', 'deals', 'sections', 'blog', 'staff'
 ];
 
 // GET - List all staff members (admin only)
