@@ -38,11 +38,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 to-gray-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#DCE8DF] to-[#FCF8F1] p-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">TripForSoul Admin</h1>
-          <p className="text-gray-500 mt-2">Sign in to manage your website</p>
+          <h1 className="text-2xl font-bold text-[#24564C]">TripForSoul Admin</h1>
+          <p className="text-[#5D756C] mt-2">Sign in to manage your website</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">

@@ -46,11 +46,11 @@ export default function DashboardPage() {
   };
 
   const cards = [
-    { label: "Banner Images", value: stats.bannerImages, icon: Image, color: "bg-blue-500" },
-    { label: "Trending Items", value: stats.trendingItems, icon: TrendingUp, color: "bg-purple-500" },
-    { label: "Region Pricing", value: stats.pricingRegions, icon: DollarSign, color: "bg-green-500" },
-    { label: "Destinations", value: stats.destinations, icon: MapPin, color: "bg-orange-500" },
-    { label: "Homepage Sections", value: stats.sections, icon: Layers, color: "bg-teal-500" },
+    { label: "Banner Images", value: stats.bannerImages, icon: Image, color: "bg-[#24564C]" },
+    { label: "Trending Items", value: stats.trendingItems, icon: TrendingUp, color: "bg-[#789B89]" },
+    { label: "Region Pricing", value: stats.pricingRegions, icon: DollarSign, color: "bg-[#C8755A]" },
+    { label: "Destinations", value: stats.destinations, icon: MapPin, color: "bg-[#C9958B]" },
+    { label: "Homepage Sections", value: stats.sections, icon: Layers, color: "bg-[#173F38]" },
   ];
 
   return (
@@ -78,27 +78,27 @@ export default function DashboardPage() {
         </div>
 
         <div className="mt-8 admin-card">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+          <h2 className="text-lg font-semibold text-[#25463F] mb-4">Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <a href="/banner" className="p-4 bg-teal-50 rounded-lg hover:bg-teal-100 transition-colors">
-              <p className="font-medium text-teal-700">Edit Banner</p>
-              <p className="text-sm text-teal-600 mt-1">Update banner text & images</p>
+            <a href="/banner" className="p-4 bg-[#DCE8DF] rounded-lg hover:bg-[#789B89] hover:text-white transition-colors">
+              <p className="font-medium text-[#24564C]">Edit Banner</p>
+              <p className="text-sm text-[#5D756C] mt-1">Update banner text & images</p>
             </a>
-            <a href="/trending" className="p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
-              <p className="font-medium text-purple-700">Manage Trending</p>
-              <p className="text-sm text-purple-600 mt-1">Toggle ON/OFF & add items</p>
+            <a href="/trending" className="p-4 bg-[#DCE8DF] rounded-lg hover:bg-[#789B89] hover:text-white transition-colors">
+              <p className="font-medium text-[#24564C]">Manage Trending</p>
+              <p className="text-sm text-[#5D756C] mt-1">Toggle ON/OFF & add items</p>
             </a>
-            <a href="/pricing" className="p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
-              <p className="font-medium text-green-700">Region Pricing</p>
-              <p className="text-sm text-green-600 mt-1">Update pricing per region</p>
+            <a href="/pricing" className="p-4 bg-[#DCE8DF] rounded-lg hover:bg-[#789B89] hover:text-white transition-colors">
+              <p className="font-medium text-[#24564C]">Region Pricing</p>
+              <p className="text-sm text-[#5D756C] mt-1">Update pricing per region</p>
             </a>
-            <a href="/destinations" className="p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
-              <p className="font-medium text-orange-700">Destinations</p>
-              <p className="text-sm text-orange-600 mt-1">Manage popular destinations</p>
+            <a href="/destinations" className="p-4 bg-[#DCE8DF] rounded-lg hover:bg-[#789B89] hover:text-white transition-colors">
+              <p className="font-medium text-[#24564C]">Destinations</p>
+              <p className="text-sm text-[#5D756C] mt-1">Manage popular destinations</p>
             </a>
-            <a href="/sections" className="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
-              <p className="font-medium text-blue-700">Sections</p>
-              <p className="text-sm text-blue-600 mt-1">Reorder & show/hide sections</p>
+            <a href="/sections" className="p-4 bg-[#DCE8DF] rounded-lg hover:bg-[#789B89] hover:text-white transition-colors">
+              <p className="font-medium text-[#24564C]">Sections</p>
+              <p className="text-sm text-[#5D756C] mt-1">Reorder & show/hide sections</p>
             </a>
           </div>
         </div>

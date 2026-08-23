@@ -451,6 +451,35 @@ export async function GET() {
         )
       `);
 
+      // Create blog_categories table
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS blog_categories (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          slug VARCHAR(255) NOT NULL UNIQUE,
+          description TEXT DEFAULT '',
+          image_url TEXT DEFAULT '',
+          sort_order INT DEFAULT 0,
+          is_active BOOLEAN DEFAULT true,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      // Insert default blog categories
+      await db.query(`
+        INSERT INTO blog_categories (name, slug, description, sort_order) VALUES
+        ('Adventure', 'adventure', 'Thrilling adventures and adrenaline-filled travel experiences', 1),
+        ('International Holidays', 'international-holidays', 'Explore the best international travel destinations and holiday ideas', 2),
+        ('Domestic Holidays', 'domestic-holidays', 'Discover amazing travel destinations within India', 3),
+        ('Travel Tips', 'travel-tips', 'Useful tips and guides for smarter travel planning', 4),
+        ('Honeymoon', 'honeymoon', 'Romantic getaways and honeymoon destination ideas', 5),
+        ('Family Holidays', 'family-holidays', 'Fun-filled holiday ideas for the whole family', 6),
+        ('Luxury Travel', 'luxury-travel', 'Premium and luxury travel experiences', 7),
+        ('Food & Culture', 'food-culture', 'Culinary journeys and cultural travel experiences', 8)
+        ON CONFLICT (slug) DO NOTHING
+      `);
+
       // Create blogs table
       await db.query(`
         CREATE TABLE IF NOT EXISTS blogs (
@@ -463,6 +492,7 @@ export async function GET() {
           gallery_images JSONB,
           author VARCHAR(255) DEFAULT '',
           tags JSONB,
+          category_id INT,
           meta_title VARCHAR(255) DEFAULT '',
           meta_description TEXT,
           is_active BOOLEAN DEFAULT true,
@@ -470,6 +500,10 @@ export async function GET() {
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
+
+      // Add category_id column to blogs if it doesn't exist
+      try { await db.query(`ALTER TABLE blogs ADD COLUMN IF NOT EXISTS category_id INT`); } catch (e) {}
+      try { await db.query(`ALTER TABLE blog_categories ALTER COLUMN image_url TYPE TEXT`); } catch (e) {}
 
       await db.query(`
         CREATE TABLE IF NOT EXISTS site_settings (

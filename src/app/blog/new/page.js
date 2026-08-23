@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import Sidebar from "@/components/Sidebar";
 import RichTextEditor from "@/components/RichTextEditor";
 
@@ -9,17 +10,25 @@ export default function NewBlogPage() {
   const router = useRouter();
   const [form, setForm] = useState({
     title: "", slug: "", excerpt: "", content: "", cover_image: "", gallery_images: [],
-    author: "", tags: "", meta_title: "", meta_description: "",
+    author: "", tags: "", meta_title: "", meta_description: "", category_id: "",
   });
+  const [categories, setCategories] = useState([]);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
+  useEffect(() => {
+    fetch("/api/blog-categories?all=true")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.categories) setCategories(data.categories);
+      })
+      .catch(console.error);
+  }, []);
+
   const handleSave = async () => {
     if (!form.title) {
-      setMessage("Blog title is required");
-      setTimeout(() => setMessage(""), 3000);
+      toast.error("Blog title is required");
       return;
     }
     setSaving(true);
@@ -27,6 +36,7 @@ export default function NewBlogPage() {
       const payload = {
         ...form,
         tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
+        category_id: form.category_id ? Number(form.category_id) : null,
       };
       const res = await fetch("/api/blog", {
         method: "POST",
@@ -34,15 +44,14 @@ export default function NewBlogPage() {
         body: JSON.stringify({ ...payload, is_active: 1 }),
       });
       if (res.ok) {
-        router.push("/blog");
+        toast.success("Blog post created successfully!");
+        setTimeout(() => router.push("/blog"), 1000);
       } else {
         const data = await res.json();
-        setMessage(data.error || "Error creating blog post");
-        setTimeout(() => setMessage(""), 3000);
+        toast.error(data.error || "Error creating blog post");
       }
     } catch (error) {
-      setMessage("Error creating blog post");
-      setTimeout(() => setMessage(""), 3000);
+      toast.error("Error creating blog post");
     } finally {
       setSaving(false);
     }
@@ -59,15 +68,12 @@ export default function NewBlogPage() {
       const data = await res.json();
       if (res.ok && data.imageUrl) {
         setForm((prev) => ({ ...prev, gallery_images: [...prev.gallery_images, data.imageUrl], cover_image: prev.cover_image || data.imageUrl }));
-        setMessage("Image uploaded successfully!");
-        setTimeout(() => setMessage(""), 3000);
+        toast.success("Image uploaded successfully!");
       } else {
-        setMessage(data.error || "Failed to upload image");
-        setTimeout(() => setMessage(""), 3000);
+        toast.error(data.error || "Failed to upload image");
       }
     } catch (error) {
-      setMessage("Error uploading image");
-      setTimeout(() => setMessage(""), 3000);
+      toast.error("Error uploading image");
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -83,8 +89,6 @@ export default function NewBlogPage() {
           <button onClick={() => router.push("/blog")} className="admin-btn-secondary">← Back to List</button>
         </div>
 
-        {message && <div className="p-4 rounded-lg mb-6 bg-green-50 text-green-600">{message}</div>}
-
         <div className="admin-card space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -94,6 +98,15 @@ export default function NewBlogPage() {
             <div>
               <label className="admin-label">Slug</label>
               <input type="text" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className="admin-input" placeholder="Auto-generated from title if blank" />
+            </div>
+            <div>
+              <label className="admin-label">Category</label>
+              <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className="admin-input">
+                <option value="">Select Category</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="admin-label">Author</label>

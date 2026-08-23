@@ -10,8 +10,8 @@ export default function BannerPage() {
     heading: "",
     subtitle: "",
     button1_text: "Find Now",
-    button2_text: "View All Trips",
-    button2_link: "/destinations",
+    button2_text: "View All Packages",
+    button2_link: "/packages",
   });
   const [images, setImages] = useState([]);
   const [newImageUrl, setNewImageUrl] = useState("");

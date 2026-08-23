@@ -33,6 +33,7 @@ const allMenuItems = [
   { href: "/gallery", label: "Gallery", icon: Image, permission: "gallery" },
   // { href: "/team-members", label: "Team Members", icon: Star, permission: "team-members" },
   { href: "/blog", label: "Blog", icon: Layers, permission: "blog" },
+  { href: "/blog-categories", label: "Blog Categories", icon: Tag, permission: "blog" },
   { href: "/staff", label: "Staff", icon: Users, permission: "staff" },
 ];
 
@@ -68,10 +69,10 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="sticky top-0 left-0 w-64 h-screen shrink-0 bg-white border-r border-gray-200 flex flex-col overflow-hidden">
-      <div className="p-6 border-b border-gray-100">
-        <h1 className="text-xl font-bold text-teal-700">TripForSoul</h1>
-        <p className="text-xs text-gray-400 mt-1">Admin Panel</p>
+    <aside className="sticky top-0 left-0 w-64 h-screen shrink-0 bg-[#173F38] border-r border-[#24564C] flex flex-col overflow-hidden">
+      <div className="p-6 border-b border-[#24564C]">
+        <h1 className="text-xl font-bold text-[#FCF8F1]">TripForSoul</h1>
+        <p className="text-xs text-[#DCE8DF] mt-1">Admin Panel</p>
       </div>
 
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -84,8 +85,8 @@ export default function Sidebar() {
               href={item.href}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                 isActive
-                  ? "bg-teal-50 text-teal-700 border-r-4 border-teal-600"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  ? "bg-[#DCE8DF] text-[#24564C] border-r-4 border-[#C8755A]"
+                  : "text-[#DCE8DF] hover:bg-[#24564C] hover:text-white"
               }`}
             >
               <Icon className="w-5 h-5" />
@@ -95,10 +96,10 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-gray-100">
+      <div className="p-4 border-t border-[#24564C]">
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 w-full transition-colors"
+          className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-[#D9826B] hover:bg-[#24564C] hover:text-white w-full transition-colors"
         >
           <LogOut className="w-5 h-5" />
           Logout

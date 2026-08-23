@@ -23,8 +23,8 @@ CREATE TABLE IF NOT EXISTS banner_settings (
   heading VARCHAR(255) DEFAULT 'Journeys Crafted for the Soul',
   subtitle TEXT DEFAULT 'Not just another trip. We design meaningful land journeys that connect you with culture, people, and places beyond the tourist trail.',
   button1_text VARCHAR(100) DEFAULT 'Find Now',
-  button2_text VARCHAR(100) DEFAULT 'View All Trips',
-  button2_link VARCHAR(255) DEFAULT '/destinations',
+  button2_text VARCHAR(100) DEFAULT 'View All Packages',
+  button2_link VARCHAR(255) DEFAULT '/packages',
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -175,6 +175,31 @@ CREATE TABLE IF NOT EXISTS offers (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Blog categories table
+CREATE TABLE IF NOT EXISTS blog_categories (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  slug VARCHAR(255) NOT NULL UNIQUE,
+  description TEXT DEFAULT '',
+  image_url TEXT DEFAULT '',
+  sort_order INT DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert default blog categories
+INSERT INTO blog_categories (name, slug, description, sort_order) VALUES
+('Adventure', 'adventure', 'Thrilling adventures and adrenaline-filled travel experiences', 1),
+('International Holidays', 'international-holidays', 'Explore the best international travel destinations and holiday ideas', 2),
+('Domestic Holidays', 'domestic-holidays', 'Discover amazing travel destinations within India', 3),
+('Travel Tips', 'travel-tips', 'Useful tips and guides for smarter travel planning', 4),
+('Honeymoon', 'honeymoon', 'Romantic getaways and honeymoon destination ideas', 5),
+('Family Holidays', 'family-holidays', 'Fun-filled holiday ideas for the whole family', 6),
+('Luxury Travel', 'luxury-travel', 'Premium and luxury travel experiences', 7),
+('Food & Culture', 'food-culture', 'Culinary journeys and cultural travel experiences', 8)
+ON CONFLICT (slug) DO NOTHING;
+
 -- Blog posts table
 CREATE TABLE IF NOT EXISTS blogs (
   id SERIAL PRIMARY KEY,
@@ -186,12 +211,17 @@ CREATE TABLE IF NOT EXISTS blogs (
   gallery_images JSONB,
   author VARCHAR(255) DEFAULT '',
   tags JSONB,
+  category_id INT,
   meta_title VARCHAR(255) DEFAULT '',
   meta_description TEXT DEFAULT '',
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Add category_id column if it doesn't exist
+ALTER TABLE IF EXISTS blogs ADD COLUMN IF NOT EXISTS category_id INT;
+ALTER TABLE IF EXISTS blog_categories ALTER COLUMN image_url TYPE TEXT;
 
 -- Trips/Packages table
 CREATE TABLE IF NOT EXISTS trips (
