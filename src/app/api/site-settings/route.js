@@ -6,7 +6,8 @@ const defaults = {
   services: { enabled: true, heading: 'Other Services', description: '', contact_form_enabled: true, youtube_url: '', items: [] },
   insurance: { enabled: true, heading: 'Travel Insurance', description: '', button_text: 'Enquire now', button_link: '/contact?subject=Travel%20Insurance' },
   cookies: { enabled: true, message: 'We use cookies to improve your experience.', policy_url: '/privacy-policy', accept_text: 'Accept all', reject_text: 'Reject non-essential' },
-  crm: { provider: 'none', enabled: false, webhook_url: '', form_mapping: {} }
+  crm: { provider: 'none', enabled: false, webhook_url: '', form_mapping: {} },
+  social: { facebook: '', instagram: '', linkedin: '', tiktok: '', youtube: '', whatsapp: '' }
 };
 
 export async function GET() {
