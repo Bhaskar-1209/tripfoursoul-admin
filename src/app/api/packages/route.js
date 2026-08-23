@@ -32,14 +32,14 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { destination_id, title, days, meals, short_description, long_description, sub_heading, itinerary, additional_info, image_url, inclusives, exclusives, price, sort_order = 0, is_trending = false, is_spiritual = false } = body;
+    const { destination_id, title, days, meals, short_description, long_description, sub_heading, itinerary, additional_info, image_url, inclusives, exclusives, price, price_usd, price_inr, price_eur, sort_order = 0, is_trending = false, is_spiritual = false } = body;
     if (!destination_id || !title) {
       return NextResponse.json({ error: 'Destination and package title are required' }, { status: 400 });
     }
     const packageItem = await db.insert('packages', {
       destination_id: Number(destination_id), title, slug: makeSlug(title), days, meals,
       short_description, long_description, sub_heading, itinerary, additional_info, image_url,
-      inclusives, exclusives, price, sort_order: Number(sort_order), is_trending: Boolean(is_trending), is_spiritual: Boolean(is_spiritual), is_active: true,
+      inclusives, exclusives, price, price_usd, price_inr, price_eur, sort_order: Number(sort_order), is_trending: Boolean(is_trending), is_spiritual: Boolean(is_spiritual), is_active: true,
     });
     return NextResponse.json({ success: true, id: packageItem.id });
   } catch (error) {
@@ -50,14 +50,14 @@ export async function POST(request) {
 export async function PUT(request) {
   try {
     const body = await request.json();
-    const { id, destination_id, title, days, meals, short_description, long_description, sub_heading, itinerary, additional_info, image_url, inclusives, exclusives, price, sort_order = 0, is_trending = false, is_spiritual = false } = body;
+    const { id, destination_id, title, days, meals, short_description, long_description, sub_heading, itinerary, additional_info, image_url, inclusives, exclusives, price, price_usd, price_inr, price_eur, sort_order = 0, is_trending = false, is_spiritual = false } = body;
     if (!id || !destination_id || !title) {
       return NextResponse.json({ error: 'Package ID, destination and title are required' }, { status: 400 });
     }
     const updated = await db.update('packages', Number(id), {
       destination_id: Number(destination_id), title, slug: makeSlug(title), days, meals,
       short_description, long_description, sub_heading, itinerary, additional_info, image_url,
-      inclusives, exclusives, price, sort_order: Number(sort_order), is_trending: Boolean(is_trending), is_spiritual: Boolean(is_spiritual), is_active: true,
+      inclusives, exclusives, price, price_usd, price_inr, price_eur, sort_order: Number(sort_order), is_trending: Boolean(is_trending), is_spiritual: Boolean(is_spiritual), is_active: true,
     });
     if (!updated) return NextResponse.json({ error: 'Package not found' }, { status: 404 });
     return NextResponse.json({ success: true });

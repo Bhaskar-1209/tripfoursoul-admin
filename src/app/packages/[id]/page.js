@@ -14,7 +14,7 @@ export default function EditPackagePage() {
   const [form, setForm] = useState({
     destination_id: "", title: "", days: "", meals: "", short_description: "",
     long_description: "", sub_heading: "", itinerary: "", additional_info: "", image_url: "",
-    inclusives: "", exclusives: "", price: "", sort_order: 0, is_trending: false, is_spiritual: false,
+    inclusives: "", exclusives: "", price: "", price_usd: "", price_inr: "", price_eur: "", sort_order: 0, is_trending: false, is_spiritual: false,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -61,6 +61,9 @@ export default function EditPackagePage() {
               inclusives: pkg.inclusives || "",
               exclusives: pkg.exclusives || "",
               price: pkg.price || "",
+              price_usd: pkg.price_usd || "",
+              price_inr: pkg.price_inr || "",
+              price_eur: pkg.price_eur || "",
               sort_order: pkg.sort_order || 0,
               is_trending: !!pkg.is_trending,
               is_spiritual: !!pkg.is_spiritual,
@@ -272,8 +275,16 @@ export default function EditPackagePage() {
               <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="admin-input" placeholder="e.g., Europe Highlights Getaway" />
             </div>
             <div>
-              <label className="admin-label">Price</label>
-              <input value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="admin-input" placeholder="e.g., ₹89,999" />
+              <label className="admin-label">Price (USD)</label>
+              <input value={form.price_usd} onChange={(e) => setForm({ ...form, price_usd: e.target.value })} className="admin-input" placeholder="e.g., 1299" />
+            </div>
+            <div>
+              <label className="admin-label">Price (INR)</label>
+              <input value={form.price_inr} onChange={(e) => setForm({ ...form, price_inr: e.target.value })} className="admin-input" placeholder="e.g., 89999" />
+            </div>
+            <div>
+              <label className="admin-label">Price (EUR)</label>
+              <input value={form.price_eur} onChange={(e) => setForm({ ...form, price_eur: e.target.value })} className="admin-input" placeholder="e.g., 1099" />
             </div>
             <div>
               <label className="admin-label">Days</label>

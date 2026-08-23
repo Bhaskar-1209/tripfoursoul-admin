@@ -7,14 +7,14 @@ import RichTextEditor from "@/components/RichTextEditor";
 
 export default function NewDestinationPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ name: "", image_url: "", region: "", price: "", description: "", sort_order: 0, is_trending: 0, is_spiritual: 0 });
+  const [form, setForm] = useState({ name: "", image_url: "", region: "", price: "", price_usd: "", price_inr: "", price_eur: "", description: "", sort_order: 0, is_trending: 0, is_spiritual: 0 });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleSave = async () => {
-    if (!form.name || !form.region || !form.price) {
+    if (!form.name || !form.region) {
       setMessage("Please fill in all required fields");
       setTimeout(() => setMessage(""), 3000);
       return;
@@ -89,8 +89,16 @@ export default function NewDestinationPage() {
               <input type="text" value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })} className="admin-input" placeholder="e.g., Europe, Asia, Africa" />
             </div>
             <div>
-              <label className="admin-label">Starting Price *</label>
-              <input type="text" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="admin-input" placeholder="e.g., $1,299" />
+              <label className="admin-label">Price (USD)</label>
+              <input type="text" value={form.price_usd} onChange={(e) => setForm({ ...form, price_usd: e.target.value })} className="admin-input" placeholder="e.g., 1299" />
+            </div>
+            <div>
+              <label className="admin-label">Price (INR)</label>
+              <input type="text" value={form.price_inr} onChange={(e) => setForm({ ...form, price_inr: e.target.value })} className="admin-input" placeholder="e.g., 89999" />
+            </div>
+            <div>
+              <label className="admin-label">Price (EUR)</label>
+              <input type="text" value={form.price_eur} onChange={(e) => setForm({ ...form, price_eur: e.target.value })} className="admin-input" placeholder="e.g., 1099" />
             </div>
             <div>
               <label className="admin-label">Sort Order</label>

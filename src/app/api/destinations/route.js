@@ -31,7 +31,7 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name, image_url, region, price, description, is_trending = false, is_spiritual = false } = body;
+    const { name, image_url, region, price, price_usd, price_inr, price_eur, description, is_trending = false, is_spiritual = false } = body;
 
     const newDestination = await db.insert('destinations', {
       name,
@@ -39,6 +39,9 @@ export async function POST(request) {
       image_url,
       region,
       price,
+      price_usd,
+      price_inr,
+      price_eur,
       description,
       is_trending: Boolean(is_trending),
       is_spiritual: Boolean(is_spiritual),
@@ -60,7 +63,7 @@ export async function POST(request) {
 export async function PUT(request) {
   try {
     const body = await request.json();
-    const { id, name, image_url, region, price, description, is_active, sort_order, is_trending = false, is_spiritual = false } = body;
+    const { id, name, image_url, region, price, price_usd, price_inr, price_eur, description, is_active, sort_order, is_trending = false, is_spiritual = false } = body;
 
     const updated = await db.update('destinations', id, {
       name,
@@ -68,6 +71,9 @@ export async function PUT(request) {
       image_url,
       region,
       price,
+      price_usd,
+      price_inr,
+      price_eur,
       description,
       is_trending: Boolean(is_trending),
       is_spiritual: Boolean(is_spiritual),
