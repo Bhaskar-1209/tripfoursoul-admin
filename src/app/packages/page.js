@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { pricingDisplay } from "@/lib/price";
 
 export default function PackagesPage() {
   return <Suspense fallback={<LoadingSpinner text="Loading packages..." />}><PackagesPageContent /></Suspense>;
@@ -112,7 +113,7 @@ function PackagesPageContent() {
                         </div>
                       </td>
                       <td className="px-3 py-3 text-gray-600">{item.destination_name}</td>
-                      <td className="px-3 py-3 font-semibold text-teal-700">{item.price}</td>
+                      <td className="px-3 py-3 font-semibold text-teal-700">{pricingDisplay(item)}</td>
                       <td className="px-3 py-3 text-gray-600">{item.days}</td>
                       <td className="px-3 py-3">
                         <div className="flex flex-wrap gap-1">

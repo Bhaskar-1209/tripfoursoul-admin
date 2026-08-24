@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { pricingDisplay } from "@/lib/price";
 
 export default function DestinationsPage() {
   const router = useRouter();
@@ -115,7 +116,7 @@ export default function DestinationsPage() {
                         </div>
                       </td>
                       <td className="px-3 py-3 text-gray-600">{destination.region}</td>
-                      <td className="px-3 py-3 font-semibold text-teal-700">{destination.price}</td>
+                      <td className="px-3 py-3 font-semibold text-teal-700">{pricingDisplay(destination)}</td>
                       <td className="px-3 py-3">
                         <div className="flex flex-wrap gap-1">
                           {destination.is_trending ? <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-700">Trending</span> : null}

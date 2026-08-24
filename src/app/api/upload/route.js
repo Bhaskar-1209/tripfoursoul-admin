@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 
-// Max file size (5MB)
-const MAX_SIZE = 5 * 1024 * 1024;
+// Max file size (100KB)
+const MAX_SIZE = 100 * 1024;
 
-// Allowed image types
-const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+// Allowed image types (WebP only)
+const ALLOWED_TYPES = ['image/webp'];
 
 // Upload buffer to base64 data URL (stored directly in the database)
 const toBase64DataUrl = (buffer, mimeType) => {
@@ -88,15 +88,20 @@ export async function POST(request) {
         return NextResponse.json({ error: 'No base64 image provided' }, { status: 400 });
       }
 
-      // Convert data URL to buffer for validation
+      // Convert data URI to buffer for validation
       const mimeMatch = base64Image.match(/^data:(image\/\w+);base64,/);
-      const detectedType = mimeMatch ? mimeMatch[1] : 'image/png';
+      const detectedType = mimeMatch ? mimeMatch[1] : '';
       const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
       const buffer = Buffer.from(base64Data, 'base64');
 
-      // Validate file size (max 5MB)
+      // Validate file type (WebP only)
+      if (!ALLOWED_TYPES.includes(detectedType)) {
+        return NextResponse.json({ error: 'Invalid file type. Only WebP images are allowed.' }, { status: 400 });
+      }
+
+      // Validate file size (max 100KB)
       if (buffer.length > MAX_SIZE) {
-        return NextResponse.json({ error: 'File size too large. Maximum 5MB allowed.' }, { status: 400 });
+        return NextResponse.json({ error: 'File size too large. Maximum 100KB allowed.' }, { status: 400 });
       }
 
       // Always return base64 data URL so images are stored directly in the DB
@@ -118,12 +123,12 @@ export async function POST(request) {
 
     // Validate file type
     if (!ALLOWED_TYPES.includes(file.type)) {
-      return NextResponse.json({ error: 'Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid file type. Only WebP images are allowed.' }, { status: 400 });
     }
 
-    // Validate file size (max 5MB)
+    // Validate file size (max 100KB)
     if (file.size > MAX_SIZE) {
-      return NextResponse.json({ error: 'File size too large. Maximum 5MB allowed.' }, { status: 400 });
+      return NextResponse.json({ error: 'File size too large. Maximum 100KB allowed.' }, { status: 400 });
     }
 
     // Convert file to buffer

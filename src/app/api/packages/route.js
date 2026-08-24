@@ -50,16 +50,39 @@ export async function POST(request) {
 export async function PUT(request) {
   try {
     const body = await request.json();
-    const { id, destination_id, title, days, meals, short_description, long_description, sub_heading, itinerary, additional_info, image_url, inclusives, exclusives, price, price_usd, price_inr, price_eur, sort_order = 0, is_trending = false, is_spiritual = false } = body;
+    const {
+      id, destination_id, title, days, meals, short_description, long_description, sub_heading, itinerary, additional_info, image_url, inclusives, exclusives,
+      price, price_usd, price_inr, price_eur, is_active, sort_order, is_trending, is_spiritual,
+    } = body;
     if (!id || !destination_id || !title) {
       return NextResponse.json({ error: 'Package ID, destination and title are required' }, { status: 400 });
     }
+    const existing = await db.get('packages', Number(id));
+    if (!existing) return NextResponse.json({ error: 'Package not found' }, { status: 404 });
+
     const updated = await db.update('packages', Number(id), {
-      destination_id: Number(destination_id), title, slug: makeSlug(title), days, meals,
-      short_description, long_description, sub_heading, itinerary, additional_info, image_url,
-      inclusives, exclusives, price, price_usd, price_inr, price_eur, sort_order: Number(sort_order), is_trending: Boolean(is_trending), is_spiritual: Boolean(is_spiritual), is_active: true,
+      destination_id: destination_id !== undefined ? Number(destination_id) : existing.destination_id,
+      title: title !== undefined ? title : existing.title,
+      slug: makeSlug(title !== undefined ? title : existing.title),
+      days: days !== undefined ? days : existing.days,
+      meals: meals !== undefined ? meals : existing.meals,
+      short_description: short_description !== undefined ? short_description : existing.short_description,
+      long_description: long_description !== undefined ? long_description : existing.long_description,
+      sub_heading: sub_heading !== undefined ? sub_heading : existing.sub_heading,
+      itinerary: itinerary !== undefined ? itinerary : existing.itinerary,
+      additional_info: additional_info !== undefined ? additional_info : existing.additional_info,
+      image_url: image_url !== undefined ? image_url : existing.image_url,
+      inclusives: inclusives !== undefined ? inclusives : existing.inclusives,
+      exclusives: exclusives !== undefined ? exclusives : existing.exclusives,
+      price: price !== undefined ? price : existing.price,
+      price_usd: price_usd !== undefined ? price_usd : existing.price_usd,
+      price_inr: price_inr !== undefined ? price_inr : existing.price_inr,
+      price_eur: price_eur !== undefined ? price_eur : existing.price_eur,
+      sort_order: sort_order !== undefined ? Number(sort_order) : existing.sort_order,
+      is_trending: is_trending !== undefined ? Boolean(is_trending) : existing.is_trending,
+      is_spiritual: is_spiritual !== undefined ? Boolean(is_spiritual) : existing.is_spiritual,
+      is_active: body.is_active !== undefined ? Boolean(body.is_active) : existing.is_active,
     });
-    if (!updated) return NextResponse.json({ error: 'Package not found' }, { status: 404 });
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

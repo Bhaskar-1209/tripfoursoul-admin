@@ -5,6 +5,10 @@ const makeSlug = (value = '') => String(value).trim().toLowerCase()
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/(^-|-$)/g, '');
 
+const MAX_BLOG_IMAGES = 3;
+
+const hasTooManyGalleryImages = (images) => Array.isArray(images) && images.length > MAX_BLOG_IMAGES;
+
 // Auto-create the blog_categories table if it doesn't exist
 // This ensures the LEFT JOIN never fails on missing table
 const ensureCategoriesTable = async () => {
@@ -97,6 +101,9 @@ export async function POST(request) {
     if (!title) {
       return NextResponse.json({ error: 'Blog title is required' }, { status: 400 });
     }
+    if (hasTooManyGalleryImages(gallery_images)) {
+      return NextResponse.json({ error: `A blog can have a maximum of ${MAX_BLOG_IMAGES} images` }, { status: 400 });
+    }
 
     const blogSlug = slug || makeSlug(title);
 
@@ -135,6 +142,9 @@ export async function PUT(request) {
     const { id, title, slug, excerpt, content, cover_image, gallery_images, author, tags, meta_title, meta_description, is_active, category_id } = body;
 
     if (!id) return NextResponse.json({ error: 'Blog post ID required' }, { status: 400 });
+    if (hasTooManyGalleryImages(gallery_images)) {
+      return NextResponse.json({ error: `A blog can have a maximum of ${MAX_BLOG_IMAGES} images` }, { status: 400 });
+    }
 
     const existing = await db.get('blogs', Number(id));
     if (!existing) return NextResponse.json({ error: 'Blog post not found' }, { status: 404 });

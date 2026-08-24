@@ -5,12 +5,13 @@ import { useRouter, useParams } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import RichTextEditor from "@/components/RichTextEditor";
+import { CURRENCIES, buildPricePayload, priceFromRecord } from "@/lib/price";
 
 export default function EditDestinationPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id;
-  const [form, setForm] = useState({ name: "", image_url: "", region: "", price: "", price_usd: "", price_inr: "", price_eur: "", description: "", sort_order: 0, is_trending: 0, is_spiritual: 0 });
+  const [form, setForm] = useState({ name: "", image_url: "", region: "", price_currency: "USD", price_value: "", description: "", sort_order: 0, is_trending: 0, is_spiritual: 0 });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -25,14 +26,13 @@ export default function EditDestinationPage() {
         const data = await res.json();
         const dest = (data.destinations || []).find((d) => d.id === Number(id));
         if (active && dest) {
+          const { currency, value } = priceFromRecord(dest);
           setForm({
             name: dest.name,
             image_url: dest.image_url,
             region: dest.region,
-            price: dest.price,
-            price_usd: dest.price_usd || "",
-            price_inr: dest.price_inr || "",
-            price_eur: dest.price_eur || "",
+            price_currency: currency,
+            price_value: value,
             description: dest.description || "",
             sort_order: dest.sort_order || 0,
             is_trending: dest.is_trending ? 1 : 0,
@@ -56,10 +56,11 @@ export default function EditDestinationPage() {
     }
     setSaving(true);
     try {
+      const priceFields = buildPricePayload(form.price_currency, form.price_value);
       const res = await fetch("/api/destinations", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, id: Number(id), is_active: 1 }),
+        body: JSON.stringify({ ...form, ...priceFields, id: Number(id), is_active: 1 }),
       });
       if (res.ok) {
         router.push("/destinations");
@@ -135,16 +136,14 @@ export default function EditDestinationPage() {
               <input type="text" value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })} className="admin-input" placeholder="e.g., Europe, Asia, Africa" />
             </div>
             <div>
-              <label className="admin-label">Price (USD)</label>
-              <input type="text" value={form.price_usd} onChange={(e) => setForm({ ...form, price_usd: e.target.value })} className="admin-input" placeholder="e.g., 1299" />
-            </div>
-            <div>
-              <label className="admin-label">Price (INR)</label>
-              <input type="text" value={form.price_inr} onChange={(e) => setForm({ ...form, price_inr: e.target.value })} className="admin-input" placeholder="e.g., 89999" />
-            </div>
-            <div>
-              <label className="admin-label">Price (EUR)</label>
-              <input type="text" value={form.price_eur} onChange={(e) => setForm({ ...form, price_eur: e.target.value })} className="admin-input" placeholder="e.g., 1099" />
+              <label className="admin-label">Starting Price</label>
+              <div className="flex gap-2">
+                <select value={form.price_currency} onChange={(e) => setForm({ ...form, price_currency: e.target.value })} className="admin-input admin-price-currency">
+                  {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <input type="text" inputMode="numeric" value={form.price_value} onChange={(e) => setForm({ ...form, price_value: e.target.value })} className="admin-input admin-price-amount" placeholder="e.g., 1299" />
+              </div>
+              <p className="mt-1 text-xs text-gray-500">Select currency (USD/INR/EUR) and enter the price number. The website shows the same currency.</p>
             </div>
             <div>
               <label className="admin-label">Sort Order</label>

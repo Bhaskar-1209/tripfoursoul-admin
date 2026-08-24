@@ -16,6 +16,7 @@ import {
   Users,
   Settings,
   LogOut,
+  Share2,
 } from "lucide-react";
 
 const allMenuItems = [
@@ -35,6 +36,7 @@ const allMenuItems = [
   { href: "/blog", label: "Blog", icon: Layers, permission: "blog" },
   { href: "/blog-categories", label: "Blog Categories", icon: Tag, permission: "blog" },
   { href: "/staff", label: "Staff", icon: Users, permission: "staff" },
+  { href: "/social-media", label: "Social Media", icon: Share2, permission: "social-media" },
 ];
 
 export default function Sidebar() {

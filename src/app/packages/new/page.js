@@ -4,6 +4,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import RichTextEditor from "@/components/RichTextEditor";
+import { CURRENCIES, buildPricePayload } from "@/lib/price";
 
 export default function NewPackagePage() {
   return <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}><NewPackageContent /></Suspense>;
@@ -17,7 +18,7 @@ function NewPackageContent() {
   const [form, setForm] = useState({
     destination_id: destParam, title: "", days: "", meals: "", short_description: "",
     long_description: "", sub_heading: "", itinerary: "", additional_info: "", image_url: "",
-    inclusives: "", exclusives: "", price: "", price_usd: "", price_inr: "", price_eur: "", sort_order: 0, is_trending: false, is_spiritual: false,
+    inclusives: "", exclusives: "", price_currency: "USD", price_value: "", sort_order: 0, is_trending: false, is_spiritual: false,
   });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -44,10 +45,11 @@ function NewPackageContent() {
   const save = async () => {
     setSaving(true);
     try {
+      const priceFields = buildPricePayload(form.price_currency, form.price_value);
       const response = await fetch("/api/packages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, ...priceFields }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Unable to save package");
@@ -95,16 +97,14 @@ function NewPackageContent() {
               <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="admin-input" placeholder="e.g., Europe Highlights Getaway" />
             </div>
             <div>
-              <label className="admin-label">Price (USD)</label>
-              <input value={form.price_usd} onChange={(e) => setForm({ ...form, price_usd: e.target.value })} className="admin-input" placeholder="e.g., 1299" />
-            </div>
-            <div>
-              <label className="admin-label">Price (INR)</label>
-              <input value={form.price_inr} onChange={(e) => setForm({ ...form, price_inr: e.target.value })} className="admin-input" placeholder="e.g., 89999" />
-            </div>
-            <div>
-              <label className="admin-label">Price (EUR)</label>
-              <input value={form.price_eur} onChange={(e) => setForm({ ...form, price_eur: e.target.value })} className="admin-input" placeholder="e.g., 1099" />
+              <label className="admin-label">Starting Price</label>
+              <div className="flex gap-2">
+                <select value={form.price_currency} onChange={(e) => setForm({ ...form, price_currency: e.target.value })} className="admin-input admin-price-currency">
+                  {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <input value={form.price_value} onChange={(e) => setForm({ ...form, price_value: e.target.value })} className="admin-input admin-price-amount" placeholder="e.g., 1299" inputMode="numeric" />
+              </div>
+              <p className="mt-1 text-xs text-gray-500">Select currency (USD/INR/EUR) and enter the price number. The website shows the same currency.</p>
             </div>
             <div>
               <label className="admin-label">Days</label>

@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import RichTextEditor from "@/components/RichTextEditor";
+import { CURRENCIES, buildPricePayload, priceFromRecord } from "@/lib/price";
 
 export default function EditPackagePage() {
   const router = useRouter();
@@ -14,7 +15,7 @@ export default function EditPackagePage() {
   const [form, setForm] = useState({
     destination_id: "", title: "", days: "", meals: "", short_description: "",
     long_description: "", sub_heading: "", itinerary: "", additional_info: "", image_url: "",
-    inclusives: "", exclusives: "", price: "", price_usd: "", price_inr: "", price_eur: "", sort_order: 0, is_trending: false, is_spiritual: false,
+    inclusives: "", exclusives: "", price_currency: "USD", price_value: "", sort_order: 0, is_trending: false, is_spiritual: false,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -27,7 +28,7 @@ export default function EditPackagePage() {
   const [showDestinationModal, setShowDestinationModal] = useState(false);
   const [editingDestination, setEditingDestination] = useState(null);
   const [destinationForm, setDestinationForm] = useState({
-    name: "", image_url: "", region: "", price: "", description: "", is_trending: 0, is_spiritual: 0,
+    name: "", image_url: "", region: "", price_currency: "USD", price_value: "", description: "", is_trending: 0, is_spiritual: 0,
   });
   const [destinationSaving, setDestinationSaving] = useState(false);
   const [destinationUploading, setDestinationUploading] = useState(false);
@@ -47,6 +48,7 @@ export default function EditPackagePage() {
         if (active) {
           if (destData.destinations) setDestinations(destData.destinations);
           if (pkg) {
+            const { currency, value } = priceFromRecord(pkg);
             setForm({
               destination_id: String(pkg.destination_id || ""),
               title: pkg.title || "",
@@ -60,10 +62,8 @@ export default function EditPackagePage() {
               image_url: pkg.image_url || "",
               inclusives: pkg.inclusives || "",
               exclusives: pkg.exclusives || "",
-              price: pkg.price || "",
-              price_usd: pkg.price_usd || "",
-              price_inr: pkg.price_inr || "",
-              price_eur: pkg.price_eur || "",
+              price_currency: currency,
+              price_value: value,
               sort_order: pkg.sort_order || 0,
               is_trending: !!pkg.is_trending,
               is_spiritual: !!pkg.is_spiritual,
@@ -85,10 +85,11 @@ export default function EditPackagePage() {
   const save = async () => {
     setSaving(true);
     try {
+      const priceFields = buildPricePayload(form.price_currency, form.price_value);
       const response = await fetch("/api/packages", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, id: Number(id) }),
+        body: JSON.stringify({ ...form, ...priceFields, id: Number(id) }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Unable to save package");
@@ -115,17 +116,19 @@ export default function EditPackagePage() {
   // ---- Destination modal handlers ----
   const openAddDestination = () => {
     setEditingDestination(null);
-    setDestinationForm({ name: "", image_url: "", region: "", price: "", description: "", is_trending: 0, is_spiritual: 0 });
+    setDestinationForm({ name: "", image_url: "", region: "", price_currency: "USD", price_value: "", description: "", is_trending: 0, is_spiritual: 0 });
     setShowDestinationModal(true);
   };
 
   const openEditDestination = (dest) => {
+    const { currency, value } = priceFromRecord(dest);
     setEditingDestination(dest);
     setDestinationForm({
       name: dest.name || "",
       image_url: dest.image_url || "",
       region: dest.region || "",
-      price: dest.price || "",
+      price_currency: currency,
+      price_value: value,
       description: dest.description || "",
       is_trending: dest.is_trending ? 1 : 0,
       is_spiritual: dest.is_spiritual ? 1 : 0,
@@ -134,16 +137,17 @@ export default function EditPackagePage() {
   };
 
   const saveDestination = async () => {
-    if (!destinationForm.name || !destinationForm.region || !destinationForm.price) {
-      notify("Please fill destination name, region and price");
+    if (!destinationForm.name || !destinationForm.region) {
+      notify("Please fill destination name and region");
       return;
     }
+    const priceFields = buildPricePayload(destinationForm.price_currency, destinationForm.price_value);
     setDestinationSaving(true);
     try {
       const method = editingDestination ? "PUT" : "POST";
       const body = editingDestination
-        ? { ...destinationForm, id: editingDestination.id, is_active: 1 }
-        : { ...destinationForm, is_active: 1 };
+        ? { ...destinationForm, ...priceFields, id: editingDestination.id, is_active: 1 }
+        : { ...destinationForm, ...priceFields, is_active: 1 };
       const res = await fetch("/api/destinations", {
         method,
         headers: { "Content-Type": "application/json" },
@@ -275,16 +279,14 @@ export default function EditPackagePage() {
               <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="admin-input" placeholder="e.g., Europe Highlights Getaway" />
             </div>
             <div>
-              <label className="admin-label">Price (USD)</label>
-              <input value={form.price_usd} onChange={(e) => setForm({ ...form, price_usd: e.target.value })} className="admin-input" placeholder="e.g., 1299" />
-            </div>
-            <div>
-              <label className="admin-label">Price (INR)</label>
-              <input value={form.price_inr} onChange={(e) => setForm({ ...form, price_inr: e.target.value })} className="admin-input" placeholder="e.g., 89999" />
-            </div>
-            <div>
-              <label className="admin-label">Price (EUR)</label>
-              <input value={form.price_eur} onChange={(e) => setForm({ ...form, price_eur: e.target.value })} className="admin-input" placeholder="e.g., 1099" />
+              <label className="admin-label">Starting Price</label>
+              <div className="flex gap-2">
+                <select value={form.price_currency} onChange={(e) => setForm({ ...form, price_currency: e.target.value })} className="admin-input admin-price-currency">
+                  {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <input value={form.price_value} onChange={(e) => setForm({ ...form, price_value: e.target.value })} className="admin-input admin-price-amount" placeholder="e.g., 1299" inputMode="numeric" />
+              </div>
+              <p className="mt-1 text-xs text-gray-500">Select currency (USD/INR/EUR) and enter the price number. The website shows the same currency.</p>
             </div>
             <div>
               <label className="admin-label">Days</label>
@@ -393,14 +395,25 @@ export default function EditPackagePage() {
                 />
               </div>
               <div>
-                <label className="admin-label">Starting Price *</label>
-                <input
-                  type="text"
-                  value={destinationForm.price}
-                  onChange={(e) => setDestinationForm({ ...destinationForm, price: e.target.value })}
-                  className="admin-input"
-                  placeholder="e.g., $1,299"
-                />
+                <label className="admin-label">Starting Price</label>
+                <div className="flex gap-2">
+                  <select
+                    value={destinationForm.price_currency}
+                    onChange={(e) => setDestinationForm({ ...destinationForm, price_currency: e.target.value })}
+                    className="admin-input admin-price-currency"
+                  >
+                    {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={destinationForm.price_value}
+                    onChange={(e) => setDestinationForm({ ...destinationForm, price_value: e.target.value })}
+                    className="admin-input admin-price-amount"
+                    placeholder="e.g., 1299"
+                  />
+                </div>
+                <p className="mt-1 text-xs text-gray-500">Select currency and enter price number. The website shows the same currency.</p>
               </div>
               <label className="flex items-center gap-3 rounded-lg border border-teal-100 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-900">
                 <input

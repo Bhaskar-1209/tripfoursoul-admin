@@ -7,6 +7,8 @@ import Sidebar from "@/components/Sidebar";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import RichTextEditor from "@/components/RichTextEditor";
 
+const MAX_IMAGE_SIZE = 100 * 1024;
+
 export default function EditBlogPage() {
   const router = useRouter();
   const params = useParams();
@@ -40,7 +42,7 @@ export default function EditBlogPage() {
             excerpt: item.excerpt || "",
             content: item.content || "",
             cover_image: item.cover_image || "",
-            gallery_images: Array.isArray(item.gallery_images) ? item.gallery_images : (() => { try { return JSON.parse(item.gallery_images || '[]'); } catch { return []; } })(),
+            gallery_images: (Array.isArray(item.gallery_images) ? item.gallery_images : (() => { try { return JSON.parse(item.gallery_images || '[]'); } catch { return []; } })()).slice(0, 3),
             author: item.author || "",
             tags: Array.isArray(item.tags) ? item.tags.join(", ") : "",
             meta_title: item.meta_title || "",
@@ -86,22 +88,46 @@ export default function EditBlogPage() {
   };
 
   const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const remainingSlots = 3 - form.gallery_images.length;
+    const files = Array.from(e.target.files || []);
+    const clearSelectedFiles = () => { if (fileInputRef.current) fileInputRef.current.value = ""; };
+    if (!files.length || remainingSlots <= 0) {
+      toast.error("A blog can have a maximum of 3 images");
+      clearSelectedFiles();
+      return;
+    }
+    if (files.length > remainingSlots) {
+      toast.error(`You can upload only ${remainingSlots} more image${remainingSlots > 1 ? "s" : ""} for this blog`);
+      clearSelectedFiles();
+      return;
+    }
+    if (files.some((file) => file.type !== "image/webp")) {
+      toast.error("Upload failed: only WebP (.webp) images are accepted");
+      clearSelectedFiles();
+      return;
+    }
+    if (files.some((file) => file.size > MAX_IMAGE_SIZE)) {
+      toast.error("Upload failed: each image must be 100 KB or smaller");
+      clearSelectedFiles();
+      return;
+    }
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
-      const data = await res.json();
-      if (res.ok && data.imageUrl) {
-        setForm((prev) => ({ ...prev, gallery_images: [...prev.gallery_images, data.imageUrl], cover_image: prev.cover_image || data.imageUrl }));
-        toast.success("Image uploaded successfully!");
-      } else {
-        toast.error(data.error || "Failed to upload image");
-      }
+      const uploads = await Promise.all(files.map(async (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        const res = await fetch("/api/upload", { method: "POST", body: formData });
+        const data = await res.json();
+        if (!res.ok || !data.imageUrl) throw new Error(data.error || "Failed to upload image");
+        return data.imageUrl;
+      }));
+      setForm((prev) => {
+        const gallery_images = [...prev.gallery_images, ...uploads].slice(0, 3);
+        return { ...prev, gallery_images, cover_image: prev.cover_image || gallery_images[0] || "" };
+      });
+      toast.success(`${uploads.length} image${uploads.length > 1 ? "s" : ""} uploaded successfully!`);
     } catch (error) {
-      toast.error("Error uploading image");
+      toast.error(error instanceof Error ? `Upload failed: ${error.message}` : "Upload failed. Please try again.");
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -158,12 +184,12 @@ export default function EditBlogPage() {
             <div className="md:col-span-2">
               <label className="admin-label">Blog Images</label>
               <div className="flex gap-2">
-                <input ref={fileInputRef} type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onChange={handleImageUpload} className="admin-input flex-1" disabled={uploading} />
-                <button type="button" onClick={() => fileInputRef.current?.click()} className="admin-btn-secondary text-xs whitespace-nowrap" disabled={uploading}>
+                <input ref={fileInputRef} type="file" multiple accept="image/webp" onChange={handleImageUpload} className="admin-input flex-1" disabled={uploading || form.gallery_images.length >= 3} />
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="admin-btn-secondary text-xs whitespace-nowrap" disabled={uploading || form.gallery_images.length >= 3}>
                   {uploading ? "Uploading..." : "Upload"}
                 </button>
               </div>
-              <p className="text-xs text-gray-500 mt-1">Upload at least 3 images if the article needs a photo gallery. The first image becomes the cover.</p>
+              <p className="text-xs text-gray-500 mt-1">Upload up to 3 WebP images, max 100 KB each. The first image becomes the cover. ({form.gallery_images.length}/3)</p>
               {form.gallery_images.length > 0 && (
                 <div className="mt-3 grid grid-cols-3 gap-3">
                   {form.gallery_images.map((url, index) => (
