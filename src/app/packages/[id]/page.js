@@ -5,7 +5,9 @@ import { useRouter, useParams } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import RichTextEditor from "@/components/RichTextEditor";
+import DayWiseItineraryEditor from "@/components/DayWiseItineraryEditor";
 import { CURRENCIES, buildPricePayload, priceFromRecord } from "@/lib/price";
+import useStatusToast from "@/hooks/useStatusToast";
 
 export default function EditPackagePage() {
   const router = useRouter();
@@ -19,7 +21,7 @@ export default function EditPackagePage() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useStatusToast();
   const [messageType, setMessageType] = useState("error");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
@@ -79,7 +81,6 @@ export default function EditPackagePage() {
   const notify = (text, type = "error") => {
     setMessage(text);
     setMessageType(type);
-    setTimeout(() => setMessage(""), 3000);
   };
 
   const save = async () => {
@@ -177,6 +178,7 @@ export default function EditPackagePage() {
   const uploadDestinationImage = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    setMessage("");
     setDestinationUploading(true);
     try {
       const payload = new FormData();
@@ -314,7 +316,8 @@ export default function EditPackagePage() {
             </div>
             <div className="md:col-span-2">
               <label className="admin-label">Day-wise Itinerary</label>
-              <RichTextEditor value={form.itinerary} onChange={(html) => setForm({ ...form, itinerary: html })} rows={4} placeholder="Enter itinerary details here, one day per line." />
+              <p className="mb-2 text-xs text-gray-500">Add each day separately with its title, location, and detailed plan.</p>
+              <DayWiseItineraryEditor value={form.itinerary} onChange={(itinerary) => setForm({ ...form, itinerary })} />
             </div>
             <div className="md:col-span-2">
               <label className="admin-label">Additional Info</label>
@@ -350,7 +353,8 @@ export default function EditPackagePage() {
             </div>
             <div className="md:col-span-2">
               <label className="admin-label">Package Image</label>
-              <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" onChange={upload} className="admin-input" disabled={uploading} />
+              <input ref={fileInputRef} type="file" accept="image/webp" onChange={upload} className="admin-input" disabled={uploading} />
+              <p className="mt-1 text-xs text-gray-500">WebP only, up to 100 KB.</p>
               {uploading && <p className="mt-1 text-sm text-gray-500">Uploading...</p>}
               {form.image_url && <img src={form.image_url} alt="Package preview" className="mt-3 h-32 w-48 rounded-lg object-cover" />}
             </div>
@@ -439,7 +443,7 @@ export default function EditPackagePage() {
                   <input
                     ref={destinationFileInputRef}
                     type="file"
-                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                    accept="image/webp"
                     onChange={uploadDestinationImage}
                     className="admin-input flex-1"
                     disabled={destinationUploading}
@@ -453,6 +457,7 @@ export default function EditPackagePage() {
                     {destinationUploading ? "Uploading..." : "Upload"}
                   </button>
                 </div>
+                <p className="mt-1 text-xs text-gray-500">WebP only, up to 100 KB.</p>
                 {destinationForm.image_url && (
                   <div className="mt-2">
                     <img src={destinationForm.image_url} alt="Preview" className="h-32 w-48 rounded-lg border border-gray-200 object-cover" />

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Sidebar from "@/components/Sidebar";
+import useStatusToast from "@/hooks/useStatusToast";
 
 export default function TestimonialsPage() {
   const [testimonials, setTestimonials] = useState([]);
@@ -9,7 +10,7 @@ export default function TestimonialsPage() {
   const [editingItem, setEditingItem] = useState(null);
   const [form, setForm] = useState({ name: "", image_url: "", rating: 5, review: "", sort_order: 0, video_url: "", influencer_video_url: "" });
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useStatusToast();
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 

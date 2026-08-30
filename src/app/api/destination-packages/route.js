@@ -11,9 +11,17 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Destination ID required' }, { status: 400 });
     }
     
-    const packages = await db.query('SELECT * FROM packages WHERE is_active = true');
-    const filtered = packages.filter((item) => item.destination_id === Number(destinationId));
-    return NextResponse.json({ packages: filtered });
+    // Do not expose packages from an unpublished destination on the public
+    // destination-detail page, even when the package itself is published.
+    const packages = await db.query(
+      `SELECT p.*
+       FROM packages p
+       INNER JOIN destinations d ON p.destination_id = d.id
+       WHERE p.destination_id = $1 AND p.is_active = true AND d.is_active = true
+       ORDER BY p.sort_order ASC, p.id DESC`,
+      [Number(destinationId)]
+    );
+    return NextResponse.json({ packages });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Sidebar from "@/components/Sidebar";
 import RichTextEditor from "@/components/RichTextEditor";
+import BlogContentManager, { contentBlocksToHtml, createInitialContentBlocks } from "@/components/BlogContentManager";
 
 const MAX_IMAGE_SIZE = 100 * 1024;
 
@@ -15,6 +16,7 @@ export default function NewBlogPage() {
     author: "", tags: "", meta_title: "", meta_description: "", category_id: "",
   });
   const [categories, setCategories] = useState([]);
+  const [contentBlocks, setContentBlocks] = useState(createInitialContentBlocks);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
@@ -37,6 +39,7 @@ export default function NewBlogPage() {
     try {
       const payload = {
         ...form,
+        content: contentBlocksToHtml(contentBlocks),
         tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
         category_id: form.category_id ? Number(form.category_id) : null,
       };
@@ -111,7 +114,10 @@ export default function NewBlogPage() {
       <Sidebar />
       <main className="flex-1 p-8 overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Add New Blog Post</h1>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Add New Blog Post</h1>
+            <p className="mt-1 text-sm text-gray-500">Create a full article with headings, paragraphs, links, tables, and images between sections.</p>
+          </div>
           <button onClick={() => router.push("/blog")} className="admin-btn-secondary">← Back to List</button>
         </div>
 
@@ -143,7 +149,7 @@ export default function NewBlogPage() {
               <input type="text" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} className="admin-input" placeholder="e.g., Travel Tips, Europe, Adventure" />
             </div>
             <div className="md:col-span-2">
-              <label className="admin-label">Blog Images</label>
+              <label className="admin-label">Cover &amp; Gallery Images</label>
               <div className="flex gap-2">
                 <input ref={fileInputRef} type="file" multiple accept="image/webp" onChange={handleImageUpload} className="admin-input flex-1" disabled={uploading || form.gallery_images.length >= 3} />
                 <button type="button" onClick={() => fileInputRef.current?.click()} className="admin-btn-secondary text-xs whitespace-nowrap" disabled={uploading || form.gallery_images.length >= 3}>
@@ -168,8 +174,8 @@ export default function NewBlogPage() {
               <RichTextEditor value={form.excerpt} onChange={(html) => setForm({ ...form, excerpt: html })} rows={2} placeholder="Short summary shown on blog listing page..." />
             </div>
             <div className="md:col-span-2">
-              <label className="admin-label">Content</label>
-              <RichTextEditor value={form.content} onChange={(html) => setForm({ ...form, content: html })} rows={10} placeholder="Write your blog content here..." />
+              <label className="admin-label">Article Content</label>
+              <BlogContentManager blocks={contentBlocks} onChange={setContentBlocks} />
             </div>
             <div>
               <label className="admin-label">Meta Title (SEO)</label>

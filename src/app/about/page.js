@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Sidebar from "@/components/Sidebar";
+import useStatusToast from "@/hooks/useStatusToast";
 
 export default function AboutPage() {
   const [data, setData] = useState({
@@ -41,7 +42,7 @@ export default function AboutPage() {
     cta_button_link: ""
   });
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useStatusToast();
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState("hero");
   const fileInputRef = useRef(null);

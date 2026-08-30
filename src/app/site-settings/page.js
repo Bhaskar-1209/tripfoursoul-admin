@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
+import useStatusToast from "@/hooks/useStatusToast";
 
 const empty = { design: { primary_color: '#0f766e', font_family: 'Inter', content_width: '7xl', section_spacing: 'py-16' }, services: { enabled: true, heading: 'Other Services', description: '', contact_form_enabled: true, youtube_url: '', items: [] }, insurance: { enabled: true, heading: 'Travel Insurance', description: '', button_text: 'Enquire now', button_link: '/contact?subject=Travel%20Insurance' }, cookies: { enabled: true, message: 'We use cookies to improve your experience.', policy_url: '/privacy-policy', accept_text: 'Accept all', reject_text: 'Reject non-essential' }, crm: { provider: 'none', enabled: false, webhook_url: '', form_mapping: {} }, social: { facebook: '', instagram: '', linkedin: '', tiktok: '', youtube: '', whatsapp: '' } };
 
@@ -9,7 +10,7 @@ function Field({ label, value, onChange, type = 'text', placeholder = '' }) { re
 function Toggle({ label, value, onChange }) { return <label className="flex items-center justify-between gap-4 p-3 rounded-lg bg-gray-50"><span className="font-medium text-sm">{label}</span><input type="checkbox" checked={Boolean(value)} onChange={(e) => onChange(e.target.checked)} className="h-4 w-4 accent-teal-600" /></label>; }
 
 export default function SiteSettingsPage() {
-  const [settings, setSettings] = useState(empty); const [message, setMessage] = useState(''); const [saving, setSaving] = useState('');
+  const [settings, setSettings] = useState(empty); const [message, setMessage] = useStatusToast(); const [saving, setSaving] = useState('');
   useEffect(() => { fetch('/api/site-settings').then((r) => r.json()).then((d) => d.settings && setSettings((old) => ({ ...old, ...d.settings }))).catch(() => setMessage('Could not load saved settings.')); }, []);
   const update = (key, field, value) => setSettings((current) => ({ ...current, [key]: { ...current[key], [field]: value } }));
   const save = async (key) => { setSaving(key); setMessage(''); try { const r = await fetch('/api/site-settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, value: settings[key] }) }); if (!r.ok) throw new Error((await r.json()).error); setMessage(`${key.replace('_', ' ')} settings saved.`); } catch (e) { setMessage(e.message || 'Could not save settings.'); } finally { setSaving(''); } };

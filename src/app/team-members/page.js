@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Sidebar from "@/components/Sidebar";
+import useStatusToast from "@/hooks/useStatusToast";
 
 export default function TeamMembersPage() {
   const [team, setTeam] = useState([]);
@@ -9,7 +10,7 @@ export default function TeamMembersPage() {
   const [editingMember, setEditingMember] = useState(null);
   const [form, setForm] = useState({ name: "", role: "", bio: "", image_url: "", sort_order: 0 });
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useStatusToast();
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 

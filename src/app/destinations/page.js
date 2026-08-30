@@ -2,24 +2,29 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import Sidebar from "@/components/Sidebar";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import ConfirmActionModal from "@/components/ConfirmActionModal";
 import { pricingDisplay } from "@/lib/price";
 
 export default function DestinationsPage() {
   const router = useRouter();
   const [destinations, setDestinations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState("");
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const fetchDestinations = async (showLoader = false) => {
     if (showLoader) setLoading(true);
     try {
       const res = await fetch("/api/destinations?all=true");
       const data = await res.json();
-      if (data.destinations) setDestinations(data.destinations);
+      if (!res.ok) throw new Error(data.error || "Could not load destinations");
+      setDestinations(data.destinations || []);
     } catch (error) {
       console.error(error);
+      toast.error(error.message || "Could not load destinations");
     } finally {
       setLoading(false);
     }
@@ -29,46 +34,63 @@ export default function DestinationsPage() {
     fetchDestinations();
   }, []);
 
-  const togglePublish = async (item) => {
+  const updatePublish = async (item) => {
     try {
-      await fetch("/api/destinations", {
+      const response = await fetch("/api/destinations", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: item.id, is_active: item.is_active ? 0 : 1 }),
       });
-      setMessage(`Destination "${item.name}" ${item.is_active ? "unpublished" : "published"}!`);
-      setTimeout(() => setMessage(""), 3000);
-      fetchDestinations();
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not update destination");
+      const packageMessage = item.is_active && data.unpublishedPackageCount
+        ? ` ${data.unpublishedPackageCount} associated ${data.unpublishedPackageCount === 1 ? "package was" : "packages were"} also unpublished.`
+        : "";
+      toast.success(`Destination "${item.name}" ${item.is_active ? "unpublished" : "published"}.${packageMessage}`);
+      await fetchDestinations();
     } catch (error) {
-      setMessage("Error updating destination");
       console.error(error);
+      toast.error(error.message || "Could not update destination");
     }
   };
 
   const toggleFlag = async (item, field) => {
     try {
-      await fetch("/api/destinations", {
+      const response = await fetch("/api/destinations", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: item.id, [field]: item[field] ? 0 : 1 }),
       });
-      setMessage(`Destination "${item.name}" updated!`);
-      setTimeout(() => setMessage(""), 3000);
-      fetchDestinations();
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not update destination");
+      toast.success(`Destination "${item.name}" updated.`);
+      await fetchDestinations();
     } catch (error) {
-      setMessage("Error updating destination");
       console.error(error);
+      toast.error(error.message || "Could not update destination");
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this destination?")) return;
+  const deleteDestination = async (item) => {
     try {
-      await fetch(`/api/destinations?id=${id}`, { method: "DELETE" });
-      setMessage("Destination deleted successfully!");
-      setTimeout(() => setMessage(""), 3000);
-      fetchDestinations();
-    } catch (error) { console.error(error); }
+      const response = await fetch(`/api/destinations?id=${item.id}`, { method: "DELETE" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not delete destination");
+      toast.success(`Destination "${item.name}" deleted.`);
+      await fetchDestinations();
+    } catch (error) {
+      console.error(error);
+      toast.error(error.message || "Could not delete destination");
+    }
+  };
+
+  const confirmSelectedAction = async () => {
+    if (!confirmAction) return;
+    setActionLoading(true);
+    if (confirmAction.type === "publish") await updatePublish(confirmAction.item);
+    if (confirmAction.type === "delete") await deleteDestination(confirmAction.item);
+    setActionLoading(false);
+    setConfirmAction(null);
   };
 
   return (
@@ -76,8 +98,6 @@ export default function DestinationsPage() {
       <Sidebar />
       <main className="flex-1 p-8 overflow-y-auto">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Destinations Management</h1>
-
-        {message && <div className="p-4 rounded-lg mb-6 bg-green-50 text-green-600">{message}</div>}
 
         <div className="admin-card">
           <div className="flex items-center justify-between mb-6">
@@ -132,7 +152,7 @@ export default function DestinationsPage() {
                             Edit
                           </button>
                           <button
-                            onClick={() => togglePublish(destination)}
+                            onClick={() => setConfirmAction({ type: "publish", item: destination })}
                             className={`rounded border px-2 py-1 text-xs ${destination.is_active ? "bg-green-600 text-white border-green-600" : "bg-white text-green-600 border-green-300 hover:bg-green-50"}`}
                           >
                             {destination.is_active ? "✓ Published" : "Unpublished"}
@@ -156,7 +176,7 @@ export default function DestinationsPage() {
                             {destination.is_spiritual ? "✓ Spirit" : "Spirit"}
                           </button>
                           <button
-                            onClick={() => handleDelete(destination.id)}
+                            onClick={() => setConfirmAction({ type: "delete", item: destination })}
                             className="rounded border border-red-300 px-2 py-1 text-xs text-red-600 hover:bg-red-50"
                           >
                             Delete
@@ -174,6 +194,20 @@ export default function DestinationsPage() {
           )}
         </div>
       </main>
+      <ConfirmActionModal
+        open={Boolean(confirmAction)}
+        title={confirmAction?.type === "delete" ? "Delete destination?" : `${confirmAction?.item?.is_active ? "Unpublish" : "Publish"} destination?`}
+        description={confirmAction?.type === "delete"
+          ? `"${confirmAction?.item?.name}" will be permanently deleted. This cannot be undone.`
+          : confirmAction?.item?.is_active
+            ? `"${confirmAction?.item?.name}" and all of its published packages will be hidden from the public website but kept in admin.`
+            : `"${confirmAction?.item?.name}" will become visible on the public website.`}
+        confirmLabel={confirmAction?.type === "delete" ? "Delete permanently" : confirmAction?.item?.is_active ? "Unpublish" : "Publish"}
+        danger={confirmAction?.type === "delete"}
+        loading={actionLoading}
+        onConfirm={confirmSelectedAction}
+        onCancel={() => !actionLoading && setConfirmAction(null)}
+      />
     </div>
   );
 }

@@ -54,6 +54,46 @@ body {
   @apply block text-sm font-medium text-[#25463F] mb-1.5;
 }
 
+/* Rich text editor content needs its own defaults because it is user-authored HTML. */
+.rich-text-editor:empty::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.rich-text-editor h2 {
+  @apply mb-2 mt-4 text-xl font-semibold text-[#25463F];
+}
+
+.rich-text-editor p {
+  @apply mb-2;
+}
+
+.rich-text-editor ul,
+.rich-text-editor ol {
+  @apply mb-3 ml-6;
+}
+
+.rich-text-editor ul {
+  list-style: disc;
+}
+
+.rich-text-editor ol {
+  list-style: decimal;
+}
+
+.rich-text-editor a {
+  @apply text-teal-700 underline;
+}
+
+.rich-text-editor table {
+  @apply my-3 w-full border-collapse;
+}
+
+.rich-text-editor td {
+  @apply border border-gray-300 p-2;
+}
+
 .admin-btn {
   @apply px-5 py-2.5 bg-[#24564C] text-white rounded-lg hover:bg-[#173F38] transition-colors text-sm font-medium;
 }

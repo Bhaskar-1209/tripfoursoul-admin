@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import useStatusToast from "@/hooks/useStatusToast";
 
 export default function EditOfferPage() {
   const router = useRouter();
@@ -13,7 +14,7 @@ export default function EditOfferPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useStatusToast();
   const inputRef = useRef(null);
 
   useEffect(() => {

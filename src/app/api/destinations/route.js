@@ -5,6 +5,27 @@ const makeSlug = (value = '') => String(value).trim().toLowerCase()
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/(^-|-$)/g, '');
 
+// Older deployments can predate the Spiritual Escape fields. Keep the API
+// usable while those databases are upgraded, without requiring a manual setup
+// request before an admin can create a destination.
+let destinationSchemaMigration;
+const ensureDestinationSchema = () => {
+  if (!destinationSchemaMigration) {
+    destinationSchemaMigration = Promise.all([
+      db.query('ALTER TABLE destinations ADD COLUMN IF NOT EXISTS is_trending BOOLEAN DEFAULT false'),
+      db.query('ALTER TABLE destinations ADD COLUMN IF NOT EXISTS is_spiritual BOOLEAN DEFAULT false'),
+      db.query("ALTER TABLE destinations ADD COLUMN IF NOT EXISTS price_usd VARCHAR(50) DEFAULT ''"),
+      db.query("ALTER TABLE destinations ADD COLUMN IF NOT EXISTS price_inr VARCHAR(50) DEFAULT ''"),
+      db.query("ALTER TABLE destinations ADD COLUMN IF NOT EXISTS price_eur VARCHAR(50) DEFAULT ''"),
+    ]).catch((error) => {
+      // Allow a retry on a transient database failure instead of caching it.
+      destinationSchemaMigration = null;
+      throw error;
+    });
+  }
+  return destinationSchemaMigration;
+};
+
 // GET - Fetch all destinations
 export async function GET(request) {
   try {
@@ -31,7 +52,16 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name, image_url, region, price, price_usd, price_inr, price_eur, description, is_trending = false, is_spiritual = false } = body;
+    const { name, image_url, region, price, price_usd, price_inr, price_eur, description, sort_order = 0, is_trending = false, is_spiritual = false } = body;
+
+    if (!name?.trim() || !region?.trim()) {
+      return NextResponse.json({ error: 'Destination name and region are required' }, { status: 400 });
+    }
+    if (!image_url?.trim()) {
+      return NextResponse.json({ error: 'Destination image is required' }, { status: 400 });
+    }
+
+    await ensureDestinationSchema();
 
     const newDestination = await db.insert('destinations', {
       name,
@@ -46,7 +76,7 @@ export async function POST(request) {
       is_trending: Boolean(is_trending),
       is_spiritual: Boolean(is_spiritual),
       is_active: true,
-      sort_order: 0
+      sort_order: Number(sort_order) || 0
     });
 
     return NextResponse.json({
@@ -67,6 +97,9 @@ export async function PUT(request) {
     const existing = await db.get('destinations', id);
     if (!existing) return NextResponse.json({ error: 'Destination not found' }, { status: 404 });
 
+    await ensureDestinationSchema();
+    const shouldCascadeUnpublish = is_active !== undefined && !Boolean(is_active) && Boolean(existing.is_active);
+
     const updated = await db.update('destinations', id, {
       name: name !== undefined ? name : existing.name,
       slug: makeSlug(name !== undefined ? name : existing.name),
@@ -83,7 +116,20 @@ export async function PUT(request) {
       sort_order: sort_order !== undefined ? Number(sort_order) : existing.sort_order
     });
 
-    return NextResponse.json({ success: true, message: 'Destination updated successfully' });
+    let unpublishedPackageCount = 0;
+    if (shouldCascadeUnpublish) {
+      const unpublishedPackages = await db.query(
+        'UPDATE packages SET is_active = false WHERE destination_id = $1 AND is_active = true RETURNING id',
+        [Number(id)]
+      );
+      unpublishedPackageCount = Array.isArray(unpublishedPackages) ? unpublishedPackages.length : 0;
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Destination updated successfully',
+      unpublishedPackageCount,
+    });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

@@ -2,8 +2,10 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import toast from "react-hot-toast";
 import Sidebar from "@/components/Sidebar";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import ConfirmActionModal from "@/components/ConfirmActionModal";
 import { pricingDisplay } from "@/lib/price";
 
 export default function PackagesPage() {
@@ -16,62 +18,102 @@ function PackagesPageContent() {
   const selectedDestinationId = searchParams.get("destination_id") || "";
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState("");
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [activeFilter, setActiveFilter] = useState("all");
+
+  const filters = [
+    { id: "all", label: "All" },
+    { id: "published", label: "Published" },
+    { id: "unpublished", label: "Unpublished" },
+    { id: "spiritual", label: "Spiritual" },
+    { id: "trending", label: "Trending" },
+  ];
 
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        const [packagesResponse, destinationsResponse] = await Promise.all([
-          fetch(`/api/packages${selectedDestinationId ? `?destination_id=${selectedDestinationId}` : ""}`),
-          fetch("/api/destinations"),
-        ]);
-        const [packagesData, destinationsData] = await Promise.all([packagesResponse.json(), destinationsResponse.json()]);
+        const packagesResponse = await fetch(`/api/packages?all=true${selectedDestinationId ? `&destination_id=${selectedDestinationId}` : ""}`);
+        const packagesData = await packagesResponse.json();
+        if (!packagesResponse.ok) throw new Error(packagesData.error || "Could not load packages");
         if (active) {
           setPackages(packagesData.packages || []);
         }
-      } catch (error) { console.error(error); }
+      } catch (error) { console.error(error); if (active) toast.error(error.message || "Could not load packages"); }
       finally { if (active) setLoading(false); }
     })();
     return () => { active = false; };
   }, [selectedDestinationId]);
 
   const loadData = async () => {
-    const response = await fetch(`/api/packages${selectedDestinationId ? `?destination_id=${selectedDestinationId}` : ""}`);
+    const response = await fetch(`/api/packages?all=true${selectedDestinationId ? `&destination_id=${selectedDestinationId}` : ""}`);
     const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Could not load packages");
     setPackages(data.packages || []);
   };
 
-  const notify = (text) => {
-    setMessage(text);
-    setTimeout(() => setMessage(""), 3000);
-  };
-
-  const remove = async (id) => {
-    if (!confirm("Delete this package?")) return;
-    const response = await fetch(`/api/packages?id=${id}`, { method: "DELETE" });
-    if (response.ok) { notify("Package deleted successfully."); await loadData(); }
+  const remove = async (item) => {
+    try {
+      const response = await fetch(`/api/packages?id=${item.id}`, { method: "DELETE" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not delete package");
+      toast.success(`Package "${item.title}" deleted.`);
+      await loadData();
+    } catch (error) {
+      toast.error(error.message || "Could not delete package");
+    }
   };
 
   const toggleFlag = async (item, field) => {
-    const response = await fetch("/api/packages", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: item.id, destination_id: item.destination_id, title: item.title, [field]: item[field] ? 0 : 1 }),
-    });
-    if (response.ok) { notify("Package updated successfully."); await loadData(); }
+    try {
+      const response = await fetch("/api/packages", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: item.id, destination_id: item.destination_id, title: item.title, [field]: item[field] ? 0 : 1 }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not update package");
+      toast.success(`Package "${item.title}" updated.`);
+      await loadData();
+    } catch (error) {
+      toast.error(error.message || "Could not update package");
+    }
   };
 
   const togglePublish = async (item) => {
-    const response = await fetch("/api/packages", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: item.id, destination_id: item.destination_id, title: item.title, is_active: item.is_active ? 0 : 1 }),
-    });
-    if (response.ok) { notify(item.is_active ? "Package unpublished." : "Package published."); await loadData(); }
+    try {
+      const response = await fetch("/api/packages", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: item.id, destination_id: item.destination_id, title: item.title, is_active: item.is_active ? 0 : 1 }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not update package");
+      toast.success(`Package "${item.title}" ${item.is_active ? "unpublished" : "published"}.`);
+      await loadData();
+    } catch (error) {
+      toast.error(error.message || "Could not update package");
+    }
+  };
+
+  const confirmSelectedAction = async () => {
+    if (!confirmAction) return;
+    setActionLoading(true);
+    if (confirmAction.type === "publish") await togglePublish(confirmAction.item);
+    if (confirmAction.type === "delete") await remove(confirmAction.item);
+    setActionLoading(false);
+    setConfirmAction(null);
   };
 
   const newUrl = selectedDestinationId ? `/packages/new?destination_id=${selectedDestinationId}` : "/packages/new";
+  const filteredPackages = packages.filter((item) => {
+    if (activeFilter === "published") return Boolean(item.is_active);
+    if (activeFilter === "unpublished") return !item.is_active;
+    if (activeFilter === "spiritual") return Boolean(item.is_spiritual);
+    if (activeFilter === "trending") return Boolean(item.is_trending);
+    return true;
+  });
 
   return (
     <div className="flex min-h-screen">
@@ -84,10 +126,24 @@ function PackagesPageContent() {
           </div>
           <button onClick={() => router.push(newUrl)} className="admin-btn">Add New Package</button>
         </div>
-        {message && <div className="mb-6 rounded-lg bg-green-50 p-4 text-green-700">{message}</div>}
-
         <section className="admin-card">
-          <h2 className="mb-4 text-lg font-semibold">{selectedDestinationId ? "Destination Packages" : "All Packages"} ({packages.length})</h2>
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-lg font-semibold">{selectedDestinationId ? "Destination Packages" : "All Packages"} ({filteredPackages.length})</h2>
+            <div className="flex flex-wrap gap-2" aria-label="Filter packages">
+              {filters.map((filter) => (
+                <button
+                  key={filter.id}
+                  type="button"
+                  onClick={() => setActiveFilter(filter.id)}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${activeFilter === filter.id
+                    ? "border-teal-600 bg-teal-600 text-white"
+                    : "border-gray-300 bg-white text-gray-600 hover:border-teal-300 hover:text-teal-700"}`}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          </div>
           {loading ? (
             <LoadingSpinner text="Loading packages..." />
           ) : (
@@ -104,7 +160,7 @@ function PackagesPageContent() {
                   </tr>
                 </thead>
                 <tbody>
-                  {packages.map((item) => (
+                  {filteredPackages.map((item) => (
                     <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-3">
@@ -125,7 +181,7 @@ function PackagesPageContent() {
                         <div className="flex flex-wrap gap-1">
                           <button onClick={() => router.push(`/packages/${item.id}`)} className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-100">Edit</button>
                           <button
-                            onClick={() => togglePublish(item)}
+                            onClick={() => setConfirmAction({ type: "publish", item })}
                             className={`rounded border px-2 py-1 text-xs ${item.is_active ? "bg-green-600 text-white border-green-600" : "bg-white text-green-600 border-green-300 hover:bg-green-50"}`}
                           >
                             {item.is_active ? "✓ Published" : "Unpublished"}
@@ -142,18 +198,32 @@ function PackagesPageContent() {
                           >
                             {item.is_spiritual ? "✓ Spirit" : "Spirit"}
                           </button>
-                          <button onClick={() => remove(item.id)} className="rounded border border-red-300 px-2 py-1 text-xs text-red-600 hover:bg-red-50">Delete</button>
+                          <button onClick={() => setConfirmAction({ type: "delete", item })} className="rounded border border-red-300 px-2 py-1 text-xs text-red-600 hover:bg-red-50">Delete</button>
                         </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {!packages.length && <p className="py-8 text-center text-sm text-gray-400">No packages found. Add a package and assign its destination.</p>}
+              {!filteredPackages.length && <p className="py-8 text-center text-sm text-gray-400">No {activeFilter === "all" ? "packages" : activeFilter} packages found.</p>}
             </div>
           )}
         </section>
       </main>
+      <ConfirmActionModal
+        open={Boolean(confirmAction)}
+        title={confirmAction?.type === "delete" ? "Delete package?" : `${confirmAction?.item?.is_active ? "Unpublish" : "Publish"} package?`}
+        description={confirmAction?.type === "delete"
+          ? `"${confirmAction?.item?.title}" will be permanently deleted. This cannot be undone.`
+          : confirmAction?.item?.is_active
+            ? `"${confirmAction?.item?.title}" will be hidden from the public website but kept in admin.`
+            : `"${confirmAction?.item?.title}" will become visible on the public website.`}
+        confirmLabel={confirmAction?.type === "delete" ? "Delete permanently" : confirmAction?.item?.is_active ? "Unpublish" : "Publish"}
+        danger={confirmAction?.type === "delete"}
+        loading={actionLoading}
+        onConfirm={confirmSelectedAction}
+        onCancel={() => !actionLoading && setConfirmAction(null)}
+      />
     </div>
   );
 }

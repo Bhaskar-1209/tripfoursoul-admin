@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
+import useStatusToast from "@/hooks/useStatusToast";
 
 export default function DealsPage() {
   const [data, setData] = useState({
@@ -16,7 +17,7 @@ export default function DealsPage() {
     is_active: 1,
   });
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useStatusToast();
 
   useEffect(() => {
     fetchData();

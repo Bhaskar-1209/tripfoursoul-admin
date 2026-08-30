@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
+import useStatusToast from "@/hooks/useStatusToast";
 
 const emptyOffer = { title: "", description: "", image_url: "", button_text: "View offer", button_link: "/contact", badge: "", sort_order: 0, is_active: true };
 
@@ -11,7 +12,7 @@ export default function NewOfferPage() {
   const [form, setForm] = useState(emptyOffer);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useStatusToast();
   const inputRef = useRef(null);
 
   const update = (key, value) => setForm((current) => ({ ...current, [key]: value }));

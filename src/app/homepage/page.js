@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Sidebar from "@/components/Sidebar";
+import useStatusToast from "@/hooks/useStatusToast";
 
 const TABS = [
   { id: "banner", label: "Banner" },
@@ -20,7 +21,7 @@ export default function HomepageSettingsPage() {
   const [activeTab, setActiveTab] = useState("banner");
   const [data, setData] = useState({});
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useStatusToast();
   const [messageType, setMessageType] = useState("success");
 
   // Features state

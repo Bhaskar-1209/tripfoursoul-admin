@@ -6,6 +6,7 @@ import Sidebar from "@/components/Sidebar";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import RichTextEditor from "@/components/RichTextEditor";
 import { CURRENCIES, buildPricePayload, priceFromRecord } from "@/lib/price";
+import useStatusToast from "@/hooks/useStatusToast";
 
 export default function EditDestinationPage() {
   const router = useRouter();
@@ -14,9 +15,15 @@ export default function EditDestinationPage() {
   const [form, setForm] = useState({ name: "", image_url: "", region: "", price_currency: "USD", price_value: "", description: "", sort_order: 0, is_trending: 0, is_spiritual: 0 });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useStatusToast();
+  const [messageType, setMessageType] = useState("error");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
+
+  const notify = (text, type = "error") => {
+    setMessage(text);
+    setMessageType(type);
+  };
 
   useEffect(() => {
     let active = true;
@@ -50,8 +57,7 @@ export default function EditDestinationPage() {
 
   const handleSave = async () => {
     if (!form.name || !form.region) {
-      setMessage("Please fill in all required fields");
-      setTimeout(() => setMessage(""), 3000);
+      notify("Destination name and region are required");
       return;
     }
     setSaving(true);
@@ -66,12 +72,10 @@ export default function EditDestinationPage() {
         router.push("/destinations");
       } else {
         const data = await res.json();
-        setMessage(data.error || "Error saving destination");
-        setTimeout(() => setMessage(""), 3000);
+        notify(data.error || "Error saving destination");
       }
     } catch (error) {
-      setMessage("Error saving destination");
-      setTimeout(() => setMessage(""), 3000);
+      notify("Error saving destination");
     } finally {
       setSaving(false);
     }
@@ -80,6 +84,7 @@ export default function EditDestinationPage() {
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    setMessage("");
     setUploading(true);
     try {
       const formData = new FormData();
@@ -88,15 +93,12 @@ export default function EditDestinationPage() {
       const data = await res.json();
       if (res.ok && data.imageUrl) {
         setForm({ ...form, image_url: data.imageUrl });
-        setMessage("Image uploaded successfully!");
-        setTimeout(() => setMessage(""), 3000);
+        notify("Image uploaded successfully!", "success");
       } else {
-        setMessage(data.error || "Failed to upload image");
-        setTimeout(() => setMessage(""), 3000);
+        notify(data.error || "Failed to upload image");
       }
     } catch (error) {
-      setMessage("Error uploading image");
-      setTimeout(() => setMessage(""), 3000);
+      notify("Error uploading image");
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -123,7 +125,7 @@ export default function EditDestinationPage() {
           <button onClick={() => router.push("/destinations")} className="admin-btn-secondary">← Back to List</button>
         </div>
 
-        {message && <div className="p-4 rounded-lg mb-6 bg-green-50 text-green-600">{message}</div>}
+        {message && <div role="alert" className={`p-4 rounded-lg mb-6 ${messageType === "success" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>{message}</div>}
 
         <div className="admin-card space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -160,11 +162,12 @@ export default function EditDestinationPage() {
             <div className="md:col-span-2">
               <label className="admin-label">Destination Image</label>
               <div className="flex gap-2">
-                <input ref={fileInputRef} type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onChange={handleImageUpload} className="admin-input flex-1" disabled={uploading} />
+                <input ref={fileInputRef} type="file" accept="image/webp" onChange={handleImageUpload} className="admin-input flex-1" disabled={uploading} />
                 <button type="button" onClick={() => fileInputRef.current?.click()} className="admin-btn-secondary text-xs whitespace-nowrap" disabled={uploading}>
                   {uploading ? "Uploading..." : "Upload"}
                 </button>
               </div>
+              <p className="mt-1 text-xs text-gray-500">WebP only, up to 100 KB.</p>
               {form.image_url && (
                 <div className="mt-2">
                   <img src={form.image_url} alt="Preview" className="w-32 h-32 object-cover rounded-lg border border-gray-200" />

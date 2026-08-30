@@ -7,21 +7,48 @@ const makeSlug = (value = '') => value
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/(^-|-$)/g, '');
 
+let packageSchemaMigration;
+const ensurePackageSchema = () => {
+  if (!packageSchemaMigration) {
+    packageSchemaMigration = Promise.all([
+      db.query('ALTER TABLE packages ADD COLUMN IF NOT EXISTS is_trending BOOLEAN DEFAULT false'),
+      db.query('ALTER TABLE packages ADD COLUMN IF NOT EXISTS is_spiritual BOOLEAN DEFAULT false'),
+      db.query("ALTER TABLE packages ADD COLUMN IF NOT EXISTS price_usd VARCHAR(50) DEFAULT ''"),
+      db.query("ALTER TABLE packages ADD COLUMN IF NOT EXISTS price_inr VARCHAR(50) DEFAULT ''"),
+      db.query("ALTER TABLE packages ADD COLUMN IF NOT EXISTS price_eur VARCHAR(50) DEFAULT ''"),
+    ]).catch((error) => {
+      packageSchemaMigration = null;
+      throw error;
+    });
+  }
+  return packageSchemaMigration;
+};
+
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const destinationId = searchParams.get('destination_id');
-    let packages = await db.query('SELECT * FROM packages WHERE is_active = true');
+    const all = searchParams.get('all') === 'true';
+    const params = [];
+    const conditions = [];
 
+    // The public API only exposes published packages belonging to published
+    // destinations. Admin uses ?all=true so drafts stay available to edit.
+    if (!all) {
+      conditions.push('p.is_active = true', 'd.is_active = true');
+    }
     if (destinationId) {
-      packages = packages.filter((item) => item.destination_id === Number(destinationId));
+      params.push(Number(destinationId));
+      conditions.push(`p.destination_id = $${params.length}`);
     }
 
-    const destinations = await db.query('SELECT * FROM destinations');
-    const destinationNames = new Map(destinations.map((item) => [item.id, item.name]));
-    packages = packages
-      .map((item) => ({ ...item, destination_name: destinationNames.get(item.destination_id) || 'Unassigned' }))
-      .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+    let sql = `SELECT p.*, COALESCE(d.name, 'Unassigned') AS destination_name
+               FROM packages p
+               LEFT JOIN destinations d ON p.destination_id = d.id`;
+    if (conditions.length) sql += ` WHERE ${conditions.join(' AND ')}`;
+    sql += ' ORDER BY p.sort_order ASC, p.id DESC';
+
+    const packages = await db.query(sql, params);
 
     return NextResponse.json({ packages });
   } catch (error) {
@@ -36,6 +63,7 @@ export async function POST(request) {
     if (!destination_id || !title) {
       return NextResponse.json({ error: 'Destination and package title are required' }, { status: 400 });
     }
+    await ensurePackageSchema();
     const packageItem = await db.insert('packages', {
       destination_id: Number(destination_id), title, slug: makeSlug(title), days, meals,
       short_description, long_description, sub_heading, itinerary, additional_info, image_url,
@@ -59,6 +87,7 @@ export async function PUT(request) {
     }
     const existing = await db.get('packages', Number(id));
     if (!existing) return NextResponse.json({ error: 'Package not found' }, { status: 404 });
+    await ensurePackageSchema();
 
     const updated = await db.update('packages', Number(id), {
       destination_id: destination_id !== undefined ? Number(destination_id) : existing.destination_id,

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import Image from "next/image";
 
 export default function LoginPage() {
@@ -28,10 +29,14 @@ export default function LoginPage() {
       if (res.ok) {
         router.push("/dashboard");
       } else {
-        setError(data.error || "Login failed");
+        const errorMessage = data.error || "Login failed";
+        setError(errorMessage);
+        toast.error(errorMessage);
       }
     } catch (err) {
-      setError("Server error. Please try again.");
+      const errorMessage = "Server error. Please try again.";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

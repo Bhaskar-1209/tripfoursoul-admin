@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import useStatusToast from "@/hooks/useStatusToast";
 
 export default function OffersPage() {
   const router = useRouter();
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useStatusToast();
 
   const load = async () => {
     const res = await fetch("/api/offers?all=true");

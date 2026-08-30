@@ -15,12 +15,16 @@ const ToolbarButton = ({ onClick, active, title, children }) => (
   </button>
 );
 
-export default function RichTextEditor({ value, onChange, placeholder, rows = 6 }) {
+export default function RichTextEditor({ value, onChange, placeholder, rows = 6, allowImageUpload = false }) {
   const editorRef = useRef(null);
+  const imageInputRef = useRef(null);
+  const selectionRef = useRef(null);
   const [showTableModal, setShowTableModal] = useState(false);
   const [tableRows, setTableRows] = useState(3);
   const [tableCols, setTableCols] = useState(3);
   const [activeFormats, setActiveFormats] = useState({});
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageError, setImageError] = useState("");
 
   // Sync external value changes (e.g., when switching between edit/add modes)
   useEffect(() => {
@@ -29,10 +33,38 @@ export default function RichTextEditor({ value, onChange, placeholder, rows = 6 
     }
   }, [value]);
 
+  const saveSelection = () => {
+    const selection = window.getSelection();
+    if (!selection?.rangeCount || !editorRef.current?.contains(selection.anchorNode)) return;
+    selectionRef.current = selection.getRangeAt(0).cloneRange();
+  };
+
+  const restoreSelection = () => {
+    const range = selectionRef.current;
+    if (!range || !editorRef.current) return;
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  };
+
+  const updateActiveFormats = () => {
+    if (!editorRef.current?.contains(window.getSelection()?.anchorNode)) return;
+    setActiveFormats({
+      bold: document.queryCommandState("bold"),
+      italic: document.queryCommandState("italic"),
+      underline: document.queryCommandState("underline"),
+      unordered: document.queryCommandState("insertUnorderedList"),
+      ordered: document.queryCommandState("insertOrderedList"),
+    });
+    saveSelection();
+  };
+
   const exec = (command, arg = null) => {
     editorRef.current?.focus();
+    restoreSelection();
     document.execCommand(command, false, arg);
     handleInput();
+    updateActiveFormats();
   };
 
   const handleInput = () => {
@@ -55,6 +87,7 @@ export default function RichTextEditor({ value, onChange, placeholder, rows = 6 
     }
     html += "</tbody></table><p><br></p>";
     editorRef.current?.focus();
+    restoreSelection();
     document.execCommand("insertHTML", false, html);
     handleInput();
     setShowTableModal(false);
@@ -63,7 +96,47 @@ export default function RichTextEditor({ value, onChange, placeholder, rows = 6 
   const insertLink = () => {
     const url = prompt("Enter URL (e.g., https://example.com):");
     if (url && url.trim()) {
-      exec("createLink", url.trim());
+      const normalizedUrl = /^(https?:|mailto:|tel:)/i.test(url.trim()) ? url.trim() : `https://${url.trim()}`;
+      exec("createLink", normalizedUrl);
+    }
+  };
+
+  const handleImageUpload = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (file.type !== "image/webp") {
+      setImageError("Only WebP images can be inserted.");
+      return;
+    }
+    if (file.size > 100 * 1024) {
+      setImageError("Image must be 100 KB or smaller.");
+      return;
+    }
+
+    setImageError("");
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await response.json();
+      if (!response.ok || !data.imageUrl) throw new Error(data.error || "Image upload failed");
+
+      editorRef.current?.focus();
+      restoreSelection();
+      const safeAlt = file.name.replace(/\.[^/.]+$/, "").replace(/"/g, "");
+      document.execCommand(
+        "insertHTML",
+        false,
+        `<figure style="margin: 20px 0;"><img src="${data.imageUrl}" alt="${safeAlt}" style="width: 100%; height: auto; border-radius: 8px;" /><figcaption style="margin-top: 6px; font-size: 12px; color: #6b7280;">Add image caption</figcaption></figure><p><br></p>`
+      );
+      handleInput();
+    } catch (error) {
+      setImageError(error.message || "Image upload failed. Please try again.");
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -71,20 +144,35 @@ export default function RichTextEditor({ value, onChange, placeholder, rows = 6 
     <div className="overflow-hidden rounded-lg border border-gray-300">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-1 border-b border-gray-200 bg-gray-50 p-2">
-        <ToolbarButton onClick={() => exec("bold")} title="Bold (Ctrl+B)"><b>B</b></ToolbarButton>
-        <ToolbarButton onClick={() => exec("italic")} title="Italic (Ctrl+I)"><i>I</i></ToolbarButton>
-        <ToolbarButton onClick={() => exec("underline")} title="Underline (Ctrl+U)"><u>U</u></ToolbarButton>
+        <ToolbarButton onClick={() => exec("bold")} active={activeFormats.bold} title="Bold (Ctrl+B)"><b>B</b></ToolbarButton>
+        <ToolbarButton onClick={() => exec("italic")} active={activeFormats.italic} title="Italic (Ctrl+I)"><i>I</i></ToolbarButton>
+        <ToolbarButton onClick={() => exec("underline")} active={activeFormats.underline} title="Underline (Ctrl+U)"><u>U</u></ToolbarButton>
         <span className="mx-1 h-5 w-px bg-gray-300" />
-        <ToolbarButton onClick={() => exec("insertUnorderedList")} title="Bullet List">• List</ToolbarButton>
-        <ToolbarButton onClick={() => exec("insertOrderedList")} title="Numbered List">1. List</ToolbarButton>
+        <ToolbarButton onClick={() => exec("insertUnorderedList")} active={activeFormats.unordered} title="Bullet List">• List</ToolbarButton>
+        <ToolbarButton onClick={() => exec("insertOrderedList")} active={activeFormats.ordered} title="Numbered List">1. List</ToolbarButton>
         <span className="mx-1 h-5 w-px bg-gray-300" />
-        <ToolbarButton onClick={() => exec("formatBlock", "h2")} title="Heading">H</ToolbarButton>
-        <ToolbarButton onClick={() => exec("formatBlock", "p")} title="Paragraph">¶</ToolbarButton>
+        <ToolbarButton onClick={() => exec("formatBlock", "<h2>")} title="Heading">H</ToolbarButton>
+        <ToolbarButton onClick={() => exec("formatBlock", "<p>")} title="Paragraph">¶</ToolbarButton>
         <span className="mx-1 h-5 w-px bg-gray-300" />
         <ToolbarButton onClick={insertLink} title="Insert Link">🔗 Link</ToolbarButton>
         <ToolbarButton onClick={() => setShowTableModal(true)} title="Insert Table">⊞ Table</ToolbarButton>
+        {allowImageUpload && (
+          <>
+            <ToolbarButton onClick={() => imageInputRef.current?.click()} title="Insert Image">
+              {uploadingImage ? "Uploading…" : "▧ Image"}
+            </ToolbarButton>
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/webp"
+              className="hidden"
+              onChange={handleImageUpload}
+              disabled={uploadingImage}
+            />
+          </>
+        )}
         <span className="mx-1 h-5 w-px bg-gray-300" />
-        <ToolbarButton onClick={() => exec("removeFormat")} title="Clear Formatting">⌫ Clear</ToolbarButton>
+        <ToolbarButton onClick={() => { exec("removeFormat"); exec("unlink"); exec("formatBlock", "<p>"); }} title="Clear Formatting">⌫ Clear</ToolbarButton>
       </div>
 
       {/* Editable area */}
@@ -94,10 +182,19 @@ export default function RichTextEditor({ value, onChange, placeholder, rows = 6 
         suppressContentEditableWarning
         onInput={handleInput}
         onBlur={handleInput}
-        className="min-h-[120px] w-full bg-white px-4 py-3 text-sm text-gray-900 focus:outline-none"
+        onKeyUp={updateActiveFormats}
+        onMouseUp={updateActiveFormats}
+        onFocus={updateActiveFormats}
+        className="rich-text-editor min-h-[120px] w-full bg-white px-4 py-3 text-sm text-gray-900 focus:outline-none"
         style={{ minHeight: `${rows * 28}px` }}
         data-placeholder={placeholder}
       />
+      {allowImageUpload && (
+        <p className="border-t border-gray-100 bg-gray-50 px-4 py-2 text-xs text-gray-500">
+          Use “Image” to place photos anywhere in the article. WebP only, max 100 KB per image.
+          {imageError && <span className="ml-2 text-red-600">{imageError}</span>}
+        </p>
+      )}
 
       {/* Table size modal */}
       {showTableModal && (

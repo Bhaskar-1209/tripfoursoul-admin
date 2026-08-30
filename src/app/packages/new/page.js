@@ -4,7 +4,9 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import RichTextEditor from "@/components/RichTextEditor";
+import DayWiseItineraryEditor from "@/components/DayWiseItineraryEditor";
 import { CURRENCIES, buildPricePayload } from "@/lib/price";
+import useStatusToast from "@/hooks/useStatusToast";
 
 export default function NewPackagePage() {
   return <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}><NewPackageContent /></Suspense>;
@@ -21,7 +23,7 @@ function NewPackageContent() {
     inclusives: "", exclusives: "", price_currency: "USD", price_value: "", sort_order: 0, is_trending: false, is_spiritual: false,
   });
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useStatusToast();
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -39,7 +41,6 @@ function NewPackageContent() {
 
   const notify = (text) => {
     setMessage(text);
-    setTimeout(() => setMessage(""), 3000);
   };
 
   const save = async () => {
@@ -132,7 +133,8 @@ function NewPackageContent() {
             </div>
             <div className="md:col-span-2">
               <label className="admin-label">Day-wise Itinerary</label>
-              <RichTextEditor value={form.itinerary} onChange={(html) => setForm({ ...form, itinerary: html })} rows={4} placeholder="Enter itinerary details here, one day per line." />
+              <p className="mb-2 text-xs text-gray-500">Add each day separately with its title, location, and detailed plan.</p>
+              <DayWiseItineraryEditor value={form.itinerary} onChange={(itinerary) => setForm({ ...form, itinerary })} />
             </div>
             <div className="md:col-span-2">
               <label className="admin-label">Additional Info</label>
@@ -168,7 +170,8 @@ function NewPackageContent() {
             </div>
             <div className="md:col-span-2">
               <label className="admin-label">Package Image</label>
-              <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" onChange={upload} className="admin-input" disabled={uploading} />
+              <input ref={fileInputRef} type="file" accept="image/webp" onChange={upload} className="admin-input" disabled={uploading} />
+              <p className="mt-1 text-xs text-gray-500">WebP only, up to 100 KB.</p>
               {uploading && <p className="mt-1 text-sm text-gray-500">Uploading...</p>}
               {form.image_url && <img src={form.image_url} alt="Package preview" className="mt-3 h-32 w-48 rounded-lg object-cover" />}
             </div>

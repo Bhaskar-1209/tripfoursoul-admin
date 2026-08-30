@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
+import useStatusToast from "@/hooks/useStatusToast";
 
 const PERMISSION_OPTIONS = [
   { value: "dashboard", label: "Dashboard" },
@@ -31,7 +32,7 @@ export default function StaffPage() {
   const [editingItem, setEditingItem] = useState(null);
   const [form, setForm] = useState({ username: "", email: "", password: "", role: "staff", permissions: [] });
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useStatusToast();
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {

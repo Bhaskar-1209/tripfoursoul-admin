@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
+import useStatusToast from "@/hooks/useStatusToast";
+import toast from "react-hot-toast";
 
 const emptySocial = { facebook: "", instagram: "", linkedin: "", tiktok: "", youtube: "", whatsapp: "" };
 
@@ -18,7 +20,7 @@ export default function SocialMediaPage() {
   const [social, setSocial] = useState(emptySocial);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useStatusToast();
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -29,7 +31,11 @@ export default function SocialMediaPage() {
           setSocial((old) => ({ ...old, ...d.settings.social }));
         }
       })
-      .catch(() => setError("Could not load saved social media links."))
+      .catch(() => {
+        const errorMessage = "Could not load saved social media links.";
+        setError(errorMessage);
+        toast.error(errorMessage);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -47,7 +53,9 @@ export default function SocialMediaPage() {
       setMessage("Social media links saved successfully!");
       setTimeout(() => setMessage(""), 3000);
     } catch (e) {
-      setError(e.message || "Could not save social media links.");
+      const errorMessage = e.message || "Could not save social media links.";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }

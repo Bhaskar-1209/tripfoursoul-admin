@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Sidebar from "@/components/Sidebar";
+import useStatusToast from "@/hooks/useStatusToast";
 
 const PAGE_KEYS = [
   { key: "about", label: "About Us", defaultHeading: "About Us", defaultSubheading: "Discover our story and passion for travel" },
@@ -17,7 +18,7 @@ export default function PageBannersPage() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ page_key: "", heading: "", subheading: "", background_image: "" });
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useStatusToast();
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 

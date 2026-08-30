@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import Sidebar from "@/components/Sidebar";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import useStatusToast from "@/hooks/useStatusToast";
 
 export default function BannerPage() {
   const [loading, setLoading] = useState(true);
@@ -16,7 +17,7 @@ export default function BannerPage() {
   const [images, setImages] = useState([]);
   const [newImageUrl, setNewImageUrl] = useState("");
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useStatusToast();
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 

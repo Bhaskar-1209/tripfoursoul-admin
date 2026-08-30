@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Sidebar from "@/components/Sidebar";
+import useStatusToast from "@/hooks/useStatusToast";
 
 export default function FeaturesPage() {
   const [features, setFeatures] = useState([]);
@@ -9,7 +10,7 @@ export default function FeaturesPage() {
   const [editingFeature, setEditingFeature] = useState(null);
   const [form, setForm] = useState({ icon: "", title: "", description: "", sort_order: 0 });
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useStatusToast();
 
   useEffect(() => { fetchFeatures(); }, []);
 

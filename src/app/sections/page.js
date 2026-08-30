@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
+import useStatusToast from "@/hooks/useStatusToast";
 
 export default function SectionsPage() {
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useStatusToast();
 
   useEffect(() => {
     fetchSections();
