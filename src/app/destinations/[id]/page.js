@@ -137,7 +137,7 @@ export default function EditDestinationPage() {
               <label className="admin-label">Region *</label>
               <input type="text" value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })} className="admin-input" placeholder="e.g., Europe, Asia, Africa" />
             </div>
-            <div>
+            {/* <div>
               <label className="admin-label">Starting Price</label>
               <div className="flex gap-2">
                 <select value={form.price_currency} onChange={(e) => setForm({ ...form, price_currency: e.target.value })} className="admin-input admin-price-currency">
@@ -146,7 +146,7 @@ export default function EditDestinationPage() {
                 <input type="text" inputMode="numeric" value={form.price_value} onChange={(e) => setForm({ ...form, price_value: e.target.value })} className="admin-input admin-price-amount" placeholder="e.g., 1299" />
               </div>
               <p className="mt-1 text-xs text-gray-500">Select currency (USD/INR/EUR) and enter the price number. The website shows the same currency.</p>
-            </div>
+            </div> */}
             <div>
               <label className="admin-label">Sort Order</label>
               <input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: parseInt(e.target.value) || 0 })} className="admin-input" />
