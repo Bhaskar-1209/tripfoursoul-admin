@@ -7,6 +7,28 @@ const makeSlug = (value = '') => value
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/(^-|-$)/g, '');
 
+// contentEditable editors represent an untouched field as markup such as
+// `<p><br></p>` or `&nbsp;`. Store and return that state as an empty string so
+// consumers can reliably omit an optional section.
+const normalizeOptionalRichText = (value) => {
+  if (typeof value !== 'string') return '';
+
+  const text = value
+    .replace(/<!--[^]*?-->/g, '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;|&#160;|&#xA0;/gi, ' ')
+    .replace(/&[a-z]+;|&#\d+;|&#x[\da-f]+;/gi, ' ')
+    .replace(/[\s\u200B-\u200D\uFEFF]/g, '');
+
+  return text ? value.trim() : '';
+};
+
+const normalizePackageOptionalSections = (packageItem) => ({
+  ...packageItem,
+  inclusives: normalizeOptionalRichText(packageItem.inclusives),
+  exclusives: normalizeOptionalRichText(packageItem.exclusives),
+});
+
 let packageSchemaMigration;
 const ensurePackageSchema = () => {
   if (!packageSchemaMigration) {
@@ -50,7 +72,7 @@ export async function GET(request) {
 
     const packages = await db.query(sql, params);
 
-    return NextResponse.json({ packages });
+    return NextResponse.json({ packages: packages.map(normalizePackageOptionalSections) });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -67,7 +89,7 @@ export async function POST(request) {
     const packageItem = await db.insert('packages', {
       destination_id: Number(destination_id), title, slug: makeSlug(title), days, meals,
       short_description, long_description, sub_heading, itinerary, additional_info, image_url,
-      inclusives, exclusives, price, price_usd, price_inr, price_eur, sort_order: Number(sort_order), is_trending: Boolean(is_trending), is_spiritual: Boolean(is_spiritual), is_active: true,
+      inclusives: normalizeOptionalRichText(inclusives), exclusives: normalizeOptionalRichText(exclusives), price, price_usd, price_inr, price_eur, sort_order: Number(sort_order), is_trending: Boolean(is_trending), is_spiritual: Boolean(is_spiritual), is_active: true,
     });
     return NextResponse.json({ success: true, id: packageItem.id });
   } catch (error) {
@@ -101,8 +123,8 @@ export async function PUT(request) {
       itinerary: itinerary !== undefined ? itinerary : existing.itinerary,
       additional_info: additional_info !== undefined ? additional_info : existing.additional_info,
       image_url: image_url !== undefined ? image_url : existing.image_url,
-      inclusives: inclusives !== undefined ? inclusives : existing.inclusives,
-      exclusives: exclusives !== undefined ? exclusives : existing.exclusives,
+      inclusives: inclusives !== undefined ? normalizeOptionalRichText(inclusives) : existing.inclusives,
+      exclusives: exclusives !== undefined ? normalizeOptionalRichText(exclusives) : existing.exclusives,
       price: price !== undefined ? price : existing.price,
       price_usd: price_usd !== undefined ? price_usd : existing.price_usd,
       price_inr: price_inr !== undefined ? price_inr : existing.price_inr,

@@ -21,6 +21,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  min-width: 320px;
 }
 
 /* Sidebar active link */
@@ -108,6 +109,7 @@ body {
 
 @media (max-width: 1023px) {
   main.flex-1 {
+    width: 100%;
     min-width: 0;
     padding: 5rem 1rem 1.5rem !important;
   }
@@ -126,6 +128,62 @@ body {
 }
 
 @media (max-width: 639px) {
+  /* Page headers: keep title and actions readable on narrow screens. */
+  main.flex-1 > .mb-6.flex {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  main.flex-1 > .mb-6.flex > .admin-btn,
+  main.flex-1 > .mb-6.flex > .admin-btn-secondary,
+  main.flex-1 > .mb-6.flex > .admin-btn-danger {
+    width: 100%;
+  }
+
+  main.flex-1 > .mb-6.flex > div:last-child:not(:only-child) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    width: 100%;
+  }
+
+  main.flex-1 > .mb-6.flex > div:last-child:not(:only-child) > .admin-btn,
+  main.flex-1 > .mb-6.flex > div:last-child:not(:only-child) > .admin-btn-secondary,
+  main.flex-1 > .mb-6.flex > div:last-child:not(:only-child) > .admin-btn-danger {
+    flex: 1 1 9rem;
+  }
+
+  /* Save/cancel button groups should wrap instead of overflowing. */
+  .admin-card > .flex.gap-3,
+  .admin-card .flex.gap-3.pt-2,
+  .admin-card .flex.gap-3.pt-6 {
+    flex-wrap: wrap;
+  }
+
+  .admin-card > .flex.gap-3 > .admin-btn,
+  .admin-card > .flex.gap-3 > .admin-btn-secondary,
+  .admin-card > .flex.gap-3 > .admin-btn-danger,
+  .admin-card .flex.gap-3.pt-2 > .admin-btn,
+  .admin-card .flex.gap-3.pt-2 > .admin-btn-secondary,
+  .admin-card .flex.gap-3.pt-2 > .admin-btn-danger,
+  .admin-card .flex.gap-3.pt-6 > .admin-btn,
+  .admin-card .flex.gap-3.pt-6 > .admin-btn-secondary,
+  .admin-card .flex.gap-3.pt-6 > .admin-btn-danger {
+    flex: 1 1 9rem;
+  }
+
+  /* Tables remain usable through horizontal scrolling, rather than crushing columns. */
+  .admin-card.overflow-x-auto table,
+  .admin-card .overflow-x-auto table {
+    min-width: 42rem;
+  }
+
+  /* Keep fixed dialogs within the phone viewport. */
+  .fixed.inset-0 > .w-full.rounded-xl {
+    max-height: calc(100vh - 2rem);
+    padding: 1rem;
+  }
+
   .admin-input {
     padding: 0.625rem 0.75rem;
   }
