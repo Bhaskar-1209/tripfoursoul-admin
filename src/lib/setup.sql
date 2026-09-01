@@ -175,10 +175,35 @@ CREATE TABLE IF NOT EXISTS offers (
   button_text VARCHAR(100) DEFAULT 'Explore offer',
   button_link VARCHAR(500) DEFAULT '/contact',
   badge VARCHAR(100) DEFAULT '',
+  coupon_code VARCHAR(100) DEFAULT '',
   sort_order INT DEFAULT 0,
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS leads (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  first_name VARCHAR(255) DEFAULT '',
+  last_name VARCHAR(255) DEFAULT '',
+  email VARCHAR(255) DEFAULT '',
+  phone VARCHAR(100) DEFAULT '',
+  destination VARCHAR(255) DEFAULT '',
+  package_name VARCHAR(255) DEFAULT '',
+  date VARCHAR(100) DEFAULT '',
+  travel_start_date DATE,
+  travel_end_date DATE,
+  travel_style VARCHAR(255) DEFAULT '',
+  trip_budget VARCHAR(255) DEFAULT '',
+  receive_offers BOOLEAN DEFAULT false,
+  travellers VARCHAR(100) DEFAULT '',
+  message TEXT DEFAULT '',
+  additional_information TEXT DEFAULT '',
+  coupon_code VARCHAR(100) DEFAULT '',
+  source VARCHAR(100) DEFAULT 'website',
+  status VARCHAR(30) DEFAULT 'new',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Blog categories table

@@ -17,12 +17,16 @@ import {
   Settings,
   LogOut,
   Share2,
+  Inbox,
+  Menu,
+  X,
 } from "lucide-react";
 
 const allMenuItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: "dashboard" },
   { href: "/homepage", label: "Homepage Settings", icon: Settings, permission: "homepage" },
   { href: "/offers", label: "Sticky Offers", icon: Tag, permission: "offers" },
+  { href: "/leads", label: "Leads", icon: Inbox, permission: "leads" },
   { href: "/destinations", label: "Destinations", icon: MapPin, permission: "destinations" },
   { href: "/packages", label: "Packages", icon: Layers, permission: "packages" },
   // { href: "/spiritual", label: "Spiritual Escape", icon: MapPin, permission: "spiritual" },
@@ -43,6 +47,11 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [menuItems, setMenuItems] = useState(allMenuItems);
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    setIsOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -71,10 +80,23 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="sticky top-0 left-0 w-64 h-screen shrink-0 bg-[#173F38] border-r border-[#24564C] flex flex-col overflow-hidden">
+    <>
+      <button
+        type="button"
+        onClick={() => setIsOpen(true)}
+        className="fixed left-4 top-4 z-50 inline-flex h-11 w-11 items-center justify-center rounded-lg bg-[#173F38] text-white shadow-lg lg:hidden"
+        aria-label="Open navigation menu"
+        aria-expanded={isOpen}
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+      {isOpen && <button type="button" className="fixed inset-0 z-40 bg-black/40 lg:hidden" aria-label="Close navigation menu" onClick={() => setIsOpen(false)} />}
+      <aside className={`fixed inset-y-0 left-0 z-50 flex h-screen w-72 shrink-0 flex-col overflow-hidden border-r border-[#24564C] bg-[#173F38] shadow-2xl transition-transform duration-200 lg:sticky lg:top-0 lg:z-auto lg:w-64 lg:translate-x-0 lg:shadow-none ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
       <div className="p-6 border-b border-[#24564C]">
-        <h1 className="text-xl font-bold text-[#FCF8F1]">TripForSoul</h1>
-        <p className="text-xs text-[#DCE8DF] mt-1">Admin Panel</p>
+        <div className="flex items-start justify-between gap-4">
+          <div><h1 className="text-xl font-bold text-[#FCF8F1]">TripForSoul</h1><p className="mt-1 text-xs text-[#DCE8DF]">Admin Panel</p></div>
+          <button type="button" onClick={() => setIsOpen(false)} className="rounded-lg p-2 text-[#DCE8DF] hover:bg-[#24564C] lg:hidden" aria-label="Close navigation menu"><X className="h-5 w-5" /></button>
+        </div>
       </div>
 
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -85,6 +107,7 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={() => setIsOpen(false)}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                 isActive
                   ? "bg-[#DCE8DF] text-[#24564C] border-r-4 border-[#C8755A]"
@@ -107,6 +130,7 @@ export default function Sidebar() {
           Logout
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }

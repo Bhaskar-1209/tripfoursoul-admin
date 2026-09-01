@@ -89,6 +89,18 @@ export function middleware(request) {
     return NextResponse.next();
   }
 
+  // Public website enquiries authenticate with a shared internal API key,
+  // rather than an admin browser session. Other lead methods continue below
+  // through the regular session/permission flow.
+  if (pathname === '/api/leads' && method === 'POST') {
+    const expectedKey = process.env.LEADS_API_KEY;
+    const requestKey = request.headers.get('x-leads-api-key');
+    if (!expectedKey || requestKey !== expectedKey) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    return NextResponse.next();
+  }
+
   // Extract token from cookie
   const token = request.cookies.get('token')?.value;
   const payload = token ? decodeTokenPayload(token) : null;

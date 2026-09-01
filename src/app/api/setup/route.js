@@ -216,6 +216,7 @@ export async function GET() {
           button_text VARCHAR(100) DEFAULT 'Explore offer',
           button_link VARCHAR(500) DEFAULT '/contact',
           badge VARCHAR(100) DEFAULT '',
+          coupon_code VARCHAR(100) DEFAULT '',
           sort_order INT DEFAULT 0,
           is_active BOOLEAN DEFAULT true,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

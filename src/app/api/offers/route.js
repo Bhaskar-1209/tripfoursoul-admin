@@ -15,7 +15,7 @@ const ensureOffersTable = () => db.query(`
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )
-`);
+`).then(() => db.query("ALTER TABLE offers ADD COLUMN IF NOT EXISTS coupon_code VARCHAR(100) DEFAULT ''"));
 
 const normalizeOffer = (offer = {}) => ({
   title: String(offer.title || '').trim(),
@@ -24,6 +24,7 @@ const normalizeOffer = (offer = {}) => ({
   button_text: String(offer.button_text || 'Explore offer').trim(),
   button_link: String(offer.button_link || '/contact').trim(),
   badge: String(offer.badge || '').trim(),
+  coupon_code: String(offer.coupon_code || '').trim().toUpperCase(),
   sort_order: Number(offer.sort_order) || 0,
   is_active: offer.is_active !== undefined ? Boolean(offer.is_active) : true,
 });

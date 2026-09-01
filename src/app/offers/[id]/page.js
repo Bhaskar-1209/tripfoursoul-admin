@@ -10,12 +10,21 @@ export default function EditOfferPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id;
-  const [form, setForm] = useState({ title: "", description: "", image_url: "", button_text: "View offer", button_link: "/contact", badge: "", sort_order: 0, is_active: true });
+  const [form, setForm] = useState({ title: "", description: "", image_url: "", button_text: "View offer", button_link: "/contact", badge: "", coupon_code: "", sort_order: 0, is_active: true });
+  const [packages, setPackages] = useState([]);
+  const [linkType, setLinkType] = useState("/contact");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useStatusToast();
   const inputRef = useRef(null);
+
+  useEffect(() => {
+    fetch("/api/packages?all=true")
+      .then((response) => response.json())
+      .then((data) => setPackages(data.packages || []))
+      .catch(() => setPackages([]));
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -32,9 +41,11 @@ export default function EditOfferPage() {
             button_text: offer.button_text || "View offer",
             button_link: offer.button_link || "/contact",
             badge: offer.badge || "",
+            coupon_code: offer.coupon_code || "",
             sort_order: offer.sort_order || 0,
             is_active: Boolean(offer.is_active),
           });
+          setLinkType(["/", "/destinations", "/packages", "/other-services", "/trips", "/gallery", "/blog", "/enquire-now", "/contact", "/about"].includes(offer.button_link) ? offer.button_link : (String(offer.button_link || "").startsWith("/package/") ? "package" : "custom"));
         }
       } catch (error) { console.error(error); }
       finally { if (active) setLoading(false); }
@@ -43,6 +54,10 @@ export default function EditOfferPage() {
   }, [id]);
 
   const update = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+  const changeLinkType = (value) => {
+    setLinkType(value);
+    if (value !== "package" && value !== "custom") update("button_link", value);
+  };
   const notify = (text) => { setMessage(text); window.setTimeout(() => setMessage(""), 3000); };
 
   const uploadImage = async (event) => {
@@ -106,6 +121,10 @@ export default function EditOfferPage() {
               <span className="admin-label">Badge</span>
               <input value={form.badge} onChange={(e) => update("badge", e.target.value)} className="admin-input" placeholder="e.g. Limited time" />
             </label>
+            <label>
+              <span className="admin-label">Coupon code</span>
+              <input value={form.coupon_code} onChange={(e) => update("coupon_code", e.target.value.toUpperCase())} className="admin-input" placeholder="e.g. SUMMER20" />
+            </label>
             <label className="md:col-span-2">
               <span className="admin-label">Description</span>
               <textarea value={form.description} onChange={(e) => update("description", e.target.value)} className="admin-input" rows={3} placeholder="Short offer description" />
@@ -115,9 +134,42 @@ export default function EditOfferPage() {
               <input value={form.button_text} onChange={(e) => update("button_text", e.target.value)} className="admin-input" />
             </label>
             <label>
+              <span className="admin-label">Link page</span>
+              <select
+                value={linkType}
+                onChange={(e) => changeLinkType(e.target.value)}
+                className="admin-input"
+              >
+                <option value="/">Home</option>
+                <option value="/destinations">Destinations</option>
+                <option value="package">Packages</option>
+                <option value="/other-services">Other Services</option>
+                <option value="/trips">Trips</option>
+                <option value="/gallery">Gallery</option>
+                <option value="/blog">Blog</option>
+                <option value="/enquire-now">Enquire Now</option>
+                <option value="/contact">Contact</option>
+                <option value="/about">About</option>
+                <option value="custom">Custom URL</option>
+              </select>
+              {linkType === "package" && (
+                <select
+                  value={packages.find((item) => form.button_link === `/package/${item.slug || item.id}`)?.id || ""}
+                  onChange={(e) => {
+                    const item = packages.find((packageItem) => packageItem.id === Number(e.target.value));
+                    if (item) update("button_link", `/package/${item.slug || item.id}`);
+                  }}
+                  className="admin-input mt-2"
+                >
+                  <option value="">Select a package</option>
+                  {packages.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+                </select>
+              )}
+            </label>
+            {linkType === "custom" && <label>
               <span className="admin-label">Button link</span>
               <input value={form.button_link} onChange={(e) => update("button_link", e.target.value)} className="admin-input" placeholder="/contact or https://..." />
-            </label>
+            </label>}
             <label>
               <span className="admin-label">Sort order</span>
               <input type="number" value={form.sort_order} onChange={(e) => update("sort_order", Number(e.target.value))} className="admin-input" />

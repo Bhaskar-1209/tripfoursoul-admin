@@ -80,7 +80,12 @@ function NewPackageContent() {
       <main className="flex-1 overflow-y-auto p-8">
         <div className="mb-6 flex items-center justify-between gap-4">
           <h1 className="text-2xl font-bold text-gray-900">Add New Package</h1>
-          <button onClick={() => router.push("/packages")} className="admin-btn-secondary">← Back to List</button>
+          <div className="flex items-center gap-3">
+            <button onClick={() => router.push("/packages")} className="admin-btn-secondary">← Back to List</button>
+            <button onClick={save} disabled={saving} className="admin-btn">
+              {saving ? "Saving..." : "Save Package"}
+            </button>
+          </div>
         </div>
         {message && <div className="mb-6 rounded-lg bg-red-50 p-4 text-red-700">{message}</div>}
 

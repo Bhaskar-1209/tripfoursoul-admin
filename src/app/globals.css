@@ -105,3 +105,34 @@ body {
 .admin-btn-secondary {
   @apply px-5 py-2.5 bg-[#DCE8DF] text-[#25463F] rounded-lg hover:bg-[#789B89] hover:text-white transition-colors text-sm font-medium;
 }
+
+@media (max-width: 1023px) {
+  main.flex-1 {
+    min-width: 0;
+    padding: 5rem 1rem 1.5rem !important;
+  }
+
+  .admin-card {
+    padding: 1rem;
+    border-radius: 0.75rem;
+  }
+
+  .admin-btn,
+  .admin-btn-danger,
+  .admin-btn-secondary {
+    min-height: 2.75rem;
+    padding: 0.625rem 0.875rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .admin-input {
+    padding: 0.625rem 0.75rem;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
