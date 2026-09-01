@@ -8,7 +8,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import RichTextEditor from "@/components/RichTextEditor";
 import BlogContentManager, { contentBlocksToHtml, createInitialContentBlocks, htmlToContentBlocks } from "@/components/BlogContentManager";
 
-const MAX_IMAGE_SIZE = 100 * 1024;
+const MAX_IMAGE_SIZE = 1024 * 1024;
 
 export default function EditBlogPage() {
   const router = useRouter();
@@ -111,7 +111,7 @@ export default function EditBlogPage() {
       return;
     }
     if (files.some((file) => file.size > MAX_IMAGE_SIZE)) {
-      toast.error("Upload failed: each image must be 100 KB or smaller");
+      toast.error("Upload failed: each image must be 1 MB or smaller");
       clearSelectedFiles();
       return;
     }
@@ -196,7 +196,7 @@ export default function EditBlogPage() {
                   {uploading ? "Uploading..." : "Upload"}
                 </button>
               </div>
-              <p className="text-xs text-gray-500 mt-1">Upload up to 3 WebP images, max 100 KB each. The first image becomes the cover. ({form.gallery_images.length}/3)</p>
+              <p className="text-xs text-gray-500 mt-1">Upload up to 3 WebP images, max 1 MB each. The first image becomes the cover. ({form.gallery_images.length}/3)</p>
               {form.gallery_images.length > 0 && (
                 <div className="mt-3 grid grid-cols-3 gap-3">
                   {form.gallery_images.map((url, index) => (

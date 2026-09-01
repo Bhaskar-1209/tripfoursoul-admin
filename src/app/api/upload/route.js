@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
-// Max file size (100KB)
-const MAX_SIZE = 100 * 1024;
+// Max file size (1 MB)
+const MAX_SIZE = 1024 * 1024;
 
 // Allowed image types (WebP only)
 const ALLOWED_TYPES = ['image/webp'];
@@ -99,9 +99,9 @@ export async function POST(request) {
         return NextResponse.json({ error: 'Invalid file type. Only WebP images are allowed.' }, { status: 400 });
       }
 
-      // Validate file size (max 100KB)
+      // Validate file size (max 1 MB)
       if (buffer.length > MAX_SIZE) {
-        return NextResponse.json({ error: 'File size too large. Maximum 100KB allowed.' }, { status: 400 });
+        return NextResponse.json({ error: 'File size too large. Maximum 1 MB allowed.' }, { status: 400 });
       }
 
       // Always return base64 data URL so images are stored directly in the DB
@@ -126,9 +126,9 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Invalid file type. Only WebP images are allowed.' }, { status: 400 });
     }
 
-    // Validate file size (max 100KB)
+    // Validate file size (max 1 MB)
     if (file.size > MAX_SIZE) {
-      return NextResponse.json({ error: 'File size too large. Maximum 100KB allowed.' }, { status: 400 });
+      return NextResponse.json({ error: 'File size too large. Maximum 1 MB allowed.' }, { status: 400 });
     }
 
     // Convert file to buffer

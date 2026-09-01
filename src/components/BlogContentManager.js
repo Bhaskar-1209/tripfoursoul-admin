@@ -94,8 +94,8 @@ export default function BlogContentManager({ blocks, onChange }) {
       setError("Only WebP images are allowed.");
       return;
     }
-    if (file.size > 100 * 1024) {
-      setError("Each image must be 100 KB or smaller.");
+    if (file.size > 1024 * 1024) {
+      setError("Each image must be 1 MB or smaller.");
       return;
     }
 

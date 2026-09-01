@@ -110,8 +110,8 @@ export default function RichTextEditor({ value, onChange, placeholder, rows = 6,
       setImageError("Only WebP images can be inserted.");
       return;
     }
-    if (file.size > 100 * 1024) {
-      setImageError("Image must be 100 KB or smaller.");
+    if (file.size > 1024 * 1024) {
+      setImageError("Image must be 1 MB or smaller.");
       return;
     }
 
@@ -191,7 +191,7 @@ export default function RichTextEditor({ value, onChange, placeholder, rows = 6,
       />
       {allowImageUpload && (
         <p className="border-t border-gray-100 bg-gray-50 px-4 py-2 text-xs text-gray-500">
-          Use “Image” to place photos anywhere in the article. WebP only, max 100 KB per image.
+          Use “Image” to place photos anywhere in the article. WebP only, max 1 MB per image.
           {imageError && <span className="ml-2 text-red-600">{imageError}</span>}
         </p>
       )}

@@ -176,7 +176,7 @@ function NewPackageContent() {
             <div className="md:col-span-2">
               <label className="admin-label">Package Image</label>
               <input ref={fileInputRef} type="file" accept="image/webp" onChange={upload} className="admin-input" disabled={uploading} />
-              <p className="mt-1 text-xs text-gray-500">WebP only, up to 100 KB.</p>
+              <p className="mt-1 text-xs text-gray-500">WebP only, up to 1 MB.</p>
               {uploading && <p className="mt-1 text-sm text-gray-500">Uploading...</p>}
               {form.image_url && <img src={form.image_url} alt="Package preview" className="mt-3 h-32 w-48 rounded-lg object-cover" />}
             </div>

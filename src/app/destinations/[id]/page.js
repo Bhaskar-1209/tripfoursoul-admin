@@ -167,7 +167,7 @@ export default function EditDestinationPage() {
                   {uploading ? "Uploading..." : "Upload"}
                 </button>
               </div>
-              <p className="mt-1 text-xs text-gray-500">WebP only, up to 100 KB.</p>
+              <p className="mt-1 text-xs text-gray-500">WebP only, up to 1 MB.</p>
               {form.image_url && (
                 <div className="mt-2">
                   <img src={form.image_url} alt="Preview" className="w-32 h-32 object-cover rounded-lg border border-gray-200" />
