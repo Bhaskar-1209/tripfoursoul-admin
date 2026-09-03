@@ -76,7 +76,6 @@ export default function EditGalleryPage() {
       });
       if (res.ok) {
         toast.success("Image updated!");
-        router.push("/gallery");
       } else {
         toast.error("Error saving");
       }

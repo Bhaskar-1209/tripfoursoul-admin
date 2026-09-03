@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import useStatusToast from "@/hooks/useStatusToast";
 
-const emptyOffer = { title: "", description: "", image_url: "", button_text: "View offer", button_link: "/contact", badge: "", coupon_code: "", sort_order: 0, is_active: true };
+const emptyOffer = { title: "", description: "", image_url: "", button_text: "View offer", button_link: "/contact", badge: "", coupon_code: "", travel_start_date: "", travel_end_date: "", duration_days: "", duration: "", publish_duration_days: "", sort_order: 0, is_active: true };
 
 export default function NewOfferPage() {
   const router = useRouter();
   const [form, setForm] = useState(emptyOffer);
+  const [publishDurationOption, setPublishDurationOption] = useState("");
   const [packages, setPackages] = useState([]);
   const [linkType, setLinkType] = useState("/contact");
   const [saving, setSaving] = useState(false);
@@ -51,11 +52,11 @@ export default function NewOfferPage() {
       const res = await fetch("/api/offers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, publish_duration_days: publishDurationOption === "custom" ? form.custom_publish_duration_days : publishDurationOption }),
       });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "Could not save offer");
-      router.push("/offers");
+      router.replace(`/offers/${result.offer.id}`);
     } catch (error) { notify(error.message || "Could not save offer."); }
     finally { setSaving(false); }
   };
@@ -84,6 +85,31 @@ export default function NewOfferPage() {
             <label>
               <span className="admin-label">Coupon code</span>
               <input value={form.coupon_code} onChange={(e) => update("coupon_code", e.target.value.toUpperCase())} className="admin-input" placeholder="e.g. SUMMER20" />
+            </label>
+            <label>
+              <span className="admin-label">Travel start date</span>
+              <input type="date" value={form.travel_start_date} onChange={(e) => update("travel_start_date", e.target.value)} className="admin-input" />
+            </label>
+            <label>
+              <span className="admin-label">Travel end date</span>
+              <input type="date" value={form.travel_end_date} onChange={(e) => update("travel_end_date", e.target.value)} className="admin-input" />
+            </label>
+            <label>
+              <span className="admin-label">Duration days</span>
+              <input type="number" min="1" step="1" value={form.duration_days} onChange={(e) => update("duration_days", e.target.value)} className="admin-input" placeholder="e.g. 5" />
+            </label>
+            <label>
+              <span className="admin-label">Display duration</span>
+              <input value={form.duration} onChange={(e) => update("duration", e.target.value)} className="admin-input" placeholder="e.g. 5 Days / 4 Nights" />
+            </label>
+            <label>
+              <span className="admin-label">Publish on website for</span>
+              <select value={publishDurationOption} onChange={(e) => setPublishDurationOption(e.target.value)} className="admin-input">
+                <option value="">Until manually unpublished</option>
+                <option value="1">1 day</option><option value="3">3 days</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option><option value="60">60 days</option><option value="90">90 days</option>
+                <option value="custom">Custom number of days</option>
+              </select>
+              {publishDurationOption === "custom" && <input type="number" min="1" step="1" required value={form.custom_publish_duration_days || ""} onChange={(e) => update("custom_publish_duration_days", e.target.value)} className="admin-input mt-2" placeholder="Enter number of days" />}
             </label>
             <label className="md:col-span-2">
               <span className="admin-label">Description</span>

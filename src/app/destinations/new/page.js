@@ -39,7 +39,8 @@ export default function NewDestinationPage() {
         body: JSON.stringify({ ...form, ...priceFields, is_active: 1 }),
       });
       if (res.ok) {
-        router.push("/destinations");
+        const data = await res.json();
+        router.replace(`/destinations/${data.id}`);
       } else {
         const data = await res.json();
         notify(data.error || "Error saving destination");

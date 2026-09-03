@@ -22,6 +22,8 @@ const ensureLeadsTable = async () => {
     message TEXT DEFAULT '',
     additional_information TEXT DEFAULT '',
     coupon_code VARCHAR(100) DEFAULT '',
+    offer_duration TEXT,
+    offer_duration_days INTEGER,
     source VARCHAR(100) DEFAULT 'website',
     status VARCHAR(30) DEFAULT 'new',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -39,7 +41,9 @@ const ensureLeadsTable = async () => {
       ADD COLUMN IF NOT EXISTS trip_budget VARCHAR(255) DEFAULT '',
       ADD COLUMN IF NOT EXISTS receive_offers BOOLEAN DEFAULT false,
       ADD COLUMN IF NOT EXISTS additional_information TEXT DEFAULT '',
-      ADD COLUMN IF NOT EXISTS coupon_code VARCHAR(100) DEFAULT ''
+      ADD COLUMN IF NOT EXISTS coupon_code VARCHAR(100) DEFAULT '',
+      ADD COLUMN IF NOT EXISTS offer_duration TEXT,
+      ADD COLUMN IF NOT EXISTS offer_duration_days INTEGER
   `);
 };
 
@@ -71,6 +75,10 @@ const parsedMessageDetails = (message) => ({
 });
 
 const validDate = (date) => /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null;
+const validDurationDays = (days) => {
+  const item = value(days);
+  return /^\d+$/.test(item) && Number(item) > 0 ? Number(item) : null;
+};
 const hydrateMessageDetails = (lead) => {
   const parsed = parsedMessageDetails(lead.message);
   return {
@@ -130,6 +138,8 @@ export async function POST(request) {
       message: cleanMessage(rawMessage),
       additional_information: value(body.additional_information),
       coupon_code: value(body.coupon_code || body.coupon).toUpperCase(),
+      offer_duration: value(body.offer_duration) || null,
+      offer_duration_days: validDurationDays(body.offer_duration_days),
       source: value(body.source) || 'website',
       status: 'new',
     };

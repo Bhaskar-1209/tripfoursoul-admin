@@ -69,7 +69,7 @@ export default function EditDestinationPage() {
         body: JSON.stringify({ ...form, ...priceFields, id: Number(id), is_active: 1 }),
       });
       if (res.ok) {
-        router.push("/destinations");
+        notify("Destination updated successfully.", "success");
       } else {
         const data = await res.json();
         notify(data.error || "Error saving destination");

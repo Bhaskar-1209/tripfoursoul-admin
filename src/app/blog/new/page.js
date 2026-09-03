@@ -49,8 +49,9 @@ export default function NewBlogPage() {
         body: JSON.stringify({ ...payload, is_active: 1 }),
       });
       if (res.ok) {
+        const data = await res.json();
         toast.success("Blog post created successfully!");
-        setTimeout(() => router.push("/blog"), 1000);
+        router.replace(`/blog/${data.post.id}`);
       } else {
         const data = await res.json();
         toast.error(data.error || "Error creating blog post");

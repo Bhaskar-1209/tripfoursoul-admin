@@ -54,7 +54,7 @@ function NewPackageContent() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Unable to save package");
-      router.push("/packages");
+      router.replace(`/packages/${data.id}`);
     } catch (error) { notify(error.message); }
     finally { setSaving(false); }
   };

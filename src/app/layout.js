@@ -1,6 +1,7 @@
 import "./globals.css";
 import { Inter } from "next/font/google";
 import { Toaster } from "react-hot-toast";
+import AdminRequestBlocker from "@/components/AdminRequestBlocker";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -14,6 +15,7 @@ export default function RootLayout({ children }) {
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
         {children}
+        <AdminRequestBlocker />
         <Toaster
           position="top-right"
           toastOptions={{

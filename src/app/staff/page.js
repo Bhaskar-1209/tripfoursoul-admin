@@ -7,7 +7,7 @@ import useStatusToast from "@/hooks/useStatusToast";
 const PERMISSION_OPTIONS = [
   { value: "dashboard", label: "Dashboard" },
   { value: "banner", label: "Banner" },
-  { value: "offers", label: "Sticky Offers" },
+  { value: "offers", label: "Offers" },
   { value: "trending", label: "Trending" },
   { value: "pricing", label: "Region Pricing" },
   { value: "destinations", label: "Popular Destinations" },

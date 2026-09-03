@@ -79,7 +79,6 @@ export default function EditBlogPage() {
       });
       if (res.ok) {
         toast.success("Blog post updated successfully!");
-        setTimeout(() => router.push("/blog"), 1000);
       } else {
         const data = await res.json();
         toast.error(data.error || "Error updating blog post");

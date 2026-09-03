@@ -48,8 +48,9 @@ export default function NewGalleryPage() {
         body: JSON.stringify({ ...form, is_active: 1 }),
       });
       if (res.ok) {
+        const data = await res.json();
         toast.success("Image added to gallery!");
-        router.push("/gallery");
+        router.replace(`/gallery/${data.id}`);
       } else {
         toast.error("Error saving");
       }
