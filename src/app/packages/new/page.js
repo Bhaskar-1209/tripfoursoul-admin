@@ -147,12 +147,12 @@ function NewPackageContent() {
             </div>
             <div>
               <label className="admin-label">Inclusions</label>
-              <RichTextEditor value={form.inclusives} onChange={(html) => setForm({ ...form, inclusives: html })} rows={3} placeholder="One per line" />
+              <RichTextEditor value={form.inclusives} onChange={(html) => setForm({ ...form, inclusives: html })} rows={3} placeholder="One per line" uniformTextSize />
               <p className="mt-1 text-xs text-gray-500">Leave blank to hide this section on the website.</p>
             </div>
             <div>
               <label className="admin-label">Exclusions</label>
-              <RichTextEditor value={form.exclusives} onChange={(html) => setForm({ ...form, exclusives: html })} rows={3} placeholder="One per line" />
+              <RichTextEditor value={form.exclusives} onChange={(html) => setForm({ ...form, exclusives: html })} rows={3} placeholder="One per line" uniformTextSize />
               <p className="mt-1 text-xs text-gray-500">Leave blank to hide this section on the website.</p>
             </div>
             <div className="md:col-span-2 flex gap-6">

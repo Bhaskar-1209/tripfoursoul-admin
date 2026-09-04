@@ -95,6 +95,25 @@ body {
   @apply border border-gray-300 p-2;
 }
 
+/* Inclusions/Exclusions editors: keep every piece of user-authored HTML at the
+   editor's base size so both fields always look identical, even when content
+   was saved with heading tags or inline font-size styles. */
+.rich-text-editor--uniform-size,
+.rich-text-editor--uniform-size * {
+  font-size: inherit !important;
+  line-height: inherit !important;
+}
+
+.rich-text-editor--uniform-size h1,
+.rich-text-editor--uniform-size h2,
+.rich-text-editor--uniform-size h3,
+.rich-text-editor--uniform-size h4,
+.rich-text-editor--uniform-size h5,
+.rich-text-editor--uniform-size h6 {
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+}
+
 .admin-btn {
   @apply px-5 py-2.5 bg-[#24564C] text-white rounded-lg hover:bg-[#173F38] transition-colors text-sm font-medium;
 }

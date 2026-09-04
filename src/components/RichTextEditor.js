@@ -15,7 +15,7 @@ const ToolbarButton = ({ onClick, active, title, children }) => (
   </button>
 );
 
-export default function RichTextEditor({ value, onChange, placeholder, rows = 6, allowImageUpload = false }) {
+export default function RichTextEditor({ value, onChange, placeholder, rows = 6, allowImageUpload = false, uniformTextSize = false }) {
   const editorRef = useRef(null);
   const imageInputRef = useRef(null);
   const selectionRef = useRef(null);
@@ -185,7 +185,7 @@ export default function RichTextEditor({ value, onChange, placeholder, rows = 6,
         onKeyUp={updateActiveFormats}
         onMouseUp={updateActiveFormats}
         onFocus={updateActiveFormats}
-        className="rich-text-editor min-h-[120px] w-full bg-white px-4 py-3 text-sm text-gray-900 focus:outline-none"
+        className={`rich-text-editor min-h-[120px] w-full bg-white px-4 py-3 text-sm text-gray-900 focus:outline-none ${uniformTextSize ? "rich-text-editor--uniform-size" : ""}`}
         style={{ minHeight: `${rows * 28}px` }}
         data-placeholder={placeholder}
       />
