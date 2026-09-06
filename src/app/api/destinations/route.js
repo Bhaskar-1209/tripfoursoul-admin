@@ -63,6 +63,15 @@ export async function POST(request) {
 
     await ensureDestinationSchema();
 
+    // Prevent two active destinations from sharing the same sort number.
+    const destinationSort = Number(sort_order) || 0;
+    if (destinationSort > 0) {
+      const duplicates = await db.query('SELECT id FROM destinations WHERE sort_order = $1 AND is_active = true', [destinationSort]);
+      if (duplicates.length > 0) {
+        return NextResponse.json({ error: `Sort number ${destinationSort} is already used by another published destination. Unpublish that destination or choose a different number.` }, { status: 400 });
+      }
+    }
+
     const newDestination = await db.insert('destinations', {
       name,
       slug: makeSlug(name),
@@ -76,7 +85,7 @@ export async function POST(request) {
       is_trending: Boolean(is_trending),
       is_spiritual: Boolean(is_spiritual),
       is_active: true,
-      sort_order: Number(sort_order) || 0
+      sort_order: destinationSort
     });
 
     return NextResponse.json({
@@ -100,6 +109,19 @@ export async function PUT(request) {
     await ensureDestinationSchema();
     const shouldCascadeUnpublish = is_active !== undefined && !Boolean(is_active) && Boolean(existing.is_active);
 
+    // Unpublishing frees the sort number so another item can use it.
+    const nextActive = is_active !== undefined ? Boolean(is_active) : Boolean(existing.is_active);
+    const nextSortOrder = nextActive
+      ? (sort_order !== undefined ? Number(sort_order) : Number(existing.sort_order) || 0)
+      : null;
+
+    if (nextActive && nextSortOrder > 0) {
+      const duplicates = await db.query('SELECT id FROM destinations WHERE sort_order = $1 AND is_active = true AND id != $2', [nextSortOrder, Number(id)]);
+      if (duplicates.length > 0) {
+        return NextResponse.json({ error: `Sort number ${nextSortOrder} is already used by another published destination. Unpublish that destination or choose a different number.` }, { status: 400 });
+      }
+    }
+
     const updated = await db.update('destinations', id, {
       name: name !== undefined ? name : existing.name,
       slug: makeSlug(name !== undefined ? name : existing.name),
@@ -112,8 +134,8 @@ export async function PUT(request) {
       description: description !== undefined ? description : existing.description,
       is_trending: is_trending !== undefined ? Boolean(is_trending) : existing.is_trending,
       is_spiritual: is_spiritual !== undefined ? Boolean(is_spiritual) : existing.is_spiritual,
-      is_active: is_active !== undefined ? Boolean(is_active) : existing.is_active,
-      sort_order: sort_order !== undefined ? Number(sort_order) : existing.sort_order
+      is_active: nextActive,
+      sort_order: nextSortOrder
     });
 
     let unpublishedPackageCount = 0;

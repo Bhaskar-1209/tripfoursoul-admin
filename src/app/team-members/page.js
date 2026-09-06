@@ -182,7 +182,7 @@ export default function TeamMembersPage() {
                     <span className="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded">{member.role}</span>
                   </div>
                   {member.bio && <p className="text-sm text-gray-600 mb-1">{member.bio}</p>}
-                  <p className="text-xs text-gray-400">Sort: {member.sort_order || 0}</p>
+                  <p className="text-xs text-gray-400">Sort: {member.sort_order || "—"}</p>
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => startEdit(member)} className="admin-btn-secondary text-xs px-3 py-1.5">Edit</button>

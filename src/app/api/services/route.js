@@ -35,13 +35,21 @@ export async function POST(request) {
       return NextResponse.json({ error: 'A service with this title already exists' }, { status: 400 });
     }
 
+    const serviceSort = Number(sort_order) || 0;
+    if (serviceSort > 0) {
+      const duplicates = await db.query('SELECT id FROM services WHERE sort_order = $1 AND is_active = true', [serviceSort]);
+      if (duplicates.length > 0) {
+        return NextResponse.json({ error: `Sort number ${serviceSort} is already used by another published service. Unpublish that service or choose a different number.` }, { status: 400 });
+      }
+    }
+
     const service = await db.insert('services', {
       title,
       slug,
       description,
       image_url,
       icon,
-      sort_order: Number(sort_order),
+      sort_order: serviceSort,
       is_active: is_active,
     });
 
@@ -65,6 +73,17 @@ export async function PUT(request) {
       return NextResponse.json({ error: 'Service not found' }, { status: 404 });
     }
 
+    // Unpublishing frees the sort number so another item can use it.
+    const nextActive = is_active !== undefined ? Boolean(is_active) : Boolean(existing.is_active);
+    const nextSortOrder = nextActive ? (sort_order !== undefined ? Number(sort_order) : Number(existing.sort_order) || 0) : null;
+
+    if (nextActive && nextSortOrder > 0) {
+      const duplicates = await db.query('SELECT id FROM services WHERE sort_order = $1 AND is_active = true AND id != $2', [nextSortOrder, Number(id)]);
+      if (duplicates.length > 0) {
+        return NextResponse.json({ error: `Sort number ${nextSortOrder} is already used by another published service. Unpublish that service or choose a different number.` }, { status: 400 });
+      }
+    }
+
     const updateData = {};
     if (title !== undefined) {
       updateData.title = title;
@@ -77,8 +96,8 @@ export async function PUT(request) {
     if (description !== undefined) updateData.description = description;
     if (image_url !== undefined) updateData.image_url = image_url;
     if (icon !== undefined) updateData.icon = icon;
-    if (sort_order !== undefined) updateData.sort_order = Number(sort_order);
-    if (is_active !== undefined) updateData.is_active = is_active;
+    updateData.sort_order = nextSortOrder;
+    updateData.is_active = nextActive;
     updateData.updated_at = new Date().toISOString();
 
     await db.update('services', Number(id), updateData);

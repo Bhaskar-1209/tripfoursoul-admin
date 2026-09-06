@@ -46,6 +46,10 @@ export default function HomepageSettingsPage() {
   const [bannerUploading, setBannerUploading] = useState(false);
   const bannerFileInputRef = useRef(null);
 
+  // About section image state
+  const [aboutUploading, setAboutUploading] = useState(false);
+  const aboutFileInputRef = useRef(null);
+
   const showMessage = (msg, type = "success") => {
     setMessage(msg);
     setMessageType(type);
@@ -126,15 +130,17 @@ export default function HomepageSettingsPage() {
 
   const updateSortOrder = async (section, newOrder) => {
     try {
-      await fetch("/api/sections", {
+      const res = await fetch("/api/sections", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: section.id, sort_order: parseInt(newOrder) }),
       });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error updating sort order");
       showMessage("Sort order updated!");
       fetchAllData();
     } catch (error) {
-      showMessage("Error updating sort order", "error");
+      showMessage(error.message || "Error updating sort order", "error");
     }
   };
 
@@ -385,6 +391,49 @@ export default function HomepageSettingsPage() {
     }
   };
 
+  // ============ ABOUT SECTION IMAGE ============
+  const handleAboutImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setAboutUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await res.json();
+
+      if (res.ok && result.imageUrl) {
+        updateAboutField("image_url", result.imageUrl);
+        // Persist immediately so the uploaded image is saved to the backend and
+        // shows on the website right away — no separate "Save" click needed.
+        const saveRes = await fetch("/api/about", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...(data.about?.about || {}), image_url: result.imageUrl }),
+        });
+        if (saveRes.ok) {
+          showMessage("About image uploaded & saved successfully!");
+          fetchAllData();
+        } else {
+          showMessage("Image uploaded, but saving failed. Please click 'Save About Settings'.", "error");
+        }
+      } else {
+        showMessage(result.error || "Failed to upload image", "error");
+      }
+    } catch (error) {
+      showMessage("Error uploading image", "error");
+    } finally {
+      setAboutUploading(false);
+      if (aboutFileInputRef.current) aboutFileInputRef.current.value = '';
+    }
+  };
+
   const handleAddBannerImageUrl = async () => {
     if (!newBannerImageUrl.trim()) return;
     try {
@@ -568,6 +617,41 @@ export default function HomepageSettingsPage() {
                     <input type="text" value={data.about.about.cta_link || ""} onChange={(e) => updateAboutField("cta_link", e.target.value)} className="admin-input" />
                   </div>
                 </div>
+                <div>
+                  <label className="admin-label">About Section Image</label>
+                  <div className="flex gap-2 items-center">
+                    <button
+                      type="button"
+                      onClick={() => aboutFileInputRef.current?.click()}
+                      className="admin-btn-secondary text-xs whitespace-nowrap"
+                      disabled={aboutUploading}
+                    >
+                      {aboutUploading ? "Uploading..." : "Upload Image"}
+                    </button>
+                    <input
+                      ref={aboutFileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                      onChange={handleAboutImageUpload}
+                      className="hidden"
+                      disabled={aboutUploading}
+                    />
+                    <input
+                      type="text"
+                      value={data.about.about.image_url || ""}
+                      onChange={(e) => updateAboutField("image_url", e.target.value)}
+                      className="admin-input flex-1"
+                      placeholder="Image URL..."
+                    />
+                  </div>
+                  {data.about.about.image_url ? (
+                    <div className="mt-2">
+                      <img src={data.about.about.image_url} alt="About section" className="w-48 h-32 object-cover rounded-lg border border-gray-200" />
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-xs text-gray-500">Upload an image to show on the homepage About Us section.</p>
+                  )}
+                </div>
                 <button type="submit" className="admin-btn">Save About Settings</button>
               </form>
             )}
@@ -671,7 +755,7 @@ export default function HomepageSettingsPage() {
 
             {/* Features List */}
             <div className="space-y-3">
-              {features.map((feature) => (
+              {features.slice().sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0)).map((feature) => (
                 <div key={feature.id} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
@@ -679,7 +763,7 @@ export default function HomepageSettingsPage() {
                       <span className="text-xs text-gray-500">({feature.icon})</span>
                     </div>
                     <p className="text-sm text-gray-600 mb-2">{feature.description}</p>
-                    <p className="text-xs text-gray-400">Sort Order: {feature.sort_order}</p>
+                    <p className="text-xs text-gray-400">Sort Order: {feature.sort_order || "—"}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -834,7 +918,7 @@ export default function HomepageSettingsPage() {
 
             {/* Testimonials List */}
             <div className="space-y-3">
-              {testimonials.map((item) => (
+              {testimonials.slice().sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0)).map((item) => (
                 <div key={item.id} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                   {item.image_url && (
                     <img src={item.image_url} alt={item.name} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
@@ -857,7 +941,7 @@ export default function HomepageSettingsPage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-400 mt-1">Sort Order: {item.sort_order}</p>
+                    <p className="text-xs text-gray-400 mt-1">Sort Order: {item.sort_order || "—"}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button

@@ -183,7 +183,7 @@ export default function FeaturesPage() {
                     <span className="text-xs text-gray-500">({feature.icon})</span>
                   </div>
                   <p className="text-sm text-gray-600 mb-2">{feature.description}</p>
-                  <p className="text-xs text-gray-400">Sort Order: {feature.sort_order}</p>
+                  <p className="text-xs text-gray-400">Sort Order: {feature.sort_order || "—"}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button

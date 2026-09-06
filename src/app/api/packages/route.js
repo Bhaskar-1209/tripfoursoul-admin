@@ -86,6 +86,15 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Destination and package title are required' }, { status: 400 });
     }
     await ensurePackageSchema();
+
+    // Prevent two active packages from sharing the same sort number.
+    if (Number(sort_order) > 0) {
+      const duplicates = await db.query('SELECT id FROM packages WHERE sort_order = $1 AND is_active = true', [Number(sort_order)]);
+      if (duplicates.length > 0) {
+        return NextResponse.json({ error: `Sort number ${sort_order} is already used by another published package. Unpublish that package or choose a different number.` }, { status: 400 });
+      }
+    }
+
     const packageItem = await db.insert('packages', {
       destination_id: Number(destination_id), title, slug: makeSlug(title), days, meals,
       short_description, long_description, sub_heading, itinerary, additional_info, image_url,
@@ -111,6 +120,20 @@ export async function PUT(request) {
     if (!existing) return NextResponse.json({ error: 'Package not found' }, { status: 404 });
     await ensurePackageSchema();
 
+    // Deciding whether the package is being unpublished: free its sort number so
+    // another item can reuse it.
+    const nextActive = body.is_active !== undefined ? Boolean(body.is_active) : Boolean(existing.is_active);
+    const nextSortOrder = nextActive
+      ? (sort_order !== undefined ? Number(sort_order) : Number(existing.sort_order) || 0)
+      : null;
+
+    if (nextActive && nextSortOrder > 0) {
+      const duplicates = await db.query('SELECT id FROM packages WHERE sort_order = $1 AND is_active = true AND id != $2', [nextSortOrder, Number(id)]);
+      if (duplicates.length > 0) {
+        return NextResponse.json({ error: `Sort number ${nextSortOrder} is already used by another published package. Unpublish that package or choose a different number.` }, { status: 400 });
+      }
+    }
+
     const updated = await db.update('packages', Number(id), {
       destination_id: destination_id !== undefined ? Number(destination_id) : existing.destination_id,
       title: title !== undefined ? title : existing.title,
@@ -129,10 +152,10 @@ export async function PUT(request) {
       price_usd: price_usd !== undefined ? price_usd : existing.price_usd,
       price_inr: price_inr !== undefined ? price_inr : existing.price_inr,
       price_eur: price_eur !== undefined ? price_eur : existing.price_eur,
-      sort_order: sort_order !== undefined ? Number(sort_order) : existing.sort_order,
+      sort_order: nextSortOrder,
       is_trending: is_trending !== undefined ? Boolean(is_trending) : existing.is_trending,
       is_spiritual: is_spiritual !== undefined ? Boolean(is_spiritual) : existing.is_spiritual,
-      is_active: body.is_active !== undefined ? Boolean(body.is_active) : existing.is_active,
+      is_active: nextActive,
     });
     return NextResponse.json({ success: true });
   } catch (error) {

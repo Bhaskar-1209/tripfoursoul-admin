@@ -220,7 +220,7 @@ export default function BlogCategoriesPage() {
                         {cat.post_count || 0} posts
                       </span>
                     </div>
-                    <p className="text-xs text-gray-400 mb-1">/{cat.slug} · Sort: {cat.sort_order}</p>
+                    <p className="text-xs text-gray-400 mb-1">/{cat.slug} · Sort: {cat.sort_order || "—"}</p>
                     {cat.description && <p className="text-sm text-gray-600 line-clamp-1">{cat.description}</p>}
                   </div>
                   <div className="flex items-center gap-2">

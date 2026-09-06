@@ -46,7 +46,7 @@ export default function SectionsPage() {
 
   const updateSortOrder = async (section, newOrder) => {
     try {
-      await fetch("/api/sections", {
+      const res = await fetch("/api/sections", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -54,11 +54,13 @@ export default function SectionsPage() {
           sort_order: parseInt(newOrder) 
         }),
       });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error updating sort order");
       setMessage("Sort order updated!");
       setTimeout(() => setMessage(""), 3000);
       fetchSections();
     } catch (error) {
-      setMessage("Error updating sort order");
+      setMessage(error.message || "Error updating sort order");
       console.error(error);
     }
   };

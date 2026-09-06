@@ -14,6 +14,7 @@ export default function DestinationsPage() {
   const [loading, setLoading] = useState(true);
   const [confirmAction, setConfirmAction] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [confirmSortOrder, setConfirmSortOrder] = useState("");
 
   const fetchDestinations = async (showLoader = false) => {
     if (showLoader) setLoading(true);
@@ -34,12 +35,15 @@ export default function DestinationsPage() {
     fetchDestinations();
   }, []);
 
-  const updatePublish = async (item) => {
+  const updatePublish = async (item, sortOrder) => {
     try {
       const response = await fetch("/api/destinations", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: item.id, is_active: item.is_active ? 0 : 1 }),
+        body: JSON.stringify({
+          id: item.id, is_active: item.is_active ? 0 : 1,
+          ...(item.is_active ? {} : { sort_order: Number(sortOrder) || 0 }),
+        }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Could not update destination");
@@ -87,10 +91,11 @@ export default function DestinationsPage() {
   const confirmSelectedAction = async () => {
     if (!confirmAction) return;
     setActionLoading(true);
-    if (confirmAction.type === "publish") await updatePublish(confirmAction.item);
+    if (confirmAction.type === "publish") await updatePublish(confirmAction.item, confirmSortOrder);
     if (confirmAction.type === "delete") await deleteDestination(confirmAction.item);
     setActionLoading(false);
     setConfirmAction(null);
+    setConfirmSortOrder("");
   };
 
   return (
@@ -120,6 +125,7 @@ export default function DestinationsPage() {
                     <th className="px-3 py-3 font-semibold">Destination</th>
                     <th className="px-3 py-3 font-semibold">Region</th>
                     <th className="px-3 py-3 font-semibold">Price</th>
+                    <th className="px-3 py-3 font-semibold">Sort</th>
                     <th className="px-3 py-3 font-semibold">Tags</th>
                     <th className="px-3 py-3 font-semibold">Actions</th>
                   </tr>
@@ -137,6 +143,7 @@ export default function DestinationsPage() {
                       </td>
                       <td className="px-3 py-3 text-gray-600">{destination.region}</td>
                       <td className="px-3 py-3 font-semibold text-teal-700">{pricingDisplay(destination)}</td>
+                      <td className="px-3 py-3 text-gray-600">{destination.sort_order || "—"}</td>
                       <td className="px-3 py-3">
                         <div className="flex flex-wrap gap-1">
                           {destination.is_trending ? <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-700">Trending</span> : null}
@@ -205,8 +212,11 @@ export default function DestinationsPage() {
         confirmLabel={confirmAction?.type === "delete" ? "Delete permanently" : confirmAction?.item?.is_active ? "Unpublish" : "Publish"}
         danger={confirmAction?.type === "delete"}
         loading={actionLoading}
+        showSortOrder={confirmAction?.type === "publish" && !confirmAction?.item?.is_active}
+        sortOrder={confirmSortOrder}
+        onSortOrderChange={setConfirmSortOrder}
         onConfirm={confirmSelectedAction}
-        onCancel={() => !actionLoading && setConfirmAction(null)}
+        onCancel={() => { if (!actionLoading) { setConfirmAction(null); setConfirmSortOrder(""); } }}
       />
     </div>
   );

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import useStatusToast from "@/hooks/useStatusToast";
 
-const emptyOffer = { title: "", description: "", image_url: "", button_text: "View offer", button_link: "/contact", badge: "", coupon_code: "", travel_start_date: "", travel_end_date: "", duration_days: "", duration: "", publish_duration_days: "", sort_order: 0, is_active: true };
+const emptyOffer = { title: "", description: "", image_url: "", button_text: "View offer", button_link: "/contact", badge: "", coupon_code: "", travel_start_date: "", travel_end_date: "", duration_days: "", duration: "", publish_duration_days: "", sort_order: 0, is_active: false };
 
 export default function NewOfferPage() {
   const router = useRouter();
@@ -19,7 +19,8 @@ export default function NewOfferPage() {
   const inputRef = useRef(null);
 
   useEffect(() => {
-    fetch("/api/packages?all=true")
+    // Only published packages should be linkable from an offer.
+    fetch("/api/packages")
       .then((response) => response.json())
       .then((data) => setPackages(data.packages || []))
       .catch(() => setPackages([]));

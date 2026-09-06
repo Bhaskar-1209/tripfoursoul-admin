@@ -20,6 +20,7 @@ function PackagesPageContent() {
   const [loading, setLoading] = useState(true);
   const [confirmAction, setConfirmAction] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [confirmSortOrder, setConfirmSortOrder] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
 
   const filters = [
@@ -81,12 +82,16 @@ function PackagesPageContent() {
     }
   };
 
-  const togglePublish = async (item) => {
+  const togglePublish = async (item, sortOrder) => {
     try {
       const response = await fetch("/api/packages", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: item.id, destination_id: item.destination_id, title: item.title, is_active: item.is_active ? 0 : 1 }),
+        body: JSON.stringify({
+          id: item.id, destination_id: item.destination_id, title: item.title,
+          is_active: item.is_active ? 0 : 1,
+          ...(item.is_active ? {} : { sort_order: Number(sortOrder) || 0 }),
+        }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Could not update package");
@@ -100,10 +105,11 @@ function PackagesPageContent() {
   const confirmSelectedAction = async () => {
     if (!confirmAction) return;
     setActionLoading(true);
-    if (confirmAction.type === "publish") await togglePublish(confirmAction.item);
+    if (confirmAction.type === "publish") await togglePublish(confirmAction.item, confirmSortOrder);
     if (confirmAction.type === "delete") await remove(confirmAction.item);
     setActionLoading(false);
     setConfirmAction(null);
+    setConfirmSortOrder("");
   };
 
   const newUrl = selectedDestinationId ? `/packages/new?destination_id=${selectedDestinationId}` : "/packages/new";
@@ -155,6 +161,7 @@ function PackagesPageContent() {
                     <th className="px-3 py-3 font-semibold">Destination</th>
                     <th className="px-3 py-3 font-semibold">Price</th>
                     <th className="px-3 py-3 font-semibold">Days</th>
+                    <th className="px-3 py-3 font-semibold">Sort</th>
                     <th className="px-3 py-3 font-semibold">Tags</th>
                     <th className="px-3 py-3 font-semibold">Actions</th>
                   </tr>
@@ -171,6 +178,7 @@ function PackagesPageContent() {
                       <td className="px-3 py-3 text-gray-600">{item.destination_name}</td>
                       <td className="px-3 py-3 font-semibold text-teal-700">{pricingDisplay(item)}</td>
                       <td className="px-3 py-3 text-gray-600">{item.days}</td>
+                      <td className="px-3 py-3 text-gray-600">{item.sort_order || "—"}</td>
                       <td className="px-3 py-3">
                         <div className="flex flex-wrap gap-1">
                           {item.is_trending ? <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-700">Trending</span> : null}
@@ -221,8 +229,11 @@ function PackagesPageContent() {
         confirmLabel={confirmAction?.type === "delete" ? "Delete permanently" : confirmAction?.item?.is_active ? "Unpublish" : "Publish"}
         danger={confirmAction?.type === "delete"}
         loading={actionLoading}
+        showSortOrder={confirmAction?.type === "publish" && !confirmAction?.item?.is_active}
+        sortOrder={confirmSortOrder}
+        onSortOrderChange={setConfirmSortOrder}
         onConfirm={confirmSelectedAction}
-        onCancel={() => !actionLoading && setConfirmAction(null)}
+        onCancel={() => { if (!actionLoading) { setConfirmAction(null); setConfirmSortOrder(""); } }}
       />
     </div>
   );

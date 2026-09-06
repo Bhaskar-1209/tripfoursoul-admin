@@ -41,7 +41,9 @@ export default function EditPackagePage() {
     (async () => {
       try {
         const [pkgRes, destRes] = await Promise.all([
-          fetch(`/api/packages`),
+          // ?all=true so unpublished packages (drafts) can also be edited —
+          // otherwise the form would stay empty for them.
+          fetch(`/api/packages?all=true`),
           fetch("/api/destinations?all=true"),
         ]);
         const pkgData = await pkgRes.json();

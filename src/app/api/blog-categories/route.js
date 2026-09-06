@@ -84,12 +84,22 @@ export async function POST(request) {
       return NextResponse.json({ error: 'A category with this slug already exists' }, { status: 400 });
     }
 
+    const categorySort = Number(sort_order) || 0;
+
+    // Check for duplicate sort number among active categories
+    if (categorySort > 0) {
+      const sortDuplicates = await db.query('SELECT id FROM blog_categories WHERE sort_order = $1 AND is_active = true', [categorySort]);
+      if (sortDuplicates.length > 0) {
+        return NextResponse.json({ error: `Sort number ${categorySort} is already used by another active category. Deactivate that category or choose a different number.` }, { status: 400 });
+      }
+    }
+
     const category = await db.insert('blog_categories', {
       name,
       slug: catSlug,
       description: description || '',
       image_url: image_url || '',
-      sort_order: sort_order || 0,
+      sort_order: categorySort,
       is_active: is_active !== undefined ? is_active : true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -113,13 +123,24 @@ export async function PUT(request) {
     const existing = await db.get('blog_categories', Number(id));
     if (!existing) return NextResponse.json({ error: 'Category not found' }, { status: 404 });
 
+    // Unpublishing frees the sort number so another item can use it.
+    const nextActive = is_active !== undefined ? Boolean(is_active) : Boolean(existing.is_active);
+    const nextSortOrder = nextActive ? (sort_order !== undefined ? Number(sort_order) : Number(existing.sort_order) || 0) : null;
+
+    if (nextActive && nextSortOrder > 0) {
+      const sortDuplicates = await db.query('SELECT id FROM blog_categories WHERE sort_order = $1 AND is_active = true AND id != $2', [nextSortOrder, Number(id)]);
+      if (sortDuplicates.length > 0) {
+        return NextResponse.json({ error: `Sort number ${nextSortOrder} is already used by another active category. Deactivate that category or choose a different number.` }, { status: 400 });
+      }
+    }
+
     const updateData = {};
     if (name !== undefined) updateData.name = name;
     if (slug !== undefined) updateData.slug = slug || makeSlug(name || existing.name);
     if (description !== undefined) updateData.description = description;
     if (image_url !== undefined) updateData.image_url = image_url;
-    if (sort_order !== undefined) updateData.sort_order = sort_order;
-    if (is_active !== undefined) updateData.is_active = is_active;
+    updateData.sort_order = nextSortOrder;
+    updateData.is_active = nextActive;
     updateData.updated_at = new Date().toISOString();
 
     const updated = await db.update('blog_categories', Number(id), updateData);

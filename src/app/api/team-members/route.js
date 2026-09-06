@@ -18,7 +18,15 @@ export async function POST(request) {
     const body = await request.json();
     const { name, designation, bio, image_url, sort_order } = body;
 
-    const member = await db.insert('team_members', { name, designation, bio, image_url: image_url || '', sort_order: sort_order || 0, is_active: true });
+    const memberSort = Number(sort_order) || 0;
+    if (memberSort > 0) {
+      const duplicates = await db.query('SELECT id FROM team_members WHERE sort_order = $1 AND is_active = true', [memberSort]);
+      if (duplicates.length > 0) {
+        return NextResponse.json({ error: `Sort number ${memberSort} is already used by another team member. Choose a different number.` }, { status: 400 });
+      }
+    }
+
+    const member = await db.insert('team_members', { name, designation, bio, image_url: image_url || '', sort_order: memberSort, is_active: true });
     return NextResponse.json({ success: true, id: member.id });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -31,7 +39,17 @@ export async function PUT(request) {
     const body = await request.json();
     const { id, name, designation, bio, image_url, is_active, sort_order } = body;
 
-    await db.update('team_members', id, { name, designation, bio, image_url, is_active, sort_order });
+    const nextActive = is_active !== undefined ? Boolean(is_active) : true;
+    const nextSortOrder = nextActive ? (Number(sort_order) || 0) : null;
+
+    if (nextActive && nextSortOrder > 0) {
+      const duplicates = await db.query('SELECT id FROM team_members WHERE sort_order = $1 AND is_active = true AND id != $2', [nextSortOrder, Number(id)]);
+      if (duplicates.length > 0) {
+        return NextResponse.json({ error: `Sort number ${nextSortOrder} is already used by another team member. Choose a different number.` }, { status: 400 });
+      }
+    }
+
+    await db.update('team_members', id, { name, designation, bio, image_url, is_active, sort_order: nextSortOrder });
 
     return NextResponse.json({ success: true });
   } catch (error) {

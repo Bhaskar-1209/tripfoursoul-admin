@@ -233,6 +233,7 @@ export default function ServicesPage() {
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Title</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Icon</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Sort</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Status</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Actions</th>
                 </tr>
@@ -254,6 +255,7 @@ export default function ServicesPage() {
                           {service.description && <div className="text-xs text-gray-500 mt-1 line-clamp-2">{service.description}</div>}
                         </td>
                         <td className="px-4 py-4 text-sm text-gray-700">{service.icon || "—"}</td>
+                        <td className="px-4 py-4 text-sm text-gray-600">{service.sort_order || "—"}</td>
                         <td className="px-4 py-4 text-sm">
                           <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${service.is_active ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-600"}`}>
                             {service.is_active ? "Published" : "Draft"}

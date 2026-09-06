@@ -42,6 +42,7 @@ export default function OffersPage() {
   const [loading, setLoading] = useState(true);
   const [confirmAction, setConfirmAction] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [confirmSortOrder, setConfirmSortOrder] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
 
   const filters = [
@@ -85,12 +86,15 @@ export default function OffersPage() {
     }
   };
 
-  const toggle = async (offer) => {
+  const toggle = async (offer, sortOrder) => {
     try {
       const res = await fetch("/api/offers", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...offer, is_active: !Boolean(offer.is_active) }),
+        body: JSON.stringify({
+          ...offer, is_active: !Boolean(offer.is_active),
+          ...(offer.is_active ? {} : { sort_order: Number(sortOrder) || 0 }),
+        }),
       });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "Could not update offer.");
@@ -104,10 +108,11 @@ export default function OffersPage() {
   const confirmSelectedAction = async () => {
     if (!confirmAction) return;
     setActionLoading(true);
-    if (confirmAction.type === "publish") await toggle(confirmAction.item);
+    if (confirmAction.type === "publish") await toggle(confirmAction.item, confirmSortOrder);
     if (confirmAction.type === "delete") await remove(confirmAction.item);
     setActionLoading(false);
     setConfirmAction(null);
+    setConfirmSortOrder("");
   };
 
   const filteredOffers = offers.filter((offer) => {
@@ -142,14 +147,14 @@ export default function OffersPage() {
           {loading ? <LoadingSpinner text="Loading offers..." /> : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead><tr className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500"><th className="px-3 py-3 font-semibold">Offer</th><th className="px-3 py-3 font-semibold">Travel dates</th><th className="px-3 py-3 font-semibold">Coupon</th><th className="px-3 py-3 font-semibold">Duration</th><th className="px-3 py-3 font-semibold">Status</th><th className="px-3 py-3 font-semibold">Actions</th></tr></thead>
+                <thead><tr className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500"><th className="px-3 py-3 font-semibold">Offer</th><th className="px-3 py-3 font-semibold">Travel dates</th><th className="px-3 py-3 font-semibold">Coupon</th><th className="px-3 py-3 font-semibold">Sort</th><th className="px-3 py-3 font-semibold">Status</th><th className="px-3 py-3 font-semibold">Actions</th></tr></thead>
                 <tbody>
                   {filteredOffers.map((offer) => (
                     <tr key={offer.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="px-3 py-3"><div className="flex items-center gap-3">{offer.image_url && <img src={offer.image_url} alt={offer.title} className="h-12 w-16 rounded object-cover" />}<div><p className="font-medium text-gray-900">{offer.title}</p>{offer.badge && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">{offer.badge}</span>}</div></div></td>
                       <td className="px-3 py-3 text-gray-600">{travelDatesLabel(offer) || "—"}</td>
                       <td className="px-3 py-3 text-gray-600">{offer.coupon_code || "—"}</td>
-                      <td className="px-3 py-3 text-gray-600">{offer.duration || (offer.duration_days ? `${offer.duration_days} days` : "—")}</td>
+                      <td className="px-3 py-3 text-gray-600">{offer.sort_order || "—"}</td>
                       <td className={`px-3 py-3 text-xs font-medium ${publishStatusLabel(offer) === "Expired" ? "text-amber-700" : "text-gray-600"}`}>{publishStatusLabel(offer)}</td>
                       <td className="px-3 py-3"><div className="flex flex-wrap gap-1"><button onClick={() => router.push(`/offers/${offer.id}`)} className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-100">Edit</button><button onClick={() => setConfirmAction({ type: "publish", item: offer })} className={`rounded border px-2 py-1 text-xs ${offer.is_active ? "border-green-600 bg-green-600 text-white" : "border-green-300 bg-white text-green-600 hover:bg-green-50"}`}>{offer.is_active ? "✓ Published" : "Unpublished"}</button><button onClick={() => setConfirmAction({ type: "delete", item: offer })} className="rounded border border-red-300 px-2 py-1 text-xs text-red-600 hover:bg-red-50">Delete</button></div></td>
                     </tr>
@@ -168,8 +173,11 @@ export default function OffersPage() {
         confirmLabel={confirmAction?.type === "delete" ? "Delete permanently" : confirmAction?.item?.is_active ? "Unpublish" : "Publish"}
         danger={confirmAction?.type === "delete"}
         loading={actionLoading}
+        showSortOrder={confirmAction?.type === "publish" && !confirmAction?.item?.is_active}
+        sortOrder={confirmSortOrder}
+        onSortOrderChange={setConfirmSortOrder}
         onConfirm={confirmSelectedAction}
-        onCancel={() => !actionLoading && setConfirmAction(null)}
+        onCancel={() => { if (!actionLoading) { setConfirmAction(null); setConfirmSortOrder(""); } }}
       />
     </div>
   );

@@ -4,7 +4,10 @@ import db from '@/lib/db';
 // GET - Fetch about us data
 export async function GET() {
   try {
-    const data = await db.query('SELECT * FROM about_us LIMIT 1');
+    // about_us is a singleton settings table. Duplicate rows can appear if the
+    // seeder/setup ran more than once, so always read the lowest-id (canonical)
+    // row instead of relying on LIMIT 1 with no ordering.
+    const data = await db.query('SELECT * FROM about_us ORDER BY id ASC LIMIT 1');
     if (data.length > 0) {
       return NextResponse.json(data[0]);
     }
@@ -54,7 +57,9 @@ export async function GET() {
 export async function PUT(request) {
   try {
     const body = await request.json();
-    const data = await db.query('SELECT * FROM about_us LIMIT 1');
+    // Use the same deterministic (lowest-id) row as GET so saves always land on
+    // the row that the site actually reads.
+    const data = await db.query('SELECT * FROM about_us ORDER BY id ASC LIMIT 1');
     if (data.length > 0) {
       await db.update('about_us', data[0].id, body);
     }

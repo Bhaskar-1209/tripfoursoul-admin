@@ -59,7 +59,7 @@ const normalizeOffer = (offer = {}) => ({
   duration: String(offer.duration || '').trim() || null,
   publish_duration_days: validDurationDays(offer.publish_duration_days),
   sort_order: Number(offer.sort_order) || 0,
-  is_active: offer.is_active !== undefined ? Boolean(offer.is_active) : true,
+  is_active: offer.is_active !== undefined ? Boolean(offer.is_active) : false,
 });
 
 export async function GET(request) {
@@ -78,6 +78,13 @@ export async function POST(request) {
     await ensureOffersTable();
     const offer = normalizeOffer(await request.json());
     if (!offer.title) return NextResponse.json({ error: 'Offer title is required' }, { status: 400 });
+    // Prevent two offers sharing the same sort number.
+    if (offer.sort_order > 0) {
+      const duplicates = await db.query('SELECT id FROM offers WHERE sort_order = $1 AND is_active = true', [offer.sort_order]);
+      if (duplicates.length > 0) {
+        return NextResponse.json({ error: `Sort number ${offer.sort_order} is already used by another published offer. Unpublish that offer or choose a different number.` }, { status: 400 });
+      }
+    }
     offer.published_until = publishExpiry(offer.publish_duration_days);
     return NextResponse.json({ offer: await db.insert('offers', offer) }, { status: 201 });
   } catch (error) {
@@ -94,6 +101,19 @@ export async function PUT(request) {
     if (!offer.title) return NextResponse.json({ error: 'Offer title is required' }, { status: 400 });
     const existing = await db.get('offers', Number(id));
     if (!existing) return NextResponse.json({ error: 'Offer not found' }, { status: 404 });
+
+    // Unpublishing frees the sort number so another item can use it.
+    const nextActive = body.is_active !== undefined ? Boolean(body.is_active) : Boolean(existing.is_active);
+    const nextSortOrder = nextActive ? offer.sort_order : null;
+    offer.sort_order = nextSortOrder;
+
+    if (nextActive && nextSortOrder > 0) {
+      const duplicates = await db.query('SELECT id FROM offers WHERE sort_order = $1 AND is_active = true AND id != $2', [nextSortOrder, Number(id)]);
+      if (duplicates.length > 0) {
+        return NextResponse.json({ error: `Sort number ${nextSortOrder} is already used by another published offer. Unpublish that offer or choose a different number.` }, { status: 400 });
+      }
+    }
+
     if (reset_publish_expiry) {
       offer.published_until = publishExpiry(offer.publish_duration_days);
     } else {

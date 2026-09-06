@@ -19,12 +19,20 @@ export async function POST(request) {
   try {
     const body = await request.json();
     const { name, image_url, rating, review, sort_order, video_url, influencer_video_url } = body;
-    
+
+    const testimonialSort = Number(sort_order) || 0;
+    if (testimonialSort > 0) {
+      const duplicates = await db.query('SELECT id FROM testimonials WHERE sort_order = $1 AND is_active = true', [testimonialSort]);
+      if (duplicates.length > 0) {
+        return NextResponse.json({ error: `Sort number ${testimonialSort} is already used by another published testimonial. Unpublish that testimonial or choose a different number.` }, { status: 400 });
+      }
+    }
+
     const testimonial = await db.insert('testimonials', {
       name, image_url, rating: rating || 5, review,
       video_url: video_url || null,
       influencer_video_url: influencer_video_url || null,
-      sort_order: sort_order || 0, is_active: true
+      sort_order: testimonialSort, is_active: true
     });
     return NextResponse.json({ success: true, id: testimonial.id });
   } catch (error) {
@@ -37,9 +45,19 @@ export async function PUT(request) {
   try {
     const body = await request.json();
     const { id, name, image_url, rating, review, is_active, sort_order, video_url, influencer_video_url } = body;
-    
-    await db.update('testimonials', id, { name, image_url, rating, review, is_active, sort_order, video_url: video_url || null, influencer_video_url: influencer_video_url || null });
-    
+
+    const nextActive = is_active !== undefined ? Boolean(is_active) : true;
+    const nextSortOrder = nextActive ? (Number(sort_order) || 0) : null;
+
+    if (nextActive && nextSortOrder > 0) {
+      const duplicates = await db.query('SELECT id FROM testimonials WHERE sort_order = $1 AND is_active = true AND id != $2', [nextSortOrder, Number(id)]);
+      if (duplicates.length > 0) {
+        return NextResponse.json({ error: `Sort number ${nextSortOrder} is already used by another published testimonial. Unpublish that testimonial or choose a different number.` }, { status: 400 });
+      }
+    }
+
+    await db.update('testimonials', id, { name, image_url, rating, review, is_active, sort_order: nextSortOrder, video_url: video_url || null, influencer_video_url: influencer_video_url || null });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

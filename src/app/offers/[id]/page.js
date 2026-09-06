@@ -28,7 +28,8 @@ export default function EditOfferPage() {
   const inputRef = useRef(null);
 
   useEffect(() => {
-    fetch("/api/packages?all=true")
+    // Only published packages should be linkable from an offer.
+    fetch("/api/packages")
       .then((response) => response.json())
       .then((data) => setPackages(data.packages || []))
       .catch(() => setPackages([]));
