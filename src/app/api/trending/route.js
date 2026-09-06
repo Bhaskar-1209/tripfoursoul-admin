@@ -14,10 +14,14 @@ export async function GET() {
 
 export async function PUT(request) {
   try {
-    const { heading, subtitle } = await request.json();
+    const { heading, subtitle, is_enabled } = await request.json();
     const settings = await db.query('SELECT * FROM trending_settings LIMIT 1');
     if (settings.length > 0) {
-      await db.update('trending_settings', settings[0].id, { heading, subtitle });
+      await db.update('trending_settings', settings[0].id, {
+        heading,
+        subtitle,
+        is_enabled: is_enabled !== undefined ? Boolean(is_enabled) : settings[0].is_enabled,
+      });
     }
     return NextResponse.json({ success: true });
   } catch (error) {

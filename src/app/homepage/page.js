@@ -993,10 +993,11 @@ export default function HomepageSettingsPage() {
                     <input type="text" value={data.deals.settings.button_text || ""} onChange={(e) => updateDealsField("button_text", e.target.value)} className="admin-input" />
                   </div>
                   <div>
-                    <label className="admin-label">Button Link</label>
-                    <input type="text" value={data.deals.settings.button_link || ""} onChange={(e) => updateDealsField("button_link", e.target.value)} className="admin-input" />
+                    <label className="admin-label">Button Behavior</label>
+                    <p className="admin-input bg-gray-50 text-gray-600 text-sm cursor-not-allowed">Opens the offers popup</p>
                   </div>
                 </div>
+                <p className="text-xs text-gray-500">The Deals button always opens a popup showing your published offers — it does not link anywhere.</p>
                 <button type="submit" className="admin-btn">Save Deals Settings</button>
               </form>
             )}
