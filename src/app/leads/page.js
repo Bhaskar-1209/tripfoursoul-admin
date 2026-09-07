@@ -16,6 +16,7 @@ export default function LeadsPage() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportStartDate, setExportStartDate] = useState("");
   const [exportEndDate, setExportEndDate] = useState("");
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const leadName = (lead) => lead.name || [lead.first_name, lead.last_name].filter(Boolean).join(" ") || "—";
   const formatDate = (date) => {
@@ -145,6 +146,12 @@ export default function LeadsPage() {
     return () => { active = false; };
   }, [setMessage]);
 
+  useEffect(() => {
+    fetch("/api/auth/me").then((response) => response.json()).then((data) => {
+      setIsSuperAdmin(data.user?.role === "super_admin");
+    }).catch(() => {});
+  }, []);
+
   const updateStatus = async (lead, status) => {
     const response = await fetch("/api/leads", {
       method: "PUT",
@@ -183,7 +190,7 @@ export default function LeadsPage() {
                   <td className="px-3 py-3">{lead.trip_budget || "—"}</td>
                   <td className="px-3 py-3"><span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${offerValue(lead) ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-600"}`}>{offerValue(lead) ? "Yes" : "No"}</span></td>
                   <td className="px-3 py-3"><select value={lead.status || "new"} onChange={(event) => updateStatus(lead, event.target.value)} className="rounded border border-gray-300 px-2 py-1 text-xs"><option value="new">New</option><option value="contacted">Contacted</option><option value="closed">Closed</option></select></td>
-                  <td className="px-3 py-3"><div className="flex gap-2"><button onClick={() => setSelectedLead(lead)} className="admin-btn-secondary text-xs">View</button><button onClick={() => remove(lead)} className="admin-btn-danger text-xs">Delete</button></div></td>
+                  <td className="px-3 py-3"><div className="flex gap-2"><button onClick={() => setSelectedLead(lead)} className="admin-btn-secondary text-xs">View</button>{isSuperAdmin && <button onClick={() => remove(lead)} className="admin-btn-danger text-xs">Delete</button>}</div></td>
                 </tr>
               ))}</tbody>
             </table>

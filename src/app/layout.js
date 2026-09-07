@@ -31,9 +31,19 @@ export default function RootLayout({ children }) {
               padding: "12px 16px",
             },
             success: {
+              style: {
+                background: "#ecfdf5",
+                color: "#047857",
+                border: "1px solid #a7f3d0",
+              },
               iconTheme: { primary: "#059669", secondary: "#fff" },
             },
             error: {
+              style: {
+                background: "#fef2f2",
+                color: "#b91c1c",
+                border: "1px solid #fecaca",
+              },
               iconTheme: { primary: "#dc2626", secondary: "#fff" },
             },
           }}

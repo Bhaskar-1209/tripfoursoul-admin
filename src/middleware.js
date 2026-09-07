@@ -22,6 +22,7 @@ const PERMISSION_BY_PATH = [
   { prefix: '/sections', permission: 'sections' },
   { prefix: '/blog', permission: 'blog' },
   { prefix: '/staff', permission: 'staff' },
+  { prefix: '/profile', permission: null },
 ];
 
 // API prefix -> permission key mapping
@@ -45,6 +46,7 @@ const API_PERMISSION_BY_PATH = {
   '/api/deals': 'deals',
   '/api/sections': 'sections',
   '/api/blog': 'blog',
+  '/api/leads': 'leads',
 };
 
 // Decode JWT payload without verification (verification happens in the route handlers)
@@ -82,6 +84,10 @@ export function middleware(request) {
   if (
     pathname === '/login' ||
     pathname === '/api/auth/login' ||
+    pathname === '/forgot-password' ||
+    pathname === '/reset-password' ||
+    pathname === '/api/auth/forgot-password' ||
+    pathname === '/api/auth/reset-password' ||
     pathname === '/api/setup' ||
     pathname === '/api/seed' ||
     pathname.startsWith('/uploads/')
@@ -157,7 +163,7 @@ export function middleware(request) {
       const matched = PERMISSION_BY_PATH.find((item) =>
         pathname.startsWith(item.prefix)
       );
-      if (!matched) return NextResponse.next();
+      if (!matched || !matched.permission) return NextResponse.next();
 
       const userPerms = payload.permissions || [];
       if (!userPerms.includes(matched.permission)) {

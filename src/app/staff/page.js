@@ -34,6 +34,7 @@ export default function StaffPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useStatusToast();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   useEffect(() => {
     // Fetch user info from server (httpOnly cookie can't be read client-side)
@@ -43,6 +44,7 @@ export default function StaffPage() {
         if (data.user && (data.user.role === "admin" || data.user.role === "super_admin")) {
           setIsAdmin(true);
         }
+        if (data.user?.role === "super_admin") setIsSuperAdmin(true);
       })
       .catch(() => {});
     fetchStaff();
@@ -138,14 +140,20 @@ export default function StaffPage() {
 
         {!isAdmin && (
           <div className="p-4 rounded-lg mb-6 bg-amber-50 text-amber-700 border border-amber-200">
-            You have read-only access to this page. Only administrators can create, edit, or delete staff accounts.
+            You have read-only access to this page. Only super admins can create or delete staff accounts.
+          </div>
+        )}
+
+        {isAdmin && !isSuperAdmin && (
+          <div className="p-4 rounded-lg mb-6 bg-amber-50 text-amber-700 border border-amber-200">
+            You can edit staff details, but only super admins can create or delete staff accounts.
           </div>
         )}
 
         <div className="admin-card">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold">All Staff Members</h2>
-            {isAdmin && (
+            {isSuperAdmin && (
               <button
                 onClick={() => { setShowForm(true); setEditingItem(null); setForm({ username: "", email: "", password: "", role: "staff", permissions: [] }); }}
                 className="admin-btn"
@@ -294,7 +302,7 @@ export default function StaffPage() {
                     >
                       Edit
                     </button>
-                    {item.username !== "admin" && (
+                    {isSuperAdmin && item.username !== "admin" && (
                       <button
                         onClick={() => handleDelete(item.id)}
                         className="admin-btn-danger text-xs px-3 py-1.5"

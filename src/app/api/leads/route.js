@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getTokenFromCookies, verifyToken } from '@/lib/auth';
 
 const ensureLeadsTable = async () => {
   await db.query(`
@@ -169,6 +170,10 @@ export async function PUT(request) {
 
 export async function DELETE(request) {
   try {
+    const payload = verifyToken(getTokenFromCookies(request));
+    if (!payload || payload.role !== 'super_admin') {
+      return NextResponse.json({ error: 'Only super admins can delete leads' }, { status: 403 });
+    }
     await ensureLeadsTable();
     const id = Number(new URL(request.url).searchParams.get('id'));
     if (!id) return NextResponse.json({ error: 'Lead id is required' }, { status: 400 });

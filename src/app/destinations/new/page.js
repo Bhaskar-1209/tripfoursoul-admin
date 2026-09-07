@@ -139,7 +139,7 @@ export default function NewDestinationPage() {
             </div>
             <div className="md:col-span-2">
               <label className="admin-label">Description</label>
-              <RichTextEditor value={form.description} onChange={(html) => setForm({ ...form, description: html })} rows={3} placeholder="Brief description of the destination..." />
+              <RichTextEditor value={form.description} onChange={(html) => setForm({ ...form, description: html })} rows={3} placeholder="Brief description of the destination..." allowImageUpload />
             </div>
           </div>
           <div className="flex gap-3 pt-2">

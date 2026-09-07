@@ -1,5 +1,7 @@
 "use client";
 
+import RichTextEditor from "@/components/RichTextEditor";
+
 const emptyDay = (number) => ({ day: `Day ${number}`, title: "", description: "" });
 
 const parseItinerary = (value) => {
@@ -65,7 +67,13 @@ export default function DayWiseItineraryEditor({ value, onChange }) {
           </div>
           <div className="mt-3">
             <label className="admin-label">Details</label>
-            <textarea value={item.description} onChange={(event) => updateDay(index, "description", event.target.value)} className="admin-input min-h-24 resize-y" placeholder="Describe activities, transfers, meals, and stay for this day." />
+            <RichTextEditor
+              value={item.description}
+              onChange={(html) => updateDay(index, "description", html)}
+              rows={4}
+              placeholder="Describe activities, transfers, meals, and stay for this day."
+              allowImageUpload
+            />
           </div>
         </div>
       ))}

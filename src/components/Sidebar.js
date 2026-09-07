@@ -17,6 +17,7 @@ import {
   Settings,
   LogOut,
   Share2,
+  UserCircle,
   Inbox,
   Menu,
   X,
@@ -41,6 +42,7 @@ const allMenuItems = [
   { href: "/blog-categories", label: "Blog Categories", icon: Tag, permission: "blog" },
   { href: "/staff", label: "Staff", icon: Users, permission: "staff" },
   { href: "/social-media", label: "Social Media", icon: Share2, permission: "social-media" },
+  { href: "/profile", label: "My Profile", icon: UserCircle, permission: null },
 ];
 
 export default function Sidebar() {
@@ -67,7 +69,7 @@ export default function Sidebar() {
           return;
         }
         const perms = data.user.permissions || [];
-        setMenuItems(allMenuItems.filter((item) => perms.includes(item.permission)));
+        setMenuItems(allMenuItems.filter((item) => !item.permission || perms.includes(item.permission)));
       })
       .catch(() => {
         setMenuItems(allMenuItems);

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Sidebar from "@/components/Sidebar";
 import useStatusToast from "@/hooks/useStatusToast";
+import RichTextEditor from "@/components/RichTextEditor";
 
 const TABS = [
   { id: "banner", label: "Banner" },
@@ -23,6 +24,8 @@ export default function HomepageSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useStatusToast();
   const [messageType, setMessageType] = useState("success");
+  const [savedSections, setSavedSections] = useState("");
+  const [savingSections, setSavingSections] = useState(false);
 
   // Features state
   const [features, setFeatures] = useState([]);
@@ -77,6 +80,7 @@ export default function HomepageSettingsPage() {
         deals: { settings: responses[5] },
         sections: responses[6],
       });
+      if (responses[6].sections) setSavedSections(JSON.stringify(responses[6].sections));
       if (responses[0].images) setBannerImages(responses[0].images);
       if (responses[3].features) setFeatures(responses[3].features);
       if (responses[4].testimonials) setTestimonials(responses[4].testimonials);
@@ -114,33 +118,50 @@ export default function HomepageSettingsPage() {
     }
   };
 
-  const toggleSection = async (section) => {
-    try {
-      await fetch("/api/sections", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: section.id, is_visible: section.is_visible ? 0 : 1 }),
-      });
-      showMessage("Section " + (section.is_visible ? "hidden" : "shown") + "!");
-      fetchAllData();
-    } catch (e) {
-      showMessage("Error", "error");
-    }
+  const toggleSection = (section) => {
+    setData((previous) => ({
+      ...previous,
+      sections: {
+        ...previous.sections,
+        sections: previous.sections.sections.map((item) => item.id === section.id
+          ? { ...item, is_visible: item.is_visible ? 0 : 1 }
+          : item),
+      },
+    }));
   };
 
-  const updateSortOrder = async (section, newOrder) => {
+  const moveSection = (section, direction) => {
+    const sections = [...(data.sections?.sections || [])].sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0));
+    const index = sections.findIndex((item) => item.id === section.id);
+    const nextIndex = index + direction;
+    if (index < 0 || nextIndex < 0 || nextIndex >= sections.length) return;
+    [sections[index], sections[nextIndex]] = [sections[nextIndex], sections[index]];
+    setData((previous) => ({
+      ...previous,
+      sections: {
+        ...previous.sections,
+        sections: sections.map((item, itemIndex) => ({ ...item, sort_order: itemIndex + 1 })),
+      },
+    }));
+  };
+
+  const saveSections = async () => {
+    setSavingSections(true);
     try {
-      const res = await fetch("/api/sections", {
+      const sections = [...(data.sections?.sections || [])].sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0));
+      const response = await fetch("/api/sections", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: section.id, sort_order: parseInt(newOrder) }),
+        body: JSON.stringify({ sections: sections.map((item, itemIndex) => ({ id: item.id, sort_order: itemIndex + 1, is_visible: item.is_visible })) }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error updating sort order");
-      showMessage("Sort order updated!");
-      fetchAllData();
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Could not save section changes");
+      showMessage("Section changes saved successfully!");
+      await fetchAllData();
     } catch (error) {
-      showMessage(error.message || "Error updating sort order", "error");
+      showMessage(error.message || "Could not save section changes", "error");
+    } finally {
+      setSavingSections(false);
     }
   };
 
@@ -605,7 +626,8 @@ export default function HomepageSettingsPage() {
                 </div>
                 <div>
                   <label className="admin-label">Description</label>
-                  <textarea value={data.about.about.description || ""} onChange={(e) => updateAboutField("description", e.target.value)} className="admin-input" rows={3} />
+                  <RichTextEditor value={data.about.about.description || ""} onChange={(html) => updateAboutField("description", html)} rows={5} placeholder="Tell visitors about TripForSoul..." allowImageUpload />
+                  <p className="mt-1 text-xs text-gray-500">Rich text, lists and inline images are supported.</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -1007,11 +1029,17 @@ export default function HomepageSettingsPage() {
         {activeTab === "sections" && (
           <div className="admin-card">
             <h2 className="text-lg font-semibold mb-4">Homepage Sections Visibility</h2>
-            <p className="text-sm text-gray-500 mb-4">Toggle which sections appear on the homepage and set their order.</p>
+            <p className="text-sm text-gray-500 mb-4">Toggle visibility and use the arrows to change the section order.</p>
             <div className="space-y-3">
-              {data.sections?.sections?.map((section) => (
+              {[...(data.sections?.sections || [])].sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0)).map((section, index, orderedSections) => (
                 <div key={section.id} className={`flex items-center justify-between p-3 border rounded-lg ${section.is_visible ? "border-gray-200" : "border-gray-300 bg-gray-50 opacity-75"}`}>
-                  <div>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex flex-col gap-1">
+                      <button type="button" disabled={index === 0} onClick={() => moveSection(section, -1)} className="rounded border border-gray-300 px-2 py-0.5 text-xs text-gray-600 hover:bg-white disabled:cursor-not-allowed disabled:opacity-30" aria-label={`Move ${section.section_name} up`}>▲</button>
+                      <button type="button" disabled={index === orderedSections.length - 1} onClick={() => moveSection(section, 1)} className="rounded border border-gray-300 px-2 py-0.5 text-xs text-gray-600 hover:bg-white disabled:cursor-not-allowed disabled:opacity-30" aria-label={`Move ${section.section_name} down`}>▼</button>
+                    </div>
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-50 text-sm font-semibold text-teal-700">{index + 1}</span>
+                  <div className="min-w-0">
                     <span className="font-medium">{section.section_name}</span>
                     <span className="text-xs text-gray-500 ml-2">({section.section_key})</span>
                     {section.is_visible ? (
@@ -1020,17 +1048,8 @@ export default function HomepageSettingsPage() {
                       <span className="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">Hidden</span>
                     )}
                   </div>
+                  </div>
                   <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      <label className="text-sm text-gray-600">Order:</label>
-                      <input
-                        type="number"
-                        value={section.sort_order}
-                        onChange={(e) => updateSortOrder(section, e.target.value)}
-                        className="w-16 px-2 py-1 border border-gray-300 rounded text-sm"
-                        min="0"
-                      />
-                    </div>
                     <label className="flex items-center gap-2">
                       <span className="text-sm text-gray-600">Visible</span>
                       <button
@@ -1043,6 +1062,16 @@ export default function HomepageSettingsPage() {
                   </div>
                 </div>
               ))}
+            </div>
+            <div className="mt-5 flex justify-end border-t border-gray-100 pt-5">
+              <button
+                type="button"
+                onClick={saveSections}
+                disabled={savingSections || savedSections === JSON.stringify(data.sections?.sections || [])}
+                className="admin-btn disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {savingSections ? "Saving..." : savedSections === JSON.stringify(data.sections?.sections || []) ? "No Changes to Save" : "Save Section Changes"}
+              </button>
             </div>
           </div>
         )}

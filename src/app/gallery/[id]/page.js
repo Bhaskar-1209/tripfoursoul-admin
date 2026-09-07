@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import toast, { Toaster } from "react-hot-toast";
+import useDirtyForm from "@/hooks/useDirtyForm";
 
 export default function EditGalleryPage() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function EditGalleryPage() {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef(null);
+  const { isDirty, markSaved } = useDirtyForm(form);
 
   useEffect(() => {
     let active = true;
@@ -25,6 +27,14 @@ export default function EditGalleryPage() {
         const img = (data.images || []).find((i) => i.id === Number(id));
         if (active && img) {
           setForm({
+            title: img.title || "",
+            image_url: img.image_url || "",
+            video_url: img.video_url || "",
+            media_type: img.media_type || "image",
+            category: img.category || "General",
+            sort_order: img.sort_order || 0,
+          });
+          markSaved({
             title: img.title || "",
             image_url: img.image_url || "",
             video_url: img.video_url || "",
@@ -76,6 +86,7 @@ export default function EditGalleryPage() {
       });
       if (res.ok) {
         toast.success("Image updated!");
+        markSaved(form);
       } else {
         toast.error("Error saving");
       }
@@ -175,8 +186,8 @@ export default function EditGalleryPage() {
           )}
 
           <div className="flex gap-3 pt-2">
-            <button onClick={handleSave} disabled={saving || uploading} className="admin-btn">
-              {saving ? "Saving..." : "Update Image"}
+            <button onClick={handleSave} disabled={saving || uploading || !isDirty} className="admin-btn disabled:cursor-not-allowed disabled:opacity-50">
+              {saving ? "Saving..." : isDirty ? "Update Image" : "No Changes to Save"}
             </button>
             <button onClick={() => router.push("/gallery")} className="admin-btn-secondary">Cancel</button>
           </div>

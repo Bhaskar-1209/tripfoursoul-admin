@@ -8,6 +8,7 @@ import RichTextEditor from "@/components/RichTextEditor";
 import DayWiseItineraryEditor from "@/components/DayWiseItineraryEditor";
 import { CURRENCIES, buildPricePayload, priceFromRecord } from "@/lib/price";
 import useStatusToast from "@/hooks/useStatusToast";
+import useDirtyForm from "@/hooks/useDirtyForm";
 
 export default function EditPackagePage() {
   const router = useRouter();
@@ -35,6 +36,7 @@ export default function EditPackagePage() {
   const [destinationSaving, setDestinationSaving] = useState(false);
   const [destinationUploading, setDestinationUploading] = useState(false);
   const destinationFileInputRef = useRef(null);
+  const { isDirty, markSaved } = useDirtyForm(form);
 
   useEffect(() => {
     let active = true;
@@ -54,6 +56,25 @@ export default function EditPackagePage() {
           if (pkg) {
             const { currency, value } = priceFromRecord(pkg);
             setForm({
+              destination_id: String(pkg.destination_id || ""),
+              title: pkg.title || "",
+              days: pkg.days || "",
+              meals: pkg.meals || "",
+              short_description: pkg.short_description || "",
+              long_description: pkg.long_description || "",
+              sub_heading: pkg.sub_heading || "",
+              itinerary: pkg.itinerary || "",
+              additional_info: pkg.additional_info || "",
+              image_url: pkg.image_url || "",
+              inclusives: pkg.inclusives || "",
+              exclusives: pkg.exclusives || "",
+              price_currency: currency,
+              price_value: value,
+              sort_order: pkg.sort_order || 0,
+              is_trending: !!pkg.is_trending,
+              is_spiritual: !!pkg.is_spiritual,
+            });
+            markSaved({
               destination_id: String(pkg.destination_id || ""),
               title: pkg.title || "",
               days: pkg.days || "",
@@ -97,6 +118,7 @@ export default function EditPackagePage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Unable to save package");
       notify("Package updated successfully.", "success");
+      markSaved(form);
     } catch (error) { notify(error.message); }
     finally { setSaving(false); }
   };
@@ -215,8 +237,8 @@ export default function EditPackagePage() {
           <h1 className="text-2xl font-bold text-gray-900">Edit Package</h1>
           <div className="flex items-center gap-3">
             <button onClick={() => router.push("/packages")} className="admin-btn-secondary">← Back to List</button>
-            <button onClick={save} disabled={saving} className="admin-btn">
-              {saving ? "Saving..." : "Update Package"}
+            <button onClick={save} disabled={saving || uploading || !isDirty} className="admin-btn disabled:cursor-not-allowed disabled:opacity-50">
+              {saving ? "Saving..." : isDirty ? "Update Package" : "No Changes to Save"}
             </button>
           </div>
         </div>
@@ -315,11 +337,11 @@ export default function EditPackagePage() {
             </div>
             <div className="md:col-span-2">
               <label className="admin-label">Short Description</label>
-              <RichTextEditor value={form.short_description} onChange={(html) => setForm({ ...form, short_description: html })} rows={3} placeholder="Short description..." />
+              <RichTextEditor value={form.short_description} onChange={(html) => setForm({ ...form, short_description: html })} rows={3} placeholder="Short description..." allowImageUpload />
             </div>
             <div className="md:col-span-2">
               <label className="admin-label">Package Overview</label>
-              <RichTextEditor value={form.long_description} onChange={(html) => setForm({ ...form, long_description: html })} rows={4} placeholder="Package overview..." />
+              <RichTextEditor value={form.long_description} onChange={(html) => setForm({ ...form, long_description: html })} rows={4} placeholder="Package overview..." allowImageUpload />
             </div>
             <div className="md:col-span-2">
               <label className="admin-label">Day-wise Itinerary</label>
@@ -328,16 +350,16 @@ export default function EditPackagePage() {
             </div>
             <div className="md:col-span-2">
               <label className="admin-label">Additional Info</label>
-              <RichTextEditor value={form.additional_info} onChange={(html) => setForm({ ...form, additional_info: html })} rows={3} placeholder="Extra package notes, customization details, or special instructions." />
+              <RichTextEditor value={form.additional_info} onChange={(html) => setForm({ ...form, additional_info: html })} rows={3} placeholder="Extra package notes, customization details, or special instructions." allowImageUpload />
             </div>
             <div>
               <label className="admin-label">Inclusions</label>
-              <RichTextEditor value={form.inclusives} onChange={(html) => setForm({ ...form, inclusives: html })} rows={3} placeholder="One per line" uniformTextSize />
+              <RichTextEditor value={form.inclusives} onChange={(html) => setForm({ ...form, inclusives: html })} rows={3} placeholder="One per line" uniformTextSize allowImageUpload />
               <p className="mt-1 text-xs text-gray-500">Leave blank to hide this section on the website.</p>
             </div>
             <div>
               <label className="admin-label">Exclusions</label>
-              <RichTextEditor value={form.exclusives} onChange={(html) => setForm({ ...form, exclusives: html })} rows={3} placeholder="One per line" uniformTextSize />
+              <RichTextEditor value={form.exclusives} onChange={(html) => setForm({ ...form, exclusives: html })} rows={3} placeholder="One per line" uniformTextSize allowImageUpload />
               <p className="mt-1 text-xs text-gray-500">Leave blank to hide this section on the website.</p>
             </div>
             <div className="md:col-span-2 flex gap-6">
@@ -369,7 +391,7 @@ export default function EditPackagePage() {
             </div>
           </div>
           <div className="flex gap-3 pt-2">
-            <button onClick={save} disabled={saving} className="admin-btn">{saving ? "Saving..." : "Update Package"}</button>
+            <button onClick={save} disabled={saving || uploading || !isDirty} className="admin-btn disabled:cursor-not-allowed disabled:opacity-50">{saving ? "Saving..." : isDirty ? "Update Package" : "No Changes to Save"}</button>
             <button onClick={() => router.push("/packages")} className="admin-btn-secondary">Cancel</button>
           </div>
         </div>

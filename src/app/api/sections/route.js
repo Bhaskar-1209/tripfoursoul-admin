@@ -22,25 +22,21 @@ export async function PUT(request) {
     } else if (body.id !== undefined) {
       sectionsToUpdate = [body];
     }
+
+    if (Array.isArray(body.sections)) {
+      const sortOrders = body.sections.map((section) => Number(section.sort_order));
+      if (sortOrders.some((sortOrder) => !Number.isInteger(sortOrder) || sortOrder < 1)) {
+        return NextResponse.json({ error: 'Every homepage section must have a valid order.' }, { status: 400 });
+      }
+      if (new Set(sortOrders).size !== sortOrders.length) {
+        return NextResponse.json({ error: 'Homepage section order values must be unique.' }, { status: 400 });
+      }
+    }
     
     for (const section of sectionsToUpdate) {
       const updateData = {};
-      if (section.sort_order !== undefined && Number(section.sort_order) > 0) {
-        // Homepage sections share one numbering — prevent two sections on the
-        // same number.
-        const [target] = await db.query(
-          'SELECT id FROM homepage_sections WHERE sort_order = $1 AND id != $2',
-          [Number(section.sort_order), section.id]
-        );
-        if (target) {
-          return NextResponse.json(
-            { error: `Sort number ${section.sort_order} is already used by another homepage section. Choose a different number.` },
-            { status: 400 }
-          );
-        }
-      }
       if (section.is_visible !== undefined) updateData.is_visible = section.is_visible;
-      if (section.sort_order !== undefined) updateData.sort_order = section.sort_order;
+      if (section.sort_order !== undefined) updateData.sort_order = Number(section.sort_order);
       if (section.section_name !== undefined) updateData.section_name = section.section_name;
       if (section.section_key !== undefined) updateData.section_key = section.section_key;
       await db.update('homepage_sections', section.id, updateData);

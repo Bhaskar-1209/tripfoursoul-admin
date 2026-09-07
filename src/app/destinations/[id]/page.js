@@ -7,6 +7,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import RichTextEditor from "@/components/RichTextEditor";
 import { CURRENCIES, buildPricePayload, priceFromRecord } from "@/lib/price";
 import useStatusToast from "@/hooks/useStatusToast";
+import useDirtyForm from "@/hooks/useDirtyForm";
 
 export default function EditDestinationPage() {
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function EditDestinationPage() {
   const [messageType, setMessageType] = useState("error");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
+  const { isDirty, markSaved } = useDirtyForm(form);
 
   const notify = (text, type = "error") => {
     setMessage(text);
@@ -35,6 +37,17 @@ export default function EditDestinationPage() {
         if (active && dest) {
           const { currency, value } = priceFromRecord(dest);
           setForm({
+            name: dest.name,
+            image_url: dest.image_url,
+            region: dest.region,
+            price_currency: currency,
+            price_value: value,
+            description: dest.description || "",
+            sort_order: dest.sort_order || 0,
+            is_trending: dest.is_trending ? 1 : 0,
+            is_spiritual: dest.is_spiritual ? 1 : 0,
+          });
+          markSaved({
             name: dest.name,
             image_url: dest.image_url,
             region: dest.region,
@@ -70,6 +83,7 @@ export default function EditDestinationPage() {
       });
       if (res.ok) {
         notify("Destination updated successfully.", "success");
+        markSaved(form);
       } else {
         const data = await res.json();
         notify(data.error || "Error saving destination");
@@ -177,11 +191,11 @@ export default function EditDestinationPage() {
             </div>
             <div className="md:col-span-2">
               <label className="admin-label">Description</label>
-              <RichTextEditor value={form.description} onChange={(html) => setForm({ ...form, description: html })} rows={3} placeholder="Brief description of the destination..." />
+              <RichTextEditor value={form.description} onChange={(html) => setForm({ ...form, description: html })} rows={3} placeholder="Brief description of the destination..." allowImageUpload />
             </div>
           </div>
           <div className="flex gap-3 pt-2">
-            <button onClick={handleSave} disabled={saving} className="admin-btn">{saving ? "Saving..." : "Update Destination"}</button>
+            <button onClick={handleSave} disabled={saving || uploading || !isDirty} className="admin-btn disabled:cursor-not-allowed disabled:opacity-50">{saving ? "Saving..." : isDirty ? "Update Destination" : "No Changes to Save"}</button>
             <button onClick={() => router.push("/destinations")} className="admin-btn-secondary">Cancel</button>
           </div>
         </div>

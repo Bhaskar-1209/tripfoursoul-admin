@@ -35,7 +35,7 @@ export async function GET(request) {
   }
 }
 
-// POST - Create staff member (admin only)
+// POST - Create staff member (super admin only)
 export async function POST(request) {
   try {
     const token = request.headers.get('cookie')?.match(/(?:^|;\s*)token=([^;]*)/)?.[1];
@@ -43,8 +43,8 @@ export async function POST(request) {
     
     const { verifyToken } = await import('@/lib/auth');
     const payload = verifyToken(token);
-    if (!payload || (payload.role !== 'admin' && payload.role !== 'super_admin')) {
-      return NextResponse.json({ error: 'Only administrators can create staff accounts' }, { status: 403 });
+    if (!payload || payload.role !== 'super_admin') {
+      return NextResponse.json({ error: 'Only super admins can create staff accounts' }, { status: 403 });
     }
     
     const body = await request.json();
@@ -122,7 +122,7 @@ export async function PUT(request) {
   }
 }
 
-// DELETE - Delete staff member (admin only)
+// DELETE - Delete staff member (super admin only)
 export async function DELETE(request) {
   try {
     const token = request.headers.get('cookie')?.match(/(?:^|;\s*)token=([^;]*)/)?.[1];
@@ -130,8 +130,8 @@ export async function DELETE(request) {
     
     const { verifyToken } = await import('@/lib/auth');
     const payload = verifyToken(token);
-    if (!payload || (payload.role !== 'admin' && payload.role !== 'super_admin')) {
-      return NextResponse.json({ error: 'Only administrators can delete staff accounts' }, { status: 403 });
+    if (!payload || payload.role !== 'super_admin') {
+      return NextResponse.json({ error: 'Only super admins can delete staff accounts' }, { status: 403 });
     }
     
     const { searchParams } = new URL(request.url);

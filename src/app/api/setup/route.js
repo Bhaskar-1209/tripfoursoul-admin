@@ -46,6 +46,8 @@ export async function GET() {
       try { await db.query(`ALTER TABLE admins ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'staff'`); } catch (e) {}
       try { await db.query(`ALTER TABLE admins ADD COLUMN IF NOT EXISTS permissions JSONB`); } catch (e) {}
       try { await db.query(`ALTER TABLE admins ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true`); } catch (e) {}
+      try { await db.query(`ALTER TABLE admins ADD COLUMN IF NOT EXISTS reset_token_hash VARCHAR(64)`); } catch (e) {}
+      try { await db.query(`ALTER TABLE admins ADD COLUMN IF NOT EXISTS reset_token_expires_at TIMESTAMP`); } catch (e) {}
 
       // Insert or update default admin (password: admin123)
       try {

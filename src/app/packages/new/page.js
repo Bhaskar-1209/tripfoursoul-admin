@@ -130,11 +130,11 @@ function NewPackageContent() {
             </div>
             <div className="md:col-span-2">
               <label className="admin-label">Short Description</label>
-              <RichTextEditor value={form.short_description} onChange={(html) => setForm({ ...form, short_description: html })} rows={3} placeholder="Short description..." />
+              <RichTextEditor value={form.short_description} onChange={(html) => setForm({ ...form, short_description: html })} rows={3} placeholder="Short description..." allowImageUpload />
             </div>
             <div className="md:col-span-2">
               <label className="admin-label">Package Overview</label>
-              <RichTextEditor value={form.long_description} onChange={(html) => setForm({ ...form, long_description: html })} rows={4} placeholder="Package overview..." />
+              <RichTextEditor value={form.long_description} onChange={(html) => setForm({ ...form, long_description: html })} rows={4} placeholder="Package overview..." allowImageUpload />
             </div>
             <div className="md:col-span-2">
               <label className="admin-label">Day-wise Itinerary</label>
@@ -143,16 +143,16 @@ function NewPackageContent() {
             </div>
             <div className="md:col-span-2">
               <label className="admin-label">Additional Info</label>
-              <RichTextEditor value={form.additional_info} onChange={(html) => setForm({ ...form, additional_info: html })} rows={3} placeholder="Extra package notes, customization details, or special instructions." />
+              <RichTextEditor value={form.additional_info} onChange={(html) => setForm({ ...form, additional_info: html })} rows={3} placeholder="Extra package notes, customization details, or special instructions." allowImageUpload />
             </div>
             <div>
               <label className="admin-label">Inclusions</label>
-              <RichTextEditor value={form.inclusives} onChange={(html) => setForm({ ...form, inclusives: html })} rows={3} placeholder="One per line" uniformTextSize />
+              <RichTextEditor value={form.inclusives} onChange={(html) => setForm({ ...form, inclusives: html })} rows={3} placeholder="One per line" uniformTextSize allowImageUpload />
               <p className="mt-1 text-xs text-gray-500">Leave blank to hide this section on the website.</p>
             </div>
             <div>
               <label className="admin-label">Exclusions</label>
-              <RichTextEditor value={form.exclusives} onChange={(html) => setForm({ ...form, exclusives: html })} rows={3} placeholder="One per line" uniformTextSize />
+              <RichTextEditor value={form.exclusives} onChange={(html) => setForm({ ...form, exclusives: html })} rows={3} placeholder="One per line" uniformTextSize allowImageUpload />
               <p className="mt-1 text-xs text-gray-500">Leave blank to hide this section on the website.</p>
             </div>
             <div className="md:col-span-2 flex gap-6">

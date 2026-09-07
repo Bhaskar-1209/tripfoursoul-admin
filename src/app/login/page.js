@@ -90,6 +90,10 @@ export default function LoginPage() {
           </button>
         </form>
 
+        <p className="mt-4 text-center text-sm">
+          <a href="/forgot-password" className="font-medium text-[#24564C] hover:underline">Forgot password?</a>
+        </p>
+
         <p className="text-center text-xs text-gray-400 mt-6">
           Default: admin / admin123
         </p>

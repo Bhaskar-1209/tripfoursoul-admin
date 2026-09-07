@@ -55,6 +55,9 @@ export default function RichTextEditor({ value, onChange, placeholder, rows = 6,
       underline: document.queryCommandState("underline"),
       unordered: document.queryCommandState("insertUnorderedList"),
       ordered: document.queryCommandState("insertOrderedList"),
+      left: document.queryCommandState("justifyLeft"),
+      center: document.queryCommandState("justifyCenter"),
+      right: document.queryCommandState("justifyRight"),
     });
     saveSelection();
   };
@@ -150,6 +153,10 @@ export default function RichTextEditor({ value, onChange, placeholder, rows = 6,
         <span className="mx-1 h-5 w-px bg-gray-300" />
         <ToolbarButton onClick={() => exec("insertUnorderedList")} active={activeFormats.unordered} title="Bullet List">• List</ToolbarButton>
         <ToolbarButton onClick={() => exec("insertOrderedList")} active={activeFormats.ordered} title="Numbered List">1. List</ToolbarButton>
+        <span className="mx-1 h-5 w-px bg-gray-300" />
+        <ToolbarButton onClick={() => exec("justifyLeft")} active={activeFormats.left} title="Align left">≡ Left</ToolbarButton>
+        <ToolbarButton onClick={() => exec("justifyCenter")} active={activeFormats.center} title="Align center">≡ Center</ToolbarButton>
+        <ToolbarButton onClick={() => exec("justifyRight")} active={activeFormats.right} title="Align right">≡ Right</ToolbarButton>
         <span className="mx-1 h-5 w-px bg-gray-300" />
         <ToolbarButton onClick={() => exec("formatBlock", "<h2>")} title="Heading">H</ToolbarButton>
         <ToolbarButton onClick={() => exec("formatBlock", "<p>")} title="Paragraph">¶</ToolbarButton>
