@@ -74,9 +74,9 @@ export async function GET() {
       `);
 
       await db.query(`
-        INSERT INTO banner_settings (heading, subtitle) VALUES
-        ('Journeys Crafted for the Soul', 'Not just another trip. We design meaningful land journeys that connect you with culture, people, and places beyond the tourist trail.')
-        ON CONFLICT DO NOTHING
+        INSERT INTO banner_settings (heading, subtitle)
+        SELECT 'Journeys Crafted for the Soul', 'Not just another trip. We design meaningful land journeys that connect you with culture, people, and places beyond the tourist trail.'
+        WHERE NOT EXISTS (SELECT 1 FROM banner_settings)
       `);
 
       // Create banner_images table
@@ -102,9 +102,9 @@ export async function GET() {
       `);
 
       await db.query(`
-        INSERT INTO trending_settings (is_enabled, heading, subtitle) VALUES
-        (true, 'Trending Now', 'Most sought-after destinations this season')
-        ON CONFLICT DO NOTHING
+        INSERT INTO trending_settings (is_enabled, heading, subtitle)
+        SELECT true, 'Trending Now', 'Most sought-after destinations this season'
+        WHERE NOT EXISTS (SELECT 1 FROM trending_settings)
       `);
 
       // Create trending_items table
@@ -204,9 +204,9 @@ export async function GET() {
       `);
 
       await db.query(`
-        INSERT INTO deals_settings (tagline, heading, description, button_text, button_link, card_tagline, card_heading, card_description, is_active) VALUES
-        ('Travel offers', 'Make more of every journey.', 'Discover current seasonal offers and speak with our team to find the journey that suits your plans.', 'Ask about offers', '/contact?subject=Offer%20enquiry', 'Planning made personal', 'Get a tailored recommendation, clear inclusions, and expert support before you book.', 'Offer availability and final pricing are confirmed by the travel team.', true)
-        ON CONFLICT DO NOTHING
+        INSERT INTO deals_settings (tagline, heading, description, button_text, button_link, card_tagline, card_heading, card_description, is_active)
+        SELECT 'Travel offers', 'Make more of every journey.', 'Discover current seasonal offers and speak with our team to find the journey that suits your plans.', 'Ask about offers', '/contact?subject=Offer%20enquiry', 'Planning made personal', 'Get a tailored recommendation, clear inclusions, and expert support before you book.', 'Offer availability and final pricing are confirmed by the travel team.', true
+        WHERE NOT EXISTS (SELECT 1 FROM deals_settings)
       `);
 
       await db.query(`
@@ -620,6 +620,15 @@ export async function GET() {
           await db.query(`ALTER TABLE ${table} ADD COLUMN IF NOT EXISTS ${column} ${definition}`);
         } catch (e) {
           // Column might already exist or table doesn't exist yet
+        }
+      }
+
+      // These tables are singletons. Keep the most recently updated row and
+      // remove legacy duplicates created by older seed/setup runs.
+      for (const table of ['banner_settings', 'trending_settings', 'deals_settings']) {
+        const rows = await db.query(`SELECT id FROM ${table} ORDER BY updated_at DESC NULLS LAST, id DESC`);
+        if (rows.length > 1) {
+          await db.query(`DELETE FROM ${table} WHERE id <> $1`, [rows[0].id]);
         }
       }
     } // end if postgresUsed
