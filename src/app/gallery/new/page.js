@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import toast, { Toaster } from "react-hot-toast";
@@ -8,6 +8,11 @@ import toast, { Toaster } from "react-hot-toast";
 export default function NewGalleryPage() {
   const router = useRouter();
   const [form, setForm] = useState({ title: "", image_url: "", video_url: "", media_type: "image", category: "General", sort_order: 0 });
+  useEffect(() => {
+    fetch("/api/sort-order?table=gallery_images").then((response) => response.json()).then((result) => {
+      if (result.nextSortOrder) setForm((previous) => ({ ...previous, sort_order: result.nextSortOrder }));
+    }).catch(() => {});
+  }, []);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef(null);

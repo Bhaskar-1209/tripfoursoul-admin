@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getNextSortOrder } from '@/lib/sortOrder';
 
 // GET - Fetch all team members
 export async function GET() {
@@ -18,7 +19,7 @@ export async function POST(request) {
     const body = await request.json();
     const { name, designation, bio, image_url, sort_order } = body;
 
-    const memberSort = Number(sort_order) || 0;
+    const memberSort = Number(sort_order) > 0 ? Number(sort_order) : await getNextSortOrder('team_members');
     if (memberSort > 0) {
       const duplicates = await db.query('SELECT id FROM team_members WHERE sort_order = $1 AND is_active = true', [memberSort]);
       if (duplicates.length > 0) {

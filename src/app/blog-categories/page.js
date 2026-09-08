@@ -146,8 +146,8 @@ export default function BlogCategoriesPage() {
           <h1 className="text-2xl font-bold text-gray-900">Blog Categories</h1>
           <div className="flex gap-3">
             <button onClick={() => router.push("/blog")} className="admin-btn-secondary">← Back to Blog</button>
-            <button onClick={() => { setEditing(null); setForm({ name: "", slug: "", description: "", image_url: "", sort_order: 0, is_active: true }); setShowForm(!showForm); }} className="admin-btn">
-              {showForm ? "Cancel" : "Add Category"}
+            <button onClick={() => router.push("/blog-categories/new")} className="admin-btn">
+              Add Category
             </button>
           </div>
         </div>
@@ -204,34 +204,20 @@ export default function BlogCategoriesPage() {
           {loading ? (
             <LoadingSpinner text="Loading categories..." />
           ) : (
-            <div className="space-y-3">
-              {categories.map((cat) => (
-                <div key={cat.id} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  {cat.image_url && (
-                    <img src={cat.image_url} alt={cat.name} className="w-20 h-16 object-cover rounded-lg flex-shrink-0" />
-                  )}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-semibold text-gray-900">{cat.name}</h4>
-                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${cat.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
-                        {cat.is_active ? "Active" : "Inactive"}
-                      </span>
-                      <span className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-600 font-medium">
-                        {cat.post_count || 0} posts
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-400 mb-1">/{cat.slug} · Sort: {cat.sort_order || "—"}</p>
-                    {cat.description && <p className="text-sm text-gray-600 line-clamp-1">{cat.description}</p>}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => toggleActive(cat)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${cat.is_active ? "bg-green-50 text-green-600 hover:bg-green-100" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
-                      {cat.is_active ? "Active" : "Inactive"}
-                    </button>
-                    <button onClick={() => handleEdit(cat)} className="admin-btn-secondary text-xs px-3 py-1.5">Edit</button>
-                    <button onClick={() => handleDelete(cat.id)} className="admin-btn-danger text-xs px-3 py-1.5">Delete</button>
-                  </div>
-                </div>
-              ))}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead><tr className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500"><th className="px-3 py-3">Category</th><th className="px-3 py-3">Slug</th><th className="px-3 py-3">Posts</th><th className="px-3 py-3">Sort</th><th className="px-3 py-3">Status</th><th className="px-3 py-3">Actions</th></tr></thead>
+                <tbody>{categories.map((cat) => (
+                  <tr key={cat.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="px-3 py-3"><div className="flex items-center gap-3">{cat.image_url && <img src={cat.image_url} alt={cat.name} className="h-10 w-14 rounded object-cover" />}<div><p className="font-medium text-gray-900">{cat.name}</p>{cat.description && <p className="max-w-xs truncate text-xs text-gray-500">{cat.description}</p>}</div></div></td>
+                    <td className="px-3 py-3 text-gray-600">/{cat.slug}</td>
+                    <td className="px-3 py-3 text-gray-600">{cat.post_count || 0}</td>
+                    <td className="px-3 py-3 font-semibold text-teal-700">{cat.sort_order || "—"}</td>
+                    <td className="px-3 py-3"><span className={`rounded-full px-2 py-1 text-xs font-medium ${cat.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>{cat.is_active ? "Active" : "Inactive"}</span></td>
+                    <td className="px-3 py-3"><div className="flex flex-wrap gap-1"><button onClick={() => toggleActive(cat)} className="rounded border border-gray-300 px-2 py-1 text-xs">{cat.is_active ? "Deactivate" : "Activate"}</button><button onClick={() => router.push(`/blog-categories/${cat.id}`)} className="rounded border border-gray-300 px-2 py-1 text-xs">Edit</button><button onClick={() => handleDelete(cat.id)} className="rounded border border-red-300 px-2 py-1 text-xs text-red-600">Delete</button></div></td>
+                  </tr>
+                ))}</tbody>
+              </table>
               {categories.length === 0 && (
                 <p className="text-gray-400 text-sm py-8 text-center">{`No categories yet. Click "Add Category" to create your first blog category.`}</p>
               )}

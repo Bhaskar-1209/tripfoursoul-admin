@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getNextSortOrder } from '@/lib/sortOrder';
+
+export const dynamic = 'force-dynamic';
 
 const makeSlug = (value = '') => String(value).trim().toLowerCase()
   .replace(/[^a-z0-9]+/g, '-')
@@ -84,7 +87,8 @@ export async function POST(request) {
       return NextResponse.json({ error: 'A category with this slug already exists' }, { status: 400 });
     }
 
-    const categorySort = Number(sort_order) || 0;
+    const categoryActive = is_active !== undefined ? Boolean(is_active) : true;
+    const categorySort = categoryActive ? (Number(sort_order) > 0 ? Number(sort_order) : await getNextSortOrder('blog_categories')) : 0;
 
     // Check for duplicate sort number among active categories
     if (categorySort > 0) {
@@ -100,7 +104,7 @@ export async function POST(request) {
       description: description || '',
       image_url: image_url || '',
       sort_order: categorySort,
-      is_active: is_active !== undefined ? is_active : true,
+      is_active: categoryActive,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     });

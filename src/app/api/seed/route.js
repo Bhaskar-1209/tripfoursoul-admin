@@ -194,7 +194,8 @@ export async function GET() {
       button2_text: 'View All Packages',
       button2_link: '/packages'
     };
-    results.data.banner_settings = await db.insert('banner_settings', bannerSettings);
+    const existingBannerSettings = await db.query('SELECT * FROM banner_settings ORDER BY id ASC LIMIT 1');
+    results.data.banner_settings = existingBannerSettings[0] || await db.insert('banner_settings', bannerSettings);
 
     // Seed Banner Images
     const bannerImages = [
@@ -219,7 +220,8 @@ export async function GET() {
       heading: 'Trending Now',
       subtitle: 'Most sought-after destinations this season'
     };
-    results.data.trending_settings = await db.insert('trending_settings', trendingSettings);
+    const existingTrendingSettings = await db.query('SELECT * FROM trending_settings ORDER BY id ASC LIMIT 1');
+    results.data.trending_settings = existingTrendingSettings[0] || await db.insert('trending_settings', trendingSettings);
 
     // Seed Trending Items
     const trendingItems = [
@@ -296,7 +298,8 @@ export async function GET() {
       card_description: 'Offer availability and final pricing are confirmed by the travel team.',
       is_active: true
     };
-    results.data.deals_settings = await db.insert('deals_settings', dealsSettings);
+    const existingDealsSettings = await db.query('SELECT * FROM deals_settings ORDER BY id ASC LIMIT 1');
+    results.data.deals_settings = existingDealsSettings[0] || await db.insert('deals_settings', dealsSettings);
 
     // Seed Admin User
     const hashedPassword = await bcrypt.hash('admin123', 10);

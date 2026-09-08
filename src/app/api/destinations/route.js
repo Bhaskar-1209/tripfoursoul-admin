@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getNextSortOrder } from '@/lib/sortOrder';
 
 const makeSlug = (value = '') => String(value).trim().toLowerCase()
   .replace(/[^a-z0-9]+/g, '-')
@@ -64,7 +65,7 @@ export async function POST(request) {
     await ensureDestinationSchema();
 
     // Prevent two active destinations from sharing the same sort number.
-    const destinationSort = Number(sort_order) || 0;
+    const destinationSort = Number(sort_order) > 0 ? Number(sort_order) : await getNextSortOrder('destinations');
     if (destinationSort > 0) {
       const duplicates = await db.query('SELECT id FROM destinations WHERE sort_order = $1 AND is_active = true', [destinationSort]);
       if (duplicates.length > 0) {

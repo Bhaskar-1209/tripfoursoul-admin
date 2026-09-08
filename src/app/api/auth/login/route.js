@@ -6,7 +6,7 @@ import fs from 'fs';
 import path from 'path';
 
 // Fallback login using JSON file
-const loginWithJson = async (username, password) => {
+const loginWithJson = async (identifier, password) => {
   try {
     const jsonPath = path.join(process.cwd(), 'database.json');
     if (!fs.existsSync(jsonPath)) {
@@ -17,7 +17,8 @@ const loginWithJson = async (username, password) => {
     const admins = data.admins || [];
     
     // Find admin by username or email
-    const admin = admins.find(a => a.username === username || a.email === username);
+    const normalizedIdentifier = String(identifier).trim();
+    const admin = admins.find(a => a.username === normalizedIdentifier || String(a.email || '').toLowerCase() === normalizedIdentifier.toLowerCase());
     if (!admin) {
       return null;
     }
@@ -44,16 +45,17 @@ const loginWithJson = async (username, password) => {
 export async function POST(request) {
   try {
     const { username, password } = await request.json();
+    const identifier = String(username || '').trim();
 
-    if (!username || !password) {
-      return NextResponse.json({ error: 'Username and password required' }, { status: 400 });
+    if (!identifier || !password) {
+      return NextResponse.json({ error: 'Username/email and password required' }, { status: 400 });
     }
 
     let admin = null;
     
     // Try PostgreSQL first
     try {
-      const admins = await db.query('SELECT * FROM admins WHERE username = $1 OR email = $2', [username, username]);
+      const admins = await db.query('SELECT * FROM admins WHERE username = $1 OR LOWER(email) = LOWER($2)', [identifier, identifier]);
       if (admins.length > 0) {
         const adminData = admins[0];
         const isValid = await bcrypt.compare(password, adminData.password);
@@ -73,7 +75,7 @@ export async function POST(request) {
     
     // Fallback to JSON if PostgreSQL failed
     if (!admin) {
-      admin = await loginWithJson(username, password);
+      admin = await loginWithJson(identifier, password);
     }
 
     if (!admin) {

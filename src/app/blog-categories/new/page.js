@@ -1,0 +1,117 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import Sidebar from "@/components/Sidebar";
+
+const emptyForm = { name: "", slug: "", description: "", image_url: "", sort_order: 0, is_active: true };
+
+export default function NewBlogCategoryPage() {
+  const router = useRouter();
+  const fileInputRef = useRef(null);
+  const [form, setForm] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/sort-order?table=blog_categories")
+      .then((response) => response.json())
+      .then((result) => {
+        if (result.nextSortOrder) setForm((previous) => ({ ...previous, sort_order: result.nextSortOrder }));
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleImageUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await fetch("/api/upload", { method: "POST", body: formData });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.imageUrl) throw new Error(result.error || "Image upload failed");
+      setForm((previous) => ({ ...previous, image_url: result.imageUrl }));
+      toast.success("Image uploaded successfully!");
+    } catch (error) {
+      toast.error(error.message || "Image upload failed");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleSave = async () => {
+    if (!form.name.trim()) {
+      toast.error("Category name is required");
+      return;
+    }
+    setSaving(true);
+    try {
+      const response = await fetch("/api/blog-categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not create category");
+      toast.success("Category created successfully!");
+      router.replace("/blog-categories");
+    } catch (error) {
+      toast.error(error.message || "Could not create category");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen">
+      <Sidebar />
+      <main className="flex-1 overflow-y-auto p-8">
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Add New Blog Category</h1>
+            <p className="mt-1 text-sm text-gray-500">Create a category for blog posts.</p>
+          </div>
+          <button type="button" onClick={() => router.push("/blog-categories")} className="admin-btn-secondary">Back to Categories</button>
+        </div>
+
+        <div className="admin-card space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <label className="admin-label">Name *</label>
+              <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="admin-input" placeholder="e.g., Adventure" />
+            </div>
+            <div>
+              <label className="admin-label">Slug</label>
+              <input type="text" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className="admin-input" placeholder="Auto-generated if blank" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="admin-label">Description</label>
+              <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="admin-input" rows={3} />
+            </div>
+            <div className="md:col-span-2">
+              <label className="admin-label">Category Image</label>
+              <div className="flex gap-2">
+                <input ref={fileInputRef} type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onChange={handleImageUpload} className="admin-input flex-1" disabled={uploading} />
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="admin-btn-secondary whitespace-nowrap text-xs" disabled={uploading}>{uploading ? "Uploading..." : "Upload Image"}</button>
+              </div>
+              {form.image_url && <img src={form.image_url} alt="Category preview" className="mt-3 h-24 w-32 rounded border object-cover" />}
+            </div>
+            <div>
+              <label className="admin-label">Sort Order</label>
+              <input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) || 0 })} className="admin-input" />
+            </div>
+            <label className="flex items-center gap-2 self-end pb-2 text-sm text-gray-700">
+              <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="h-4 w-4" />
+              Active
+            </label>
+          </div>
+          <button type="button" onClick={handleSave} disabled={saving} className="admin-btn">{saving ? "Saving..." : "Create Category"}</button>
+        </div>
+      </main>
+    </div>
+  );
+}

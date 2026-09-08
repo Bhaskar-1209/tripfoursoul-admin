@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 const makeSlug = (value = '') => String(value).trim().toLowerCase()
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/(^-|-$)/g, '');
@@ -52,6 +54,8 @@ export async function GET(request) {
     const all = searchParams.get('all') === 'true';
     const category = searchParams.get('category');
     const categorySlug = searchParams.get('categorySlug');
+    const slug = searchParams.get('slug');
+    const id = searchParams.get('id');
 
     let sql = `SELECT b.*, c.name as category_name, c.slug as category_slug 
                FROM blogs b 
@@ -69,6 +73,14 @@ export async function GET(request) {
     if (categorySlug) {
       params.push(categorySlug);
       conditions.push(`c.slug = $${params.length}`);
+    }
+    if (slug) {
+      params.push(slug);
+      conditions.push(`b.slug = $${params.length}`);
+    }
+    if (id && Number.isInteger(Number(id))) {
+      params.push(Number(id));
+      conditions.push(`b.id = $${params.length}`);
     }
 
     if (conditions.length > 0) {

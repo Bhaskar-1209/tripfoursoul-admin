@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getNextSortOrder } from '@/lib/sortOrder';
 
 const makeSlug = (value = '') =>
   String(value)
@@ -35,7 +36,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'A service with this title already exists' }, { status: 400 });
     }
 
-    const serviceSort = Number(sort_order) || 0;
+    const serviceSort = is_active ? (Number(sort_order) > 0 ? Number(sort_order) : await getNextSortOrder('services')) : 0;
     if (serviceSort > 0) {
       const duplicates = await db.query('SELECT id FROM services WHERE sort_order = $1 AND is_active = true', [serviceSort]);
       if (duplicates.length > 0) {

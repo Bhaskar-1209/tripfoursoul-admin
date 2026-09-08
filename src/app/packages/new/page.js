@@ -39,6 +39,12 @@ function NewPackageContent() {
     return () => { active = false; };
   }, []);
 
+  useEffect(() => {
+    fetch("/api/sort-order?table=packages").then((response) => response.json()).then((result) => {
+      if (result.nextSortOrder) setForm((previous) => ({ ...previous, sort_order: result.nextSortOrder }));
+    }).catch(() => {});
+  }, []);
+
   const notify = (text) => {
     setMessage(text);
   };

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getNextSortOrder } from '@/lib/sortOrder';
 
 const makeSlug = (value = '') => value
   .trim()
@@ -87,18 +88,20 @@ export async function POST(request) {
     }
     await ensurePackageSchema();
 
+    const packageSort = Number(sort_order) > 0 ? Number(sort_order) : await getNextSortOrder('packages');
+
     // Prevent two active packages from sharing the same sort number.
-    if (Number(sort_order) > 0) {
-      const duplicates = await db.query('SELECT id FROM packages WHERE sort_order = $1 AND is_active = true', [Number(sort_order)]);
+    if (packageSort > 0) {
+      const duplicates = await db.query('SELECT id FROM packages WHERE sort_order = $1 AND is_active = true', [packageSort]);
       if (duplicates.length > 0) {
-        return NextResponse.json({ error: `Sort number ${sort_order} is already used by another published package. Unpublish that package or choose a different number.` }, { status: 400 });
+        return NextResponse.json({ error: `Sort number ${packageSort} is already used by another published package. Unpublish that package or choose a different number.` }, { status: 400 });
       }
     }
 
     const packageItem = await db.insert('packages', {
       destination_id: Number(destination_id), title, slug: makeSlug(title), days, meals,
       short_description, long_description, sub_heading, itinerary, additional_info, image_url,
-      inclusives: normalizeOptionalRichText(inclusives), exclusives: normalizeOptionalRichText(exclusives), price, price_usd, price_inr, price_eur, sort_order: Number(sort_order), is_trending: Boolean(is_trending), is_spiritual: Boolean(is_spiritual), is_active: true,
+      inclusives: normalizeOptionalRichText(inclusives), exclusives: normalizeOptionalRichText(exclusives), price, price_usd, price_inr, price_eur, sort_order: packageSort, is_trending: Boolean(is_trending), is_spiritual: Boolean(is_spiritual), is_active: true,
     });
     return NextResponse.json({ success: true, id: packageItem.id });
   } catch (error) {

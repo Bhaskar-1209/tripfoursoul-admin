@@ -43,7 +43,7 @@ export default function OffersPage() {
   const [confirmAction, setConfirmAction] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [confirmSortOrder, setConfirmSortOrder] = useState("");
-  const [activeFilter, setActiveFilter] = useState("all");
+  const [activeFilter, setActiveFilter] = useState("published");
 
   const filters = [
     { id: "all", label: "All" },

@@ -52,13 +52,13 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="admin-label">Username</label>
+            <label className="admin-label">Username or Email</label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="admin-input"
-              placeholder="Enter username"
+              placeholder="Enter username or email"
               required
             />
           </div>

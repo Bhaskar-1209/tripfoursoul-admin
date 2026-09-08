@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import useStatusToast from "@/hooks/useStatusToast";
 
 export default function TestimonialsPage() {
+  const router = useRouter();
   const [testimonials, setTestimonials] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -16,13 +18,13 @@ export default function TestimonialsPage() {
 
   useEffect(() => { fetchTestimonials(); }, []);
 
-  const fetchTestimonials = async () => {
+  async function fetchTestimonials() {
     try {
       const res = await fetch("/api/testimonials?all=true");
       const data = await res.json();
       if (data.testimonials) setTestimonials(data.testimonials);
     } catch (error) { console.error(error); }
-  };
+  }
 
   const togglePublish = async (item) => {
     try {
@@ -142,7 +144,7 @@ export default function TestimonialsPage() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold">All Testimonials</h2>
             <button 
-              onClick={() => { setShowForm(true); setEditingItem(null); setForm({ name: "", image_url: "", rating: 5, review: "", sort_order: 0, video_url: "", influencer_video_url: "" }); }}
+              onClick={() => router.push("/testimonials/new")}
               className="admin-btn"
             >
               Add New Testimonial
@@ -308,7 +310,7 @@ export default function TestimonialsPage() {
                     {item.is_active ? 'Published' : 'Unpublished'}
                   </button>
                   <button 
-                    onClick={() => startEdit(item)} 
+                    onClick={() => router.push(`/testimonials/${item.id}`)}
                     className="admin-btn-secondary text-xs px-3 py-1.5"
                   >
                     Edit
@@ -323,7 +325,7 @@ export default function TestimonialsPage() {
               </div>
             ))}
             {testimonials.length === 0 && (
-              <p className="text-gray-400 text-sm py-8 text-center">No testimonials added yet. Click "Add New Testimonial" to create your first testimonial.</p>
+              <p className="text-gray-400 text-sm py-8 text-center">No testimonials added yet. Click &quot;Add New Testimonial&quot; to create your first testimonial.</p>
             )}
           </div>
         </div>

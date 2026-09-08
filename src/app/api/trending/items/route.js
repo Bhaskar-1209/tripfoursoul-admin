@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getNextSortOrder } from '@/lib/sortOrder';
 
 export async function GET() {
   try {
@@ -13,9 +14,10 @@ export async function GET() {
 export async function POST(request) {
   try {
     const { name, image_url, region, price, badge, sort_order } = await request.json();
+    const trendingSort = Number(sort_order) > 0 ? Number(sort_order) : await getNextSortOrder('trending_items');
     const result = await db.insert('trending_items', {
       name, image_url, region: region || '', price: price || '', badge: badge || '',
-      sort_order: sort_order || 0, is_active: true
+      sort_order: trendingSort, is_active: true
     });
     return NextResponse.json({ success: true, id: result.id });
   } catch (error) {

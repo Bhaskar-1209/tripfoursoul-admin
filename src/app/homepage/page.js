@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import useStatusToast from "@/hooks/useStatusToast";
 import RichTextEditor from "@/components/RichTextEditor";
@@ -18,8 +19,12 @@ const TABS = [
 const emptyFeature = { icon: "", title: "", description: "", sort_order: 0 };
 const emptyTestimonial = { name: "", image_url: "", rating: 5, review: "", sort_order: 0, video_url: "", influencer_video_url: "" };
 
-export default function HomepageSettingsPage() {
-  const [activeTab, setActiveTab] = useState("banner");
+function HomepageSettingsPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const [selectedTab, setSelectedTab] = useState(null);
+  const activeTab = selectedTab || (TABS.some((tab) => tab.id === requestedTab) ? requestedTab : "banner");
   const [data, setData] = useState({});
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useStatusToast();
@@ -109,12 +114,13 @@ export default function HomepageSettingsPage() {
       });
       if (res.ok) {
         showMessage("Saved successfully!");
-        fetchAllData();
       } else {
-        showMessage("Error saving", "error");
+        const result = await res.json().catch(() => ({}));
+        showMessage(result.error || "Error saving", "error");
       }
+      await fetchAllData();
     } catch (e) {
-      showMessage("Error saving", "error");
+      showMessage(e instanceof Error ? e.message : "Network error while saving", "error");
     }
   };
 
@@ -504,7 +510,7 @@ export default function HomepageSettingsPage() {
             {TABS.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => setSelectedTab(tab.id)}
                 className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
                   activeTab === tab.id
                     ? "bg-teal-600 text-white"
@@ -708,7 +714,7 @@ export default function HomepageSettingsPage() {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold">Features Management</h2>
               <button
-                onClick={() => { setShowFeatureForm(true); setEditingFeature(null); setFeatureForm(emptyFeature); }}
+                onClick={() => router.push("/features/new")}
                 className="admin-btn"
               >
                 Add New Feature
@@ -798,7 +804,7 @@ export default function HomepageSettingsPage() {
                     >
                       {feature.is_active ? 'Published' : 'Unpublished'}
                     </button>
-                    <button onClick={() => startFeatureEdit(feature)} className="admin-btn-secondary text-xs px-3 py-1.5">
+                    <button onClick={() => router.push(`/features/${feature.id}`)} className="admin-btn-secondary text-xs px-3 py-1.5">
                       Edit
                     </button>
                     <button onClick={() => handleFeatureDelete(feature.id)} className="admin-btn-danger text-xs px-3 py-1.5">
@@ -819,7 +825,7 @@ export default function HomepageSettingsPage() {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold">Testimonials Management</h2>
               <button
-                onClick={() => { setShowTestimonialForm(true); setEditingTestimonial(null); setTestimonialForm(emptyTestimonial); }}
+                onClick={() => router.push("/testimonials/new")}
                 className="admin-btn"
               >
                 Add New Testimonial
@@ -976,7 +982,7 @@ export default function HomepageSettingsPage() {
                     >
                       {item.is_active ? 'Published' : 'Unpublished'}
                     </button>
-                    <button onClick={() => startTestimonialEdit(item)} className="admin-btn-secondary text-xs px-3 py-1.5">
+                    <button onClick={() => router.push(`/testimonials/${item.id}`)} className="admin-btn-secondary text-xs px-3 py-1.5">
                       Edit
                     </button>
                     <button onClick={() => handleTestimonialDelete(item.id)} className="admin-btn-danger text-xs px-3 py-1.5">
@@ -1017,6 +1023,21 @@ export default function HomepageSettingsPage() {
                   <div>
                     <label className="admin-label">Button Behavior</label>
                     <p className="admin-input bg-gray-50 text-gray-600 text-sm cursor-not-allowed">Opens the offers popup</p>
+                  </div>
+                </div>
+                <div className="border-t border-gray-200 pt-4 space-y-4">
+                  <h3 className="text-base font-semibold text-gray-900">Right Card</h3>
+                  <div>
+                    <label className="admin-label">Card Tagline</label>
+                    <input type="text" value={data.deals.settings.card_tagline || ""} onChange={(e) => updateDealsField("card_tagline", e.target.value)} className="admin-input" />
+                  </div>
+                  <div>
+                    <label className="admin-label">Card Heading</label>
+                    <textarea value={data.deals.settings.card_heading || ""} onChange={(e) => updateDealsField("card_heading", e.target.value)} className="admin-input" rows={3} />
+                  </div>
+                  <div>
+                    <label className="admin-label">Card Description</label>
+                    <textarea value={data.deals.settings.card_description || ""} onChange={(e) => updateDealsField("card_description", e.target.value)} className="admin-input" rows={2} />
                   </div>
                 </div>
                 <p className="text-xs text-gray-500">The Deals button always opens a popup showing your published offers — it does not link anywhere.</p>
@@ -1077,5 +1098,13 @@ export default function HomepageSettingsPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function HomepageSettingsPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading...</div>}>
+      <HomepageSettingsPageContent />
+    </Suspense>
   );
 }

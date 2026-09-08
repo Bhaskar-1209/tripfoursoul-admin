@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import useStatusToast from "@/hooks/useStatusToast";
 
 export default function FeaturesPage() {
+  const router = useRouter();
   const [features, setFeatures] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingFeature, setEditingFeature] = useState(null);
@@ -14,13 +16,13 @@ export default function FeaturesPage() {
 
   useEffect(() => { fetchFeatures(); }, []);
 
-  const fetchFeatures = async () => {
+  async function fetchFeatures() {
     try {
       const res = await fetch("/api/features?all=true");
       const data = await res.json();
       if (data.features) setFeatures(data.features);
     } catch (error) { console.error(error); }
-  };
+  }
 
   const togglePublish = async (feature) => {
     try {
@@ -101,7 +103,7 @@ export default function FeaturesPage() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold">All Features</h2>
             <button 
-              onClick={() => { setShowForm(true); setEditingFeature(null); setForm({ icon: "", title: "", description: "", sort_order: 0 }); }}
+              onClick={() => router.push("/features/new")}
               className="admin-btn"
             >
               Add New Feature
@@ -197,7 +199,7 @@ export default function FeaturesPage() {
                     {feature.is_active ? 'Published' : 'Unpublished'}
                   </button>
                   <button 
-                    onClick={() => startEdit(feature)} 
+                    onClick={() => router.push(`/features/${feature.id}`)}
                     className="admin-btn-secondary text-xs px-3 py-1.5"
                   >
                     Edit
@@ -212,7 +214,7 @@ export default function FeaturesPage() {
               </div>
             ))}
             {features.length === 0 && (
-              <p className="text-gray-400 text-sm py-8 text-center">No features added yet. Click "Add New Feature" to create your first feature.</p>
+              <p className="text-gray-400 text-sm py-8 text-center">No features added yet. Click &quot;Add New Feature&quot; to create your first feature.</p>
             )}
           </div>
         </div>

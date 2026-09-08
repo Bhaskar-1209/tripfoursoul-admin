@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getNextSortOrder } from '@/lib/sortOrder';
+
+export const dynamic = 'force-dynamic';
 
 // GET - Fetch all testimonials
 export async function GET(request) {
@@ -20,7 +23,7 @@ export async function POST(request) {
     const body = await request.json();
     const { name, image_url, rating, review, sort_order, video_url, influencer_video_url } = body;
 
-    const testimonialSort = Number(sort_order) || 0;
+    const testimonialSort = Number(sort_order) > 0 ? Number(sort_order) : await getNextSortOrder('testimonials');
     if (testimonialSort > 0) {
       const duplicates = await db.query('SELECT id FROM testimonials WHERE sort_order = $1 AND is_active = true', [testimonialSort]);
       if (duplicates.length > 0) {

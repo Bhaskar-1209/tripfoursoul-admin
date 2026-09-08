@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getNextSortOrder } from '@/lib/sortOrder';
 
 export async function GET() {
   try {
@@ -14,7 +15,7 @@ export async function GET() {
 export async function POST(request) {
   try {
     const { image_url, sort_order } = await request.json();
-    const image = await db.insert('banner_images', { image_url, sort_order: sort_order || 0, is_active: true });
+    const image = await db.insert('banner_images', { image_url, sort_order: Number(sort_order) > 0 ? Number(sort_order) : await getNextSortOrder('banner_images', false), is_active: true });
     return NextResponse.json({ success: true, id: image.id });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

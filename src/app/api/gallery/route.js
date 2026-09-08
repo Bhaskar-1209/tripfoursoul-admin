@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getNextSortOrder } from '@/lib/sortOrder';
 
 const normalizeActive = (value) => value === true || value === 1 || value === '1' || value === 'true';
 
@@ -22,10 +23,12 @@ export async function POST(request) {
     const body = await request.json();
     const { image_url, video_url, media_type, title, category, sort_order, is_active } = body;
     if (!(image_url || video_url)) return NextResponse.json({ error: 'An image or video URL is required' }, { status: 400 });
+    const galleryActive = is_active !== undefined ? normalizeActive(is_active) : true;
+    const gallerySort = galleryActive ? (Number(sort_order) > 0 ? Number(sort_order) : await getNextSortOrder('gallery_images')) : 0;
     const img = await db.insert('gallery_images', {
       image_url: image_url || '', video_url: video_url || '', media_type: media_type || (video_url ? 'video' : 'image'),
-      title: title || '', category: category || 'General', sort_order: Number(sort_order) || 0,
-      is_active: is_active !== undefined ? normalizeActive(is_active) : true
+      title: title || '', category: category || 'General', sort_order: gallerySort,
+      is_active: galleryActive
     });
     return NextResponse.json({ success: true, id: img.id });
   } catch (error) {

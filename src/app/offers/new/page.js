@@ -26,6 +26,12 @@ export default function NewOfferPage() {
       .catch(() => setPackages([]));
   }, []);
 
+  useEffect(() => {
+    fetch("/api/sort-order?table=offers").then((response) => response.json()).then((result) => {
+      if (result.nextSortOrder) setForm((previous) => ({ ...previous, sort_order: result.nextSortOrder }));
+    }).catch(() => {});
+  }, []);
+
   const update = (key, value) => setForm((current) => ({ ...current, [key]: value }));
   const changeLinkType = (value) => {
     setLinkType(value);

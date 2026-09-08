@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import RichTextEditor from "@/components/RichTextEditor";
@@ -15,6 +15,11 @@ export default function NewDestinationPage() {
   const [messageType, setMessageType] = useState("error");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
+  useEffect(() => {
+    fetch("/api/sort-order?table=destinations").then((response) => response.json()).then((result) => {
+      if (result.nextSortOrder) setForm((previous) => ({ ...previous, sort_order: result.nextSortOrder }));
+    }).catch(() => {});
+  }, []);
 
   const notify = (text, type = "error") => {
     setMessage(text);

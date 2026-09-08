@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getNextSortOrder } from '@/lib/sortOrder';
 
 const ensureOffersTable = () => db.query(`
   CREATE TABLE IF NOT EXISTS offers (
@@ -78,6 +79,8 @@ export async function POST(request) {
     await ensureOffersTable();
     const offer = normalizeOffer(await request.json());
     if (!offer.title) return NextResponse.json({ error: 'Offer title is required' }, { status: 400 });
+    if (offer.is_active && offer.sort_order <= 0) offer.sort_order = await getNextSortOrder('offers');
+    if (!offer.is_active) offer.sort_order = 0;
     // Prevent two offers sharing the same sort number.
     if (offer.sort_order > 0) {
       const duplicates = await db.query('SELECT id FROM offers WHERE sort_order = $1 AND is_active = true', [offer.sort_order]);
