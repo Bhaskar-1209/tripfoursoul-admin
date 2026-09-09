@@ -106,6 +106,12 @@ export async function PUT(request) {
 
     const existing = await db.get('destinations', id);
     if (!existing) return NextResponse.json({ error: 'Destination not found' }, { status: 404 });
+    // The image is compulsory: explicitly clearing it is rejected so the user
+    // must upload a replacement before saving. Partial updates (e.g. publishing
+    // from the list page) that omit image_url are unaffected.
+    if (image_url !== undefined && !String(image_url || '').trim()) {
+      return NextResponse.json({ error: 'Destination image is required' }, { status: 400 });
+    }
 
     await ensureDestinationSchema();
     const shouldCascadeUnpublish = is_active !== undefined && !Boolean(is_active) && Boolean(existing.is_active);

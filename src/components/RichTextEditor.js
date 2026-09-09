@@ -15,6 +15,142 @@ const ToolbarButton = ({ onClick, active, title, children }) => (
   </button>
 );
 
+// contentEditable browsers (Chrome in particular) drop a stray <br> — or an
+// empty <p>/<div> — into a field the moment it is clicked, and create an empty
+// <li> when Enter is pressed at the end of a bullet/numbered list. That
+// scaffold makes typed text start on the second line / leaves a blank line at
+// the end of a list, and because it lives in innerHTML, gets stored as an extra
+// empty line (e.g. in Additional Info / Inclusions / Exclusions). These
+// helpers strip leading/trailing blank blocks, stray <br>s and empty list
+// items so fields never begin or end with an unwanted empty line.
+const trimEmptyEdges = (html) => {
+  if (typeof html !== "string") return "";
+  let out = html;
+
+  // An empty block is a <br>, an empty <p>/<div>, an empty <li> (optionally
+  // wrapping an empty <p>/<div>), or a fully empty <ul>/<ol>.
+  const emptyBr = `(?:<br\\s*\\/?>)`;
+  const emptyDivP = `(?:<(?:div|p)(?:\\s[^>]*)?>\\s*(?:<br\\s*\\/?>|&nbsp;)?\\s*<\\/(?:div|p)>)`;
+  const emptyLi = `(?:<li(?:\\s[^>]*)?>\\s*(?:(?:<br\\s*\\/?>)|(?:&nbsp;)|(?:<(?:div|p)(?:\\s[^>]*)?>\\s*(?:<br\\s*\\/?>|&nbsp;)?\\s*<\\/(?:div|p)>))?\\s*<\\/li>)`;
+  const emptyList = `(?:<(?:ul|ol)(?:\\s[^>]*)?>\\s*<\\/(?:ul|ol)>)`;
+
+  // Chrome leaves an empty <li> behind when Enter is pressed at the end of a
+  // bullet/numbered list (that line is where a new point would be typed).
+  // Remove those empty items from the edges of lists so they can't persist.
+  out = out.replace(new RegExp(`(?:${emptyLi}\\s*)+(?=</(?:ul|ol)>)`, "gi"), "");
+  out = out.replace(new RegExp(`(<(?:ul|ol)(?:\\s[^>]*)?>\\s*)(?:${emptyLi}\\s*)+`, "gi"), "$1");
+
+  // Remove leading empty blocks / <br>s / list items (and whitespace before).
+  let changed = true;
+  while (changed) {
+    changed = false;
+    const leading = out.match(new RegExp(`^\\s*(?:(?:${emptyBr})|(?:${emptyDivP})|(?:${emptyLi})|(?:${emptyList}))`, "i"));
+    if (leading) {
+      out = out.slice(leading[0].length);
+      changed = true;
+    }
+  }
+
+  // Remove trailing empty blocks / <br>s / list items — but keep the anchor
+  // block directly after a table/figure: the browser needs it to keep editing
+  // after the media.
+  changed = true;
+  while (changed) {
+    changed = false;
+    const trailing = out.match(new RegExp(`(\\s*(?:(?:${emptyBr})|(?:${emptyDivP})|(?:${emptyLi})|(?:${emptyList}))\\s*)$`, "i"));
+    if (trailing) {
+      const without = out.slice(0, trailing.index);
+      if (/(?:table|figure)>$/i.test(without)) break;
+      out = without;
+      changed = true;
+    }
+  }
+
+  // Drop any remaining leading/trailing whitespace-only text nodes.
+  out = out.replace(/^\s+/, "").replace(/\s+$/, "");
+
+  // If only blank markup/whitespace remains, collapse to "" so the placeholder
+  // shows again instead of a blank line. Real content (text, images, tables,
+  // non-empty lists…) is preserved. List tags only become "removable" here when
+  // the edge trimming above has already emptied the items they wrap.
+  const residue = out
+    .replace(/<br\s*\/?>|&nbsp;|&#160;|&#xA0;/gi, "")
+    .replace(/<\/?(?:div|p|li|ul|ol)(?:\s[^>]*)?>/gi, "")
+    .replace(/[\s\u200B-\u200D\uFEFF]/g, "");
+  return residue ? out : "";
+};
+
+// Google Docs / Word leave inline vertical margins on list markup — e.g.
+// `<li style="...margin-bottom: 12pt...">`, or a `<p style="line-height:1.38;
+// margin-top:12pt;margin-bottom:0pt">`, or a shorthand `margin: 12pt 0px 0pt;`
+// inside an item. Those margins create unwanted gaps between bullet points.
+// Rewrite `margin-top`/`margin-bottom` (and the `margin` shorthand) to 0 on
+// <li> tags and on any <p> that lives inside a <ul>/<ol>, so bulleted content
+// stays tight and the saved HTML no longer carries the stray 12pt gap.
+const normalizeListMargins = (html) => {
+  if (typeof html !== "string" || !/<li[\s>]/i.test(html)) return html;
+
+  const rewriteOpeningTag = (tag) => {
+    const styleMatch = tag.match(/(style\s*=\s*["'])([^"']*)(["'])/i);
+    if (!styleMatch) return tag;
+    const pre = styleMatch[1];
+    const style = styleMatch[2];
+    const post = styleMatch[3];
+    const full = styleMatch[0];
+
+    // Match `margin`, `margin-top` or `margin-bottom` declarations (but not
+    // `margin-left`/`margin-right`, which are untouched for list indentation).
+    if (!/(?:^|;)\s*margin(?:-(?:top|bottom))?\s*:/i.test(style)) return tag;
+
+    const parts = style.split(";");
+    const fixed = parts.map((part) => {
+      const idx = part.indexOf(":");
+      if (idx === -1) return part;
+      // Keep any whitespace that preceded the property so the rewritten style
+      // stays formatted exactly like the original (only the value changes).
+      const leadingWs = (part.match(/^\s*/) || [""])[0];
+      const prop = part.slice(0, idx).trim().toLowerCase();
+      if (prop === "margin-top" || prop === "margin-bottom") return `${leadingWs}${prop}: 0`;
+      if (prop === "margin") return `${leadingWs}margin: 0`; // shorthand — zero all sides
+      return part;
+    });
+
+    // Rebuild the opening tag: everything before `style="` stays untouched,
+    // only the style value is rewritten.
+    const before = tag.slice(0, styleMatch.index);
+    const after = tag.slice(styleMatch.index + full.length);
+    return before + pre + fixed.join(";") + post + after;
+  };
+
+  // Walk the markup and zero inline top/bottom margins on <li>/<p> opening tags
+  // that sit inside a <ul>/<ol> (nested lists included). Everything else is
+  // left byte-for-byte identical.
+  const parts = [];
+  let cursor = 0;
+  let depth = 0;
+  const tagPattern = /<(?:ul|ol|li|p)\b[^>]*>|<\/(?:ul|ol|li|p)>/gi;
+  let match;
+  while ((match = tagPattern.exec(html)) !== null) {
+    const text = html.slice(cursor, match.index);
+    if (text) parts.push(text);
+    const tag = match[0];
+    if (/^<\/(?:ul|ol)>/i.test(tag)) {
+      depth = Math.max(0, depth - 1);
+      parts.push(tag);
+    } else if (/^<(?:ul|ol)\b/i.test(tag)) {
+      depth += 1;
+      parts.push(tag);
+    } else if (depth > 0 && /^<(?:li|p)\b/i.test(tag)) {
+      parts.push(rewriteOpeningTag(tag));
+    } else {
+      parts.push(tag);
+    }
+    cursor = tagPattern.lastIndex;
+  }
+  if (cursor < html.length) parts.push(html.slice(cursor));
+  return parts.join("");
+};
+
 export default function RichTextEditor({ value, onChange, placeholder, rows = 6, allowImageUpload = false, uniformTextSize = false }) {
   const editorRef = useRef(null);
   const imageInputRef = useRef(null);
@@ -26,10 +162,15 @@ export default function RichTextEditor({ value, onChange, placeholder, rows = 6,
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageError, setImageError] = useState("");
 
-  // Sync external value changes (e.g., when switching between edit/add modes)
+  // Sync external value changes (e.g., when switching between edit/add modes).
+  // Inline list margins from pasted (Google Docs) content are normalized so old
+  // 12pt gaps disappear as soon as the value is loaded into the editor.
   useEffect(() => {
-    if (editorRef.current && editorRef.current.innerHTML !== (value || "")) {
-      editorRef.current.innerHTML = value || "";
+    if (editorRef.current) {
+      const normalized = trimEmptyEdges(normalizeListMargins(value || ""));
+      if (editorRef.current.innerHTML !== normalized) {
+        editorRef.current.innerHTML = normalized;
+      }
     }
   }, [value]);
 
@@ -74,6 +215,27 @@ export default function RichTextEditor({ value, onChange, placeholder, rows = 6,
     if (editorRef.current) {
       onChange(editorRef.current.innerHTML);
     }
+  };
+
+  // Chrome inserts a stray <br> (or an empty list block) into an empty editor
+  // when it is clicked. Clear that scaffold as soon as the editor gains focus
+  // so the placeholder shows again and the first keystroke lands on the first
+  // line (no blank line).
+  const clearAutoScaffold = () => {
+    const el = editorRef.current;
+    if (!el) return;
+    if (trimEmptyEdges(el.innerHTML) === "") el.innerHTML = "";
+  };
+
+  // On blur, strip edge blank lines and normalize list margins before reporting
+  // the value so the form (and the database) never keeps an extra empty line or
+  // the 12pt gap the browser/paste left behind.
+  const handleBlur = () => {
+    const el = editorRef.current;
+    if (!el) return;
+    const clean = trimEmptyEdges(normalizeListMargins(el.innerHTML));
+    if (clean !== el.innerHTML) el.innerHTML = clean;
+    onChange(clean);
   };
 
   const insertTable = () => {
@@ -188,10 +350,10 @@ export default function RichTextEditor({ value, onChange, placeholder, rows = 6,
         contentEditable
         suppressContentEditableWarning
         onInput={handleInput}
-        onBlur={handleInput}
+        onBlur={handleBlur}
         onKeyUp={updateActiveFormats}
         onMouseUp={updateActiveFormats}
-        onFocus={updateActiveFormats}
+        onFocus={() => { clearAutoScaffold(); updateActiveFormats(); }}
         className={`rich-text-editor min-h-[120px] w-full bg-white px-4 py-3 text-sm text-gray-900 focus:outline-none ${uniformTextSize ? "rich-text-editor--uniform-size" : ""}`}
         style={{ minHeight: `${rows * 28}px` }}
         data-placeholder={placeholder}

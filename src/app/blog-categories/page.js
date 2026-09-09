@@ -68,6 +68,10 @@ export default function BlogCategoriesPage() {
       toast.error("Category name is required");
       return;
     }
+    if (!form.image_url) {
+      toast.error("Category image is required");
+      return;
+    }
     setSaving(true);
     try {
       const method = editing ? "PUT" : "POST";
@@ -169,7 +173,7 @@ export default function BlogCategoriesPage() {
                 <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="admin-input" rows={2} placeholder="Short description of this category..." />
               </div>
               <div className="md:col-span-2">
-                <label className="admin-label">Category Image</label>
+                <label className="admin-label">Category Image *</label>
                 <div className="flex gap-2">
                   <input ref={fileInputRef} type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onChange={handleImageUpload} className="admin-input flex-1" disabled={uploading} />
                   <button type="button" onClick={() => fileInputRef.current?.click()} className="admin-btn-secondary text-xs whitespace-nowrap" disabled={uploading}>

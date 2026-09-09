@@ -78,6 +78,9 @@ export async function POST(request) {
     if (!name) {
       return NextResponse.json({ error: 'Category name is required' }, { status: 400 });
     }
+    if (!image_url?.trim()) {
+      return NextResponse.json({ error: 'Category image is required' }, { status: 400 });
+    }
 
     const catSlug = slug || makeSlug(name);
 
@@ -126,6 +129,12 @@ export async function PUT(request) {
 
     const existing = await db.get('blog_categories', Number(id));
     if (!existing) return NextResponse.json({ error: 'Category not found' }, { status: 404 });
+    // The image is compulsory: explicitly clearing it is rejected so the user
+    // must upload a replacement before saving. Partial updates (e.g. activating
+    // from the list page) that omit image_url are unaffected.
+    if (image_url !== undefined && !String(image_url || '').trim()) {
+      return NextResponse.json({ error: 'Category image is required' }, { status: 400 });
+    }
 
     // Unpublishing frees the sort number so another item can use it.
     const nextActive = is_active !== undefined ? Boolean(is_active) : Boolean(existing.is_active);

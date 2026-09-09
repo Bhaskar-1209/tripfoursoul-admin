@@ -116,6 +116,11 @@ export async function POST(request) {
     if (hasTooManyGalleryImages(gallery_images)) {
       return NextResponse.json({ error: `A blog can have a maximum of ${MAX_BLOG_IMAGES} images` }, { status: 400 });
     }
+    // The image is compulsory: every blog needs at least one image.
+    const blogImages = Array.isArray(gallery_images) ? gallery_images : [];
+    if (blogImages.length === 0 && !String(cover_image || '').trim()) {
+      return NextResponse.json({ error: 'At least one blog image is required' }, { status: 400 });
+    }
 
     const blogSlug = slug || makeSlug(title);
 
@@ -160,6 +165,18 @@ export async function PUT(request) {
 
     const existing = await db.get('blogs', Number(id));
     if (!existing) return NextResponse.json({ error: 'Blog post not found' }, { status: 404 });
+
+    // The image is compulsory: merging in the existing value keeps partial
+    // updates (e.g. publish/unpublish from the list page) working while still
+    // blocking a request that clears the last remaining image.
+    let existingGallery = existing.gallery_images || '[]';
+    try { existingGallery = JSON.parse(existingGallery); } catch { existingGallery = []; }
+    if (!Array.isArray(existingGallery)) existingGallery = [];
+    const finalImages = gallery_images !== undefined ? (Array.isArray(gallery_images) ? gallery_images : []) : existingGallery;
+    const finalCover = cover_image !== undefined ? cover_image : existing.cover_image;
+    if (finalImages.length === 0 && !String(finalCover || '').trim()) {
+      return NextResponse.json({ error: 'At least one blog image is required' }, { status: 400 });
+    }
 
     const updateData = {};
     if (title !== undefined) updateData.title = title;

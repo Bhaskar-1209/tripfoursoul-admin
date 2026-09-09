@@ -67,7 +67,7 @@ body {
 }
 
 .rich-text-editor p {
-  @apply mb-2;
+  /* @apply mb-2; */
 }
 
 .rich-text-editor ul,

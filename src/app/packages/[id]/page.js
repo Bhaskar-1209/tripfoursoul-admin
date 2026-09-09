@@ -107,6 +107,10 @@ export default function EditPackagePage() {
   };
 
   const save = async () => {
+    if (!form.image_url) {
+      notify("Package image is required");
+      return;
+    }
     setSaving(true);
     try {
       const priceFields = buildPricePayload(form.price_currency, form.price_value);
@@ -164,6 +168,10 @@ export default function EditPackagePage() {
   const saveDestination = async () => {
     if (!destinationForm.name || !destinationForm.region) {
       notify("Please fill destination name and region");
+      return;
+    }
+    if (!destinationForm.image_url) {
+      notify("Destination image is required");
       return;
     }
     const priceFields = buildPricePayload(destinationForm.price_currency, destinationForm.price_value);
@@ -383,11 +391,16 @@ export default function EditPackagePage() {
               </label>
             </div>
             <div className="md:col-span-2">
-              <label className="admin-label">Package Image</label>
+              <label className="admin-label">Package Image *</label>
               <input ref={fileInputRef} type="file" accept="image/webp" onChange={upload} className="admin-input" disabled={uploading} />
-              <p className="mt-1 text-xs text-gray-500">WebP only, up to 1 MB.</p>
+              <p className="mt-1 text-xs text-gray-500">WebP only, up to 1 MB. An image is required.</p>
               {uploading && <p className="mt-1 text-sm text-gray-500">Uploading...</p>}
-              {form.image_url && <img src={form.image_url} alt="Package preview" className="mt-3 h-32 w-48 rounded-lg object-cover" />}
+              {form.image_url && (
+                <div className="mt-3 flex items-start gap-3">
+                  <img src={form.image_url} alt="Package preview" className="h-32 w-48 rounded-lg object-cover" />
+                  <button type="button" onClick={() => setForm((current) => ({ ...current, image_url: "" }))} className="admin-btn-danger text-xs whitespace-nowrap">Remove Image</button>
+                </div>
+              )}
             </div>
           </div>
           <div className="flex gap-3 pt-2">
@@ -488,10 +501,11 @@ export default function EditPackagePage() {
                     {destinationUploading ? "Uploading..." : "Upload"}
                   </button>
                 </div>
-                <p className="mt-1 text-xs text-gray-500">WebP only, up to 1 MB.</p>
+                <p className="mt-1 text-xs text-gray-500">WebP only, up to 1 MB. An image is required.</p>
                 {destinationForm.image_url && (
-                  <div className="mt-2">
+                  <div className="mt-2 flex items-start gap-3">
                     <img src={destinationForm.image_url} alt="Preview" className="h-32 w-48 rounded-lg border border-gray-200 object-cover" />
+                    <button type="button" onClick={() => setDestinationForm((current) => ({ ...current, image_url: "" }))} className="admin-btn-danger text-xs whitespace-nowrap">Remove Image</button>
                   </div>
                 )}
               </div>

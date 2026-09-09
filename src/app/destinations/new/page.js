@@ -134,11 +134,11 @@ export default function NewDestinationPage() {
                   {uploading ? "Uploading..." : "Upload"}
                 </button>
               </div>
-              <p className="mt-1 text-xs text-gray-500">WebP only, up to 1 MB.</p>
+              <p className="mt-1 text-xs text-gray-500">WebP only, up to 1 MB. An image is required.</p>
               {form.image_url && (
-                <div className="mt-2">
+                <div className="mt-2 flex items-start gap-3">
                   <img src={form.image_url} alt="Preview" className="w-32 h-32 object-cover rounded-lg border border-gray-200" />
-                  <p className="text-xs text-gray-500 mt-1">Image uploaded</p>
+                  <button type="button" onClick={() => setForm({ ...form, image_url: "" })} className="admin-btn-danger text-xs whitespace-nowrap">Remove Image</button>
                 </div>
               )}
             </div>

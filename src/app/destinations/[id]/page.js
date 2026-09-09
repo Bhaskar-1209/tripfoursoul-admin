@@ -73,6 +73,10 @@ export default function EditDestinationPage() {
       notify("Destination name and region are required");
       return;
     }
+    if (!form.image_url) {
+      notify("Destination image is required");
+      return;
+    }
     setSaving(true);
     try {
       const priceFields = buildPricePayload(form.price_currency, form.price_value);
@@ -174,18 +178,18 @@ export default function EditDestinationPage() {
               Show this destination in the Spiritual Escape section
             </label>
             <div className="md:col-span-2">
-              <label className="admin-label">Destination Image</label>
+              <label className="admin-label">Destination Image *</label>
               <div className="flex gap-2">
                 <input ref={fileInputRef} type="file" accept="image/webp" onChange={handleImageUpload} className="admin-input flex-1" disabled={uploading} />
                 <button type="button" onClick={() => fileInputRef.current?.click()} className="admin-btn-secondary text-xs whitespace-nowrap" disabled={uploading}>
                   {uploading ? "Uploading..." : "Upload"}
                 </button>
               </div>
-              <p className="mt-1 text-xs text-gray-500">WebP only, up to 1 MB.</p>
+              <p className="mt-1 text-xs text-gray-500">WebP only, up to 1 MB. An image is required.</p>
               {form.image_url && (
-                <div className="mt-2">
+                <div className="mt-2 flex items-start gap-3">
                   <img src={form.image_url} alt="Preview" className="w-32 h-32 object-cover rounded-lg border border-gray-200" />
-                  <p className="text-xs text-gray-500 mt-1">Image uploaded</p>
+                  <button type="button" onClick={() => setForm({ ...form, image_url: "" })} className="admin-btn-danger text-xs whitespace-nowrap">Remove Image</button>
                 </div>
               )}
             </div>

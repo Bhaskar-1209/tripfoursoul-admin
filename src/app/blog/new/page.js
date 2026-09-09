@@ -35,6 +35,10 @@ export default function NewBlogPage() {
       toast.error("Blog title is required");
       return;
     }
+    if (form.gallery_images.length === 0) {
+      toast.error("At least one blog image is required");
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
@@ -150,7 +154,7 @@ export default function NewBlogPage() {
               <input type="text" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} className="admin-input" placeholder="e.g., Travel Tips, Europe, Adventure" />
             </div>
             <div className="md:col-span-2">
-              <label className="admin-label">Cover &amp; Gallery Images</label>
+              <label className="admin-label">Cover &amp; Gallery Images *</label>
               <div className="flex gap-2">
                 <input ref={fileInputRef} type="file" multiple accept="image/webp" onChange={handleImageUpload} className="admin-input flex-1" disabled={uploading || form.gallery_images.length >= 3} />
                 <button type="button" onClick={() => fileInputRef.current?.click()} className="admin-btn-secondary text-xs whitespace-nowrap" disabled={uploading || form.gallery_images.length >= 3}>

@@ -26,6 +26,7 @@ const normalizeOptionalRichText = (value) => {
 
 const normalizePackageOptionalSections = (packageItem) => ({
   ...packageItem,
+  additional_info: normalizeOptionalRichText(packageItem.additional_info),
   inclusives: normalizeOptionalRichText(packageItem.inclusives),
   exclusives: normalizeOptionalRichText(packageItem.exclusives),
 });
@@ -86,6 +87,9 @@ export async function POST(request) {
     if (!destination_id || !title) {
       return NextResponse.json({ error: 'Destination and package title are required' }, { status: 400 });
     }
+    if (!image_url?.trim()) {
+      return NextResponse.json({ error: 'Package image is required' }, { status: 400 });
+    }
     await ensurePackageSchema();
 
     const packageSort = Number(sort_order) > 0 ? Number(sort_order) : await getNextSortOrder('packages');
@@ -118,6 +122,12 @@ export async function PUT(request) {
     } = body;
     if (!id || !destination_id || !title) {
       return NextResponse.json({ error: 'Package ID, destination and title are required' }, { status: 400 });
+    }
+    // The image is compulsory: explicitly clearing it is rejected so the user
+    // must upload a replacement before saving. Partial updates (e.g. publishing
+    // from the list page) that omit image_url are unaffected.
+    if (image_url !== undefined && !String(image_url || '').trim()) {
+      return NextResponse.json({ error: 'Package image is required' }, { status: 400 });
     }
     const existing = await db.get('packages', Number(id));
     if (!existing) return NextResponse.json({ error: 'Package not found' }, { status: 404 });

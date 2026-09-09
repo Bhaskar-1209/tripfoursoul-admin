@@ -48,6 +48,10 @@ export default function NewBlogCategoryPage() {
       toast.error("Category name is required");
       return;
     }
+    if (!form.image_url.trim()) {
+      toast.error("Category image is required");
+      return;
+    }
     setSaving(true);
     try {
       const response = await fetch("/api/blog-categories", {
@@ -93,12 +97,17 @@ export default function NewBlogCategoryPage() {
               <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="admin-input" rows={3} />
             </div>
             <div className="md:col-span-2">
-              <label className="admin-label">Category Image</label>
+              <label className="admin-label">Category Image *</label>
               <div className="flex gap-2">
                 <input ref={fileInputRef} type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onChange={handleImageUpload} className="admin-input flex-1" disabled={uploading} />
                 <button type="button" onClick={() => fileInputRef.current?.click()} className="admin-btn-secondary whitespace-nowrap text-xs" disabled={uploading}>{uploading ? "Uploading..." : "Upload Image"}</button>
               </div>
-              {form.image_url && <img src={form.image_url} alt="Category preview" className="mt-3 h-24 w-32 rounded border object-cover" />}
+              {form.image_url && (
+                <div className="mt-3 flex items-start gap-3">
+                  <img src={form.image_url} alt="Category preview" className="h-24 w-32 rounded border object-cover" />
+                  <button type="button" onClick={() => setForm((previous) => ({ ...previous, image_url: "" }))} className="admin-btn-danger text-xs whitespace-nowrap">Remove Image</button>
+                </div>
+              )}
             </div>
             <div>
               <label className="admin-label">Sort Order</label>

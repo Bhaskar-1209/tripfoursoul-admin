@@ -50,6 +50,10 @@ function NewPackageContent() {
   };
 
   const save = async () => {
+    if (!form.image_url) {
+      notify("Package image is required");
+      return;
+    }
     setSaving(true);
     try {
       const priceFields = buildPricePayload(form.price_currency, form.price_value);
@@ -182,11 +186,16 @@ function NewPackageContent() {
               </label>
             </div>
             <div className="md:col-span-2">
-              <label className="admin-label">Package Image</label>
+              <label className="admin-label">Package Image *</label>
               <input ref={fileInputRef} type="file" accept="image/webp" onChange={upload} className="admin-input" disabled={uploading} />
-              <p className="mt-1 text-xs text-gray-500">WebP only, up to 1 MB.</p>
+              <p className="mt-1 text-xs text-gray-500">WebP only, up to 1 MB. An image is required.</p>
               {uploading && <p className="mt-1 text-sm text-gray-500">Uploading...</p>}
-              {form.image_url && <img src={form.image_url} alt="Package preview" className="mt-3 h-32 w-48 rounded-lg object-cover" />}
+              {form.image_url && (
+                <div className="mt-3 flex items-start gap-3">
+                  <img src={form.image_url} alt="Package preview" className="h-32 w-48 rounded-lg object-cover" />
+                  <button type="button" onClick={() => setForm((current) => ({ ...current, image_url: "" }))} className="admin-btn-danger text-xs whitespace-nowrap">Remove Image</button>
+                </div>
+              )}
             </div>
           </div>
           <div className="flex gap-3 pt-2">
