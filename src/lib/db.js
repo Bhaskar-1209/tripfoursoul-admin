@@ -123,13 +123,14 @@ const IMAGE_FIELDS = [
   'icon', 'video_url', 'influencer_video_url'
 ];
 
-// Process a row to convert local image paths to base64 data URLs
+// Local development keeps image data self-contained as base64. In production,
+// preserve stored upload paths so browsers retrieve the image file normally.
 const processImageFields = (row) => {
   if (!row || typeof row !== 'object') return row;
 
   const processed = { ...row };
   for (const field of IMAGE_FIELDS) {
-    if (processed[field] && typeof processed[field] === 'string' && isLocalPath(processed[field])) {
+    if (process.env.NODE_ENV !== 'production' && processed[field] && typeof processed[field] === 'string' && isLocalPath(processed[field])) {
       const base64 = localPathToBase64(processed[field]);
       if (base64) {
         processed[field] = base64;

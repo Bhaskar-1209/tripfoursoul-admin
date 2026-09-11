@@ -1,15 +1,31 @@
 import { NextResponse } from 'next/server';
+import { mkdir, writeFile } from 'fs/promises';
+import path from 'path';
+import { randomUUID } from 'crypto';
 
 // Max file size (1 MB)
 const MAX_SIZE = 1024 * 1024;
 
 // Allowed image types (WebP only)
 const ALLOWED_TYPES = ['image/webp'];
+const useBase64Images = process.env.NODE_ENV !== 'production';
 
 // Upload buffer to base64 data URL (stored directly in the database)
 const toBase64DataUrl = (buffer, mimeType) => {
   return `data:${mimeType};base64,${buffer.toString('base64')}`;
 };
+
+const saveProductionUpload = async (buffer) => {
+  const uploadsDirectory = path.join(process.cwd(), 'public', 'uploads');
+  const filename = `${Date.now()}-${randomUUID()}.webp`;
+  await mkdir(uploadsDirectory, { recursive: true });
+  await writeFile(path.join(uploadsDirectory, filename), buffer);
+  return `/uploads/${filename}`;
+};
+
+const storedImageUrl = async (buffer, mimeType) => (
+  useBase64Images ? toBase64DataUrl(buffer, mimeType) : saveProductionUpload(buffer)
+);
 
 export async function GET(request) {
   try {
@@ -104,12 +120,11 @@ export async function POST(request) {
         return NextResponse.json({ error: 'File size too large. Maximum 1 MB allowed.' }, { status: 400 });
       }
 
-      // Always return base64 data URL so images are stored directly in the DB
-      const dataUrl = toBase64DataUrl(buffer, detectedType);
+      const imageUrl = await storedImageUrl(buffer, detectedType);
       return NextResponse.json({
         success: true,
-        imageUrl: dataUrl,
-        message: 'Image converted to base64 successfully',
+        imageUrl,
+        message: useBase64Images ? 'Image converted to base64 successfully' : 'Image uploaded successfully',
       });
     }
 
@@ -135,12 +150,11 @@ export async function POST(request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Always return base64 data URL so images are stored directly in the DB
-    const base64Image = toBase64DataUrl(buffer, file.type);
+    const imageUrl = await storedImageUrl(buffer, file.type);
     return NextResponse.json({
       success: true,
-      imageUrl: base64Image,
-      message: 'Image converted to base64 successfully',
+      imageUrl,
+      message: useBase64Images ? 'Image converted to base64 successfully' : 'Image uploaded successfully',
     });
   } catch (error) {
     console.error('Upload error:', error);

@@ -134,10 +134,15 @@ export default function DestinationsPage() {
                   {destinations.map((destination) => (
                     <tr key={destination.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="px-3 py-3">
-                        <div className="flex items-center gap-3">
-                          {destination.image_url && (
-                            <img src={destination.image_url} alt={destination.name} className="h-12 w-16 rounded object-cover" />
-                          )}
+                        <div className="flex items-center gap-2">
+                          {(() => {
+                            const imgs = (Array.isArray(destination.gallery_images) && destination.gallery_images.length)
+                              ? destination.gallery_images
+                              : (destination.image_url ? [destination.image_url] : []);
+                            return imgs.slice(0, 3).map((url, i) => (
+                              <img key={i} src={url} alt={destination.name} className="h-12 w-16 rounded object-cover" />
+                            ));
+                          })()}
                           <span className="font-medium text-gray-900">{destination.name}</span>
                         </div>
                       </td>

@@ -6,6 +6,15 @@ const makeSlug = (value = '') => String(value).trim().toLowerCase()
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/(^-|-$)/g, '');
 
+const MAX_DESTINATION_IMAGES = 10;
+
+const hasTooManyGalleryImages = (images) => Array.isArray(images) && images.length > MAX_DESTINATION_IMAGES;
+
+const parseGalleryImages = (value) => {
+  if (Array.isArray(value)) return value;
+  try { return JSON.parse(value || '[]'); } catch { return []; }
+};
+
 // Older deployments can predate the Spiritual Escape fields. Keep the API
 // usable while those databases are upgraded, without requiring a manual setup
 // request before an admin can create a destination.
@@ -18,6 +27,7 @@ const ensureDestinationSchema = () => {
       db.query("ALTER TABLE destinations ADD COLUMN IF NOT EXISTS price_usd VARCHAR(50) DEFAULT ''"),
       db.query("ALTER TABLE destinations ADD COLUMN IF NOT EXISTS price_inr VARCHAR(50) DEFAULT ''"),
       db.query("ALTER TABLE destinations ADD COLUMN IF NOT EXISTS price_eur VARCHAR(50) DEFAULT ''"),
+      db.query('ALTER TABLE destinations ADD COLUMN IF NOT EXISTS gallery_images JSONB'),
     ]).catch((error) => {
       // Allow a retry on a transient database failure instead of caching it.
       destinationSchemaMigration = null;
@@ -43,6 +53,12 @@ export async function GET(request) {
     // Sort by sort_order and created_at
     destinations.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
 
+    // Return gallery_images as a parsed array so consumers can render a gallery.
+    destinations = destinations.map((d) => {
+      try { d.gallery_images = parseGalleryImages(d.gallery_images); } catch { d.gallery_images = []; }
+      return d;
+    });
+
     return NextResponse.json({ destinations });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -53,13 +69,16 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name, image_url, region, price, price_usd, price_inr, price_eur, description, sort_order = 0, is_trending = false, is_spiritual = false } = body;
+    const { name, image_url, gallery_images, region, price, price_usd, price_inr, price_eur, description, sort_order = 0, is_trending = false, is_spiritual = false } = body;
 
     if (!name?.trim() || !region?.trim()) {
       return NextResponse.json({ error: 'Destination name and region are required' }, { status: 400 });
     }
     if (!image_url?.trim()) {
       return NextResponse.json({ error: 'Destination image is required' }, { status: 400 });
+    }
+    if (hasTooManyGalleryImages(gallery_images)) {
+      return NextResponse.json({ error: `A destination can have a maximum of ${MAX_DESTINATION_IMAGES} images` }, { status: 400 });
     }
 
     await ensureDestinationSchema();
@@ -73,10 +92,15 @@ export async function POST(request) {
       }
     }
 
+    const galleryImages = Array.isArray(gallery_images)
+      ? gallery_images.map(String).filter(Boolean)
+      : [image_url];
+
     const newDestination = await db.insert('destinations', {
       name,
       slug: makeSlug(name),
       image_url,
+      gallery_images: JSON.stringify(galleryImages),
       region,
       price,
       price_usd,
@@ -102,7 +126,7 @@ export async function POST(request) {
 export async function PUT(request) {
   try {
     const body = await request.json();
-    const { id, name, image_url, region, price, price_usd, price_inr, price_eur, description, is_active, sort_order, is_trending, is_spiritual } = body;
+    const { id, name, image_url, gallery_images, region, price, price_usd, price_inr, price_eur, description, is_active, sort_order, is_trending, is_spiritual } = body;
 
     const existing = await db.get('destinations', id);
     if (!existing) return NextResponse.json({ error: 'Destination not found' }, { status: 404 });
@@ -112,6 +136,15 @@ export async function PUT(request) {
     if (image_url !== undefined && !String(image_url || '').trim()) {
       return NextResponse.json({ error: 'Destination image is required' }, { status: 400 });
     }
+    if (hasTooManyGalleryImages(gallery_images)) {
+      return NextResponse.json({ error: `A destination can have a maximum of ${MAX_DESTINATION_IMAGES} images` }, { status: 400 });
+    }
+
+    // Merge the incoming gallery with the existing one so partial updates (e.g.
+    // publish/unpublish from the list page) never wipe out uploaded images.
+    const nextGallery = gallery_images !== undefined
+      ? (Array.isArray(gallery_images) ? gallery_images.map(String).filter(Boolean) : [])
+      : parseGalleryImages(existing.gallery_images);
 
     await ensureDestinationSchema();
     const shouldCascadeUnpublish = is_active !== undefined && !Boolean(is_active) && Boolean(existing.is_active);
@@ -133,6 +166,7 @@ export async function PUT(request) {
       name: name !== undefined ? name : existing.name,
       slug: makeSlug(name !== undefined ? name : existing.name),
       image_url: image_url !== undefined ? image_url : existing.image_url,
+      gallery_images: JSON.stringify(nextGallery),
       region: region !== undefined ? region : existing.region,
       price: price !== undefined ? price : existing.price,
       price_usd: price_usd !== undefined ? price_usd : existing.price_usd,

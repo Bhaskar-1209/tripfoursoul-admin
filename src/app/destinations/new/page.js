@@ -7,9 +7,12 @@ import RichTextEditor from "@/components/RichTextEditor";
 import { CURRENCIES, buildPricePayload } from "@/lib/price";
 import useStatusToast from "@/hooks/useStatusToast";
 
+const MAX_IMAGE_SIZE = 1024 * 1024;
+const MAX_DESTINATION_IMAGES = 10;
+
 export default function NewDestinationPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ name: "", image_url: "", region: "", price_currency: "USD", price_value: "", description: "", sort_order: 0, is_trending: 0, is_spiritual: 0 });
+  const [form, setForm] = useState({ name: "", image_url: "", gallery_images: [], region: "", price_currency: "USD", price_value: "", description: "", sort_order: 0, is_trending: 0, is_spiritual: 0 });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useStatusToast();
   const [messageType, setMessageType] = useState("error");
@@ -31,8 +34,8 @@ export default function NewDestinationPage() {
       notify("Destination name and region are required");
       return;
     }
-    if (!form.image_url) {
-      notify("Destination image is required");
+    if (!form.gallery_images.length) {
+      notify("At least one destination image is required");
       return;
     }
     setSaving(true);
@@ -41,7 +44,7 @@ export default function NewDestinationPage() {
       const res = await fetch("/api/destinations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, ...priceFields, is_active: 1 }),
+        body: JSON.stringify({ ...form, image_url: form.gallery_images[0] || "", gallery_images: form.gallery_images, ...priceFields, is_active: 1 }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -58,29 +61,60 @@ export default function NewDestinationPage() {
   };
 
   const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const remainingSlots = MAX_DESTINATION_IMAGES - form.gallery_images.length;
+    const files = Array.from(e.target.files || []);
+    const clearSelectedFiles = () => { if (fileInputRef.current) fileInputRef.current.value = ''; };
+    if (!files.length || remainingSlots <= 0) {
+      notify(`A destination can have a maximum of ${MAX_DESTINATION_IMAGES} images`);
+      clearSelectedFiles();
+      return;
+    }
+    if (files.length > remainingSlots) {
+      notify(`You can upload only ${remainingSlots} more image${remainingSlots > 1 ? "s" : ""} for this destination`);
+      clearSelectedFiles();
+      return;
+    }
+    if (files.some((file) => file.type !== "image/webp")) {
+      notify("Upload failed: only WebP (.webp) images are accepted");
+      clearSelectedFiles();
+      return;
+    }
+    if (files.some((file) => file.size > MAX_IMAGE_SIZE)) {
+      notify("Upload failed: each image must be 1 MB or smaller");
+      clearSelectedFiles();
+      return;
+    }
     // A new file selection is the point at which an earlier upload error can
     // safely be cleared; errors otherwise remain visible for the admin.
     setMessage("");
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
-      const data = await res.json();
-      if (res.ok && data.imageUrl) {
-        setForm({ ...form, image_url: data.imageUrl });
-        notify("Image uploaded successfully!", "success");
-      } else {
-        notify(data.error || "Failed to upload image");
-      }
+      const uploads = await Promise.all(files.map(async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch("/api/upload", { method: "POST", body: formData });
+        const data = await res.json();
+        if (!res.ok || !data.imageUrl) throw new Error(data.error || "Image upload failed");
+        return data.imageUrl;
+      }));
+      setForm((current) => {
+        const gallery_images = [...current.gallery_images, ...uploads];
+        return { ...current, gallery_images, image_url: gallery_images[0] || current.image_url };
+      });
+      notify("Image(s) uploaded successfully!", "success");
     } catch (error) {
-      notify("Error uploading image");
+      notify(error.message || "Error uploading image");
     } finally {
       setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      clearSelectedFiles();
     }
+  };
+
+  const removeImage = (index) => {
+    setForm((current) => {
+      const gallery_images = current.gallery_images.filter((_, i) => i !== index);
+      return { ...current, gallery_images, image_url: gallery_images[0] || "" };
+    });
   };
 
   return (
@@ -127,18 +161,23 @@ export default function NewDestinationPage() {
               Show this destination in the Spiritual Escape section
             </label>
             <div className="md:col-span-2">
-              <label className="admin-label">Destination Image *</label>
+              <label className="admin-label">Destination Images *</label>
               <div className="flex gap-2">
-                <input ref={fileInputRef} type="file" accept="image/webp" onChange={handleImageUpload} className="admin-input flex-1" disabled={uploading} />
-                <button type="button" onClick={() => fileInputRef.current?.click()} className="admin-btn-secondary text-xs whitespace-nowrap" disabled={uploading}>
+                <input ref={fileInputRef} type="file" multiple accept="image/webp" onChange={handleImageUpload} className="admin-input flex-1" disabled={uploading || form.gallery_images.length >= MAX_DESTINATION_IMAGES} />
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="admin-btn-secondary text-xs whitespace-nowrap" disabled={uploading || form.gallery_images.length >= MAX_DESTINATION_IMAGES}>
                   {uploading ? "Uploading..." : "Upload"}
                 </button>
               </div>
-              <p className="mt-1 text-xs text-gray-500">WebP only, up to 1 MB. An image is required.</p>
-              {form.image_url && (
-                <div className="mt-2 flex items-start gap-3">
-                  <img src={form.image_url} alt="Preview" className="w-32 h-32 object-cover rounded-lg border border-gray-200" />
-                  <button type="button" onClick={() => setForm({ ...form, image_url: "" })} className="admin-btn-danger text-xs whitespace-nowrap">Remove Image</button>
+              <p className="mt-1 text-xs text-gray-500">Upload up to {MAX_DESTINATION_IMAGES} WebP images, max 1 MB each. The first image becomes the cover. ({form.gallery_images.length}/{MAX_DESTINATION_IMAGES})</p>
+              {form.gallery_images.length > 0 && (
+                <div className="mt-3 grid grid-cols-4 gap-3">
+                  {form.gallery_images.map((url, index) => (
+                    <div key={`${url}-${index}`} className="relative">
+                      <img src={url} alt="Destination image" className="w-full h-24 object-cover rounded border" />
+                      {index === 0 && <span className="absolute top-1 left-1 rounded bg-black/60 px-1 text-[10px] text-white">Cover</span>}
+                      <button type="button" onClick={() => removeImage(index)} className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 text-xs">×</button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

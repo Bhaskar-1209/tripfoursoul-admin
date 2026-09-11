@@ -60,7 +60,8 @@ export const localPathToBase64 = (filePath = '') => {
  * Process an image URL:
  * - Keep base64 data URLs as-is
  * - Keep external URLs as-is
- * - Convert local paths to base64 data URLs
+ * - In local development, convert local paths to base64 data URLs
+ * - In production, preserve local upload paths for normal file delivery
  * @param {string|null} url - Image URL
  * @returns {string|null} - Processed URL
  */
@@ -69,6 +70,7 @@ export const processImageUrl = (url) => {
   if (isBase64Image(url)) return url;
   if (isExternalUrl(url)) return url;
   if (isLocalPath(url)) {
+    if (process.env.NODE_ENV === 'production') return url;
     const base64 = localPathToBase64(url);
     if (base64) return base64;
   }

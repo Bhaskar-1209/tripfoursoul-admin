@@ -62,9 +62,19 @@ export default function LeadsPage() {
       "Submitted": formatSubmittedDate(lead.created_at),
       "Name": leadName(lead),
       "First Name": lead.first_name || "",
+      "Middle Name": lead.middle_name || "",
       "Last Name": lead.last_name || "",
       "Email": lead.email || "",
       "Phone": lead.phone || "",
+      "Service": lead.service_type || "",
+      "Source Page": lead.source_page || "",
+      "Citizenship / Nationality": lead.nationality || "",
+      "Travel Intent": lead.travel_intent || "",
+      "Financial & Sponsorship Info": lead.financial_sponsorship_info || "",
+      "Date of Birth": formatDate(lead.date_of_birth),
+      "Travel Date": formatDate(lead.travel_date),
+      "Gender": lead.gender || "",
+      "Marital Status": lead.marital_status || "",
       "Destination": lead.destination || "",
       "Package": lead.package_name || "",
       "Coupon Code": lead.coupon_code || "",
@@ -81,8 +91,10 @@ export default function LeadsPage() {
     }));
     const worksheet = XLSX.utils.json_to_sheet(rows);
     worksheet["!cols"] = [
-      { wch: 22 }, { wch: 24 }, { wch: 16 }, { wch: 16 }, { wch: 30 }, { wch: 18 }, { wch: 22 }, { wch: 22 },
-      { wch: 18 }, { wch: 18 }, { wch: 20 }, { wch: 18 }, { wch: 16 }, { wch: 14 }, { wch: 45 }, { wch: 45 }, { wch: 15 }, { wch: 14 },
+      { wch: 22 }, { wch: 24 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 20 }, { wch: 36 }, { wch: 24 },
+      { wch: 24 }, { wch: 44 }, { wch: 16 }, { wch: 16 }, { wch: 12 }, { wch: 20 }, { wch: 22 }, { wch: 22 },
+      { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 20 }, { wch: 18 }, { wch: 16 }, { wch: 14 }, { wch: 45 },
+      { wch: 45 }, { wch: 15 }, { wch: 14 },
     ];
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Leads");
@@ -104,16 +116,15 @@ export default function LeadsPage() {
     doc.setTextColor(0);
     autoTable(doc, {
       startY: 20,
-      head: [["Submitted", "Name", "Email", "Phone", "Destination", "Coupon", "Start", "End", "Style", "Budget", "Offers", "Message"]],
+      head: [["Submitted", "Name", "Service", "Source page", "Email", "Phone", "Destination", "Message"]],
       body: exportLeads.map((lead) => [
-        formatSubmittedDate(lead.created_at), leadName(lead), lead.email || "—", lead.phone || "—", lead.destination || "—",
-        lead.coupon_code || "—", formatDate(lead.travel_start_date), formatDate(lead.travel_end_date), lead.travel_style || "—", lead.trip_budget || "—",
-        offerValue(lead) ? "Yes" : "No", lead.message || lead.additional_information || "—",
+        formatSubmittedDate(lead.created_at), leadName(lead), lead.service_type || "—", lead.source_page || lead.source || "—",
+        lead.email || "—", lead.phone || "—", lead.destination || "—", lead.message || lead.additional_information || "—",
       ]),
       margin: { left: 5, right: 5 },
       styles: { fontSize: 6, cellPadding: 1.4, overflow: "linebreak" },
       headStyles: { fillColor: [36, 86, 76], textColor: 255, fontStyle: "bold" },
-      columnStyles: { 0: { cellWidth: 25 }, 1: { cellWidth: 24 }, 2: { cellWidth: 34 }, 3: { cellWidth: 20 }, 4: { cellWidth: 22 }, 5: { cellWidth: 16 }, 6: { cellWidth: 16 }, 7: { cellWidth: 20 }, 8: { cellWidth: 18 }, 9: { cellWidth: 14 }, 10: { cellWidth: 48 } },
+      columnStyles: { 0: { cellWidth: 25 }, 1: { cellWidth: 24 }, 2: { cellWidth: 21 }, 3: { cellWidth: 35 }, 4: { cellWidth: 32 }, 5: { cellWidth: 20 }, 6: { cellWidth: 23 }, 7: { cellWidth: 50 } },
     });
     doc.save(exportFileName("pdf"));
     setShowExportModal(false);
@@ -175,12 +186,14 @@ export default function LeadsPage() {
         {message && <div className="mb-5 rounded-lg bg-red-50 p-3 text-sm text-red-700">{message}</div>}
         {loading ? <LoadingSpinner text="Loading leads..." /> : (
           <div className="admin-card overflow-x-auto">
-            <table className="w-full min-w-[1650px] text-left text-sm">
-              <thead><tr className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500"><th className="px-3 py-3">Submitted</th><th className="px-3 py-3">Name</th><th className="px-3 py-3">Email</th><th className="px-3 py-3">Phone</th><th className="px-3 py-3">Coupon code</th><th className="px-3 py-3">Travel start</th><th className="px-3 py-3">Travel end</th><th className="px-3 py-3">Travel style</th><th className="px-3 py-3">Trip budget</th><th className="px-3 py-3">Receive offers</th><th className="px-3 py-3">Status</th><th className="px-3 py-3">Action</th></tr></thead>
+            <table className="w-full min-w-[1850px] text-left text-sm">
+              <thead><tr className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500"><th className="px-3 py-3">Submitted</th><th className="px-3 py-3">Name</th><th className="px-3 py-3">Service</th><th className="px-3 py-3">Source page</th><th className="px-3 py-3">Email</th><th className="px-3 py-3">Phone</th><th className="px-3 py-3">Coupon code</th><th className="px-3 py-3">Travel start</th><th className="px-3 py-3">Travel end</th><th className="px-3 py-3">Travel style</th><th className="px-3 py-3">Trip budget</th><th className="px-3 py-3">Receive offers</th><th className="px-3 py-3">Status</th><th className="px-3 py-3">Action</th></tr></thead>
               <tbody>{leads.map((lead) => (
                 <tr key={lead.id} className="border-b border-gray-100 align-top">
                   <td className="px-3 py-3 text-gray-500">{lead.created_at ? new Date(lead.created_at).toLocaleString() : "—"}</td>
                   <td className="px-3 py-3 font-semibold text-gray-900">{leadName(lead)}</td>
+                  <td className="px-3 py-3 font-medium text-teal-700">{lead.service_type || "—"}</td>
+                  <td className="max-w-56 truncate px-3 py-3" title={lead.source_page || lead.source || ""}>{lead.source_page || lead.source || "—"}</td>
                   <td className="px-3 py-3">{lead.email || "—"}</td>
                   <td className="px-3 py-3">{lead.phone || "—"}</td>
                   <td className="px-3 py-3 font-medium text-teal-700">{lead.coupon_code || "—"}</td>
@@ -201,7 +214,8 @@ export default function LeadsPage() {
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl" role="dialog" aria-modal="true" aria-labelledby="lead-details-title" onClick={(event) => event.stopPropagation()}>
             <div className="mb-5 flex items-start justify-between gap-4"><div><h2 id="lead-details-title" className="text-xl font-bold text-gray-900">Lead details</h2><p className="mt-1 text-sm text-gray-500">Submitted {selectedLead.created_at ? new Date(selectedLead.created_at).toLocaleString() : "—"}</p></div><button onClick={() => setSelectedLead(null)} className="text-2xl leading-none text-gray-400 hover:text-gray-700" aria-label="Close lead details">×</button></div>
             <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
-              <Detail label="Name" value={leadName(selectedLead)} /><Detail label="First name" value={selectedLead.first_name} /><Detail label="Last name" value={selectedLead.last_name} /><Detail label="Email" value={selectedLead.email} /><Detail label="Phone" value={selectedLead.phone} /><Detail label="Destination" value={selectedLead.destination} /><Detail label="Package" value={selectedLead.package_name} /><Detail label="Coupon code" value={selectedLead.coupon_code} /><Detail label="Travel start date" value={formatDate(selectedLead.travel_start_date)} /><Detail label="Travel end date" value={formatDate(selectedLead.travel_end_date)} /><Detail label="Travel style" value={selectedLead.travel_style} /><Detail label="Trip budget" value={selectedLead.trip_budget} /><Detail label="Receive offers" value={offerValue(selectedLead) ? "Yes" : "No"} /><Detail label="Legacy travel date" value={selectedLead.date} /><Detail label="Travellers" value={selectedLead.travellers} /><Detail label="Source" value={selectedLead.source} /><Detail label="Status" value={selectedLead.status} />
+              <Detail label="Name" value={leadName(selectedLead)} /><Detail label="First name" value={selectedLead.first_name} /><Detail label="Middle name" value={selectedLead.middle_name} /><Detail label="Last name" value={selectedLead.last_name} /><Detail label="Email" value={selectedLead.email} /><Detail label="Phone" value={selectedLead.phone} /><Detail label="Service" value={selectedLead.service_type} /><Detail label="Source page" value={selectedLead.source_page} /><Detail label="Citizenship / Nationality" value={selectedLead.nationality} /><Detail label="Travel intent" value={selectedLead.travel_intent} /><Detail label="Date of birth" value={formatDate(selectedLead.date_of_birth)} /><Detail label="Travel date" value={formatDate(selectedLead.travel_date)} /><Detail label="Gender" value={selectedLead.gender} /><Detail label="Marital status" value={selectedLead.marital_status} /><Detail label="Destination / country to visit" value={selectedLead.destination} /><Detail label="Package" value={selectedLead.package_name} /><Detail label="Coupon code" value={selectedLead.coupon_code} /><Detail label="Travel start date" value={formatDate(selectedLead.travel_start_date)} /><Detail label="Travel end date" value={formatDate(selectedLead.travel_end_date)} /><Detail label="Travel style" value={selectedLead.travel_style} /><Detail label="Trip budget" value={selectedLead.trip_budget} /><Detail label="Receive offers" value={offerValue(selectedLead) ? "Yes" : "No"} /><Detail label="Legacy travel date" value={selectedLead.date} /><Detail label="Travellers" value={selectedLead.travellers} /><Detail label="Source" value={selectedLead.source} /><Detail label="Status" value={selectedLead.status} />
+              <Detail label="Financial & sponsorship info" value={selectedLead.financial_sponsorship_info} className="sm:col-span-2" />
               <Detail label="Message" value={selectedLead.message || selectedLead.additional_information} className="sm:col-span-2" /><Detail label="Additional information" value={selectedLead.additional_information || selectedLead.message} className="sm:col-span-2" />
             </div>
           </div>

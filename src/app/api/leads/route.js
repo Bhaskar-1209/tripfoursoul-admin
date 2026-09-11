@@ -8,6 +8,7 @@ const ensureLeadsTable = async () => {
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     first_name VARCHAR(255) DEFAULT '',
+    middle_name VARCHAR(255) DEFAULT '',
     last_name VARCHAR(255) DEFAULT '',
     email VARCHAR(255) DEFAULT '',
     phone VARCHAR(100) DEFAULT '',
@@ -26,6 +27,15 @@ const ensureLeadsTable = async () => {
     offer_duration TEXT,
     offer_duration_days INTEGER,
     source VARCHAR(100) DEFAULT 'website',
+    service_type VARCHAR(100) DEFAULT '',
+    source_page VARCHAR(500) DEFAULT '',
+    nationality VARCHAR(255) DEFAULT '',
+    travel_intent VARCHAR(255) DEFAULT '',
+    financial_sponsorship_info TEXT DEFAULT '',
+    date_of_birth DATE,
+    travel_date DATE,
+    gender VARCHAR(20) DEFAULT '',
+    marital_status VARCHAR(100) DEFAULT '',
     status VARCHAR(30) DEFAULT 'new',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )
@@ -35,6 +45,7 @@ const ensureLeadsTable = async () => {
   await db.query(`
     ALTER TABLE leads
       ADD COLUMN IF NOT EXISTS first_name VARCHAR(255) DEFAULT '',
+      ADD COLUMN IF NOT EXISTS middle_name VARCHAR(255) DEFAULT '',
       ADD COLUMN IF NOT EXISTS last_name VARCHAR(255) DEFAULT '',
       ADD COLUMN IF NOT EXISTS travel_start_date DATE,
       ADD COLUMN IF NOT EXISTS travel_end_date DATE,
@@ -44,7 +55,16 @@ const ensureLeadsTable = async () => {
       ADD COLUMN IF NOT EXISTS additional_information TEXT DEFAULT '',
       ADD COLUMN IF NOT EXISTS coupon_code VARCHAR(100) DEFAULT '',
       ADD COLUMN IF NOT EXISTS offer_duration TEXT,
-      ADD COLUMN IF NOT EXISTS offer_duration_days INTEGER
+      ADD COLUMN IF NOT EXISTS offer_duration_days INTEGER,
+      ADD COLUMN IF NOT EXISTS service_type VARCHAR(100) DEFAULT '',
+      ADD COLUMN IF NOT EXISTS source_page VARCHAR(500) DEFAULT '',
+      ADD COLUMN IF NOT EXISTS nationality VARCHAR(255) DEFAULT '',
+      ADD COLUMN IF NOT EXISTS travel_intent VARCHAR(255) DEFAULT '',
+      ADD COLUMN IF NOT EXISTS financial_sponsorship_info TEXT DEFAULT '',
+      ADD COLUMN IF NOT EXISTS date_of_birth DATE,
+      ADD COLUMN IF NOT EXISTS travel_date DATE,
+      ADD COLUMN IF NOT EXISTS gender VARCHAR(20) DEFAULT '',
+      ADD COLUMN IF NOT EXISTS marital_status VARCHAR(100) DEFAULT ''
   `);
 };
 
@@ -80,6 +100,8 @@ const validDurationDays = (days) => {
   const item = value(days);
   return /^\d+$/.test(item) && Number(item) > 0 ? Number(item) : null;
 };
+const travelServiceTypes = new Set(['private-transfer', 'travel-insurance', 'visa']);
+const normalizedServiceType = (serviceType) => value(serviceType).toLowerCase().replace(/[\s_]+/g, '-');
 const hydrateMessageDetails = (lead) => {
   const parsed = parsedMessageDetails(lead.message);
   return {
@@ -119,15 +141,25 @@ export async function POST(request) {
     const rawMessage = value(body.message);
     const parsed = parsedMessageDetails(rawMessage);
     const firstName = value(body.first_name);
+    const middleName = value(body.middle_name);
     const lastName = value(body.last_name);
+    const serviceType = normalizedServiceType(body.service_type || body.service);
+    const destination = value(body.destination || body.country_visiting || body.country_to_visit || body.country_you_are_visiting || body.country_you_want_to_visit);
+    const nationality = value(body.nationality || body.citizenship);
+    const travelIntent = value(body.travel_intent);
+    const financialSponsorshipInfo = value(body.financial_sponsorship_info || body.financial_info);
+    const dateOfBirth = validDate(value(body.date_of_birth));
+    const travelDate = validDate(value(body.travel_date));
+    const gender = value(body.gender).toUpperCase();
     const lead = {
       // Keep the legacy full-name field for existing admin views and integrations.
       name: value(body.name) || [firstName, lastName].filter(Boolean).join(' '),
       first_name: firstName,
+      middle_name: middleName,
       last_name: lastName,
       email: value(body.email),
       phone: value(body.phone),
-      destination: value(body.destination),
+      destination,
       package_name: value(body.package_name || body.package),
       date: value(body.date),
       travel_start_date: validDate(value(body.travel_start_date)) || validDate(parsed.travel_start_date),
@@ -142,10 +174,37 @@ export async function POST(request) {
       offer_duration: value(body.offer_duration) || null,
       offer_duration_days: validDurationDays(body.offer_duration_days),
       source: value(body.source) || 'website',
+      service_type: serviceType,
+      source_page: value(body.source_page || body.source_url || body.page),
+      nationality,
+      travel_intent: travelIntent,
+      financial_sponsorship_info: financialSponsorshipInfo,
+      date_of_birth: dateOfBirth,
+      travel_date: travelDate,
+      gender,
+      marital_status: value(body.marital_status),
       status: 'new',
     };
     if (!lead.name || !lead.email) {
       return NextResponse.json({ error: 'Name and email are required' }, { status: 400 });
+    }
+    if (travelServiceTypes.has(serviceType)) {
+      const missing = [];
+      if (!firstName) missing.push('first_name');
+      if (!lastName) missing.push('last_name');
+      if (!lead.email) missing.push('email');
+      if (!lead.phone) missing.push('phone');
+      if (!nationality) missing.push('nationality');
+      if (!destination) missing.push('destination');
+      if (serviceType !== 'private-transfer' && !travelIntent) missing.push('travel_intent');
+      if (serviceType !== 'private-transfer' && !financialSponsorshipInfo) missing.push('financial_sponsorship_info');
+      if (serviceType === 'travel-insurance' && !travelDate) missing.push('travel_date');
+      if (serviceType === 'visa' && !dateOfBirth) missing.push('date_of_birth');
+      if (serviceType === 'visa' && !['M', 'F'].includes(gender)) missing.push('gender');
+      if (serviceType === 'visa' && !lead.marital_status) missing.push('marital_status');
+      if (missing.length) {
+        return NextResponse.json({ error: `Missing or invalid required fields: ${missing.join(', ')}` }, { status: 400 });
+      }
     }
     const saved = await db.insert('leads', lead);
     return NextResponse.json({ success: true, lead: saved }, { status: 201 });
