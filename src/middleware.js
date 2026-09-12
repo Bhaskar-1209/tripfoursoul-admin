@@ -75,6 +75,11 @@ export function middleware(request) {
     return NextResponse.redirect(new URL('/homepage', request.url));
   }
 
+  // Redirect root path to /login
+  if (pathname === '/') {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
   // Allow public GET requests to API (for frontend integration)
   if (pathname.startsWith('/api/') && method === 'GET') {
     return NextResponse.next();
