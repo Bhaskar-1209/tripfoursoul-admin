@@ -99,8 +99,10 @@ export async function PUT(request) {
     const existing = await db.query('SELECT * FROM admins WHERE id = $1', [Number(id)]);
     if (existing.length === 0) return NextResponse.json({ error: 'Staff member not found' }, { status: 404 });
     
+    const existingStaff = existing[0];
+
     // Cannot modify the primary admin account
-    if (existing.username === 'admin' && role && role !== 'admin' && role !== 'super_admin') {
+    if (existingStaff.username === 'admin' && role && role !== 'admin' && role !== 'super_admin') {
       return NextResponse.json({ error: 'Cannot change the primary admin role' }, { status: 403 });
     }
     
@@ -108,11 +110,11 @@ export async function PUT(request) {
     if (username) updateData.username = username;
     if (email !== undefined) updateData.email = email;
     if (password) updateData.password = await bcrypt.hash(password, 10);
-    if (role && existing.username !== 'admin') updateData.role = role;
+    if (role && existingStaff.username !== 'admin') updateData.role = role;
     if (permissions !== undefined) {
       updateData.permissions = permissions.filter(p => AVAILABLE_PERMISSIONS.includes(p));
     }
-    if (is_active !== undefined && existing.username !== 'admin') updateData.is_active = is_active;
+    if (is_active !== undefined && existingStaff.username !== 'admin') updateData.is_active = is_active;
     
     const updated = await db.update('admins', Number(id), updateData);
     const { password: _, ...safeStaff } = updated;

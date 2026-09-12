@@ -41,14 +41,24 @@ const sendResetEmail = async (email, resetUrl) => {
 };
 
 export async function POST(request) {
-  const genericResponse = { message: 'If an account exists for that email, a reset link has been sent.' };
-
   try {
     const { email } = await request.json();
     if (!email?.trim()) return NextResponse.json({ error: 'Email is required' }, { status: 400 });
 
+    // Check if email provider is configured
+    const apiKey = process.env.RESEND_API_KEY;
+    const fromEmail = process.env.RESEND_FROM_EMAIL;
+    if (!apiKey || !fromEmail) {
+      return NextResponse.json(
+        { error: 'Email sending is not configured on this server. Please contact your super admin to reset your password directly from the Staff Management page.' },
+        { status: 503 }
+      );
+    }
+
     await ensureResetColumns();
     const admins = await db.query('SELECT id, email FROM admins WHERE LOWER(email) = LOWER($1) AND is_active = true', [email.trim()]);
+
+    const genericResponse = { message: 'If an account exists for that email, a reset link has been sent.' };
     if (!admins.length) return NextResponse.json(genericResponse);
 
     const token = randomBytes(32).toString('hex');
@@ -60,12 +70,7 @@ export async function POST(request) {
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
     const resetUrl = `${baseUrl}/reset-password?token=${encodeURIComponent(token)}`;
-    const emailSent = await sendResetEmail(admins[0].email, resetUrl);
-
-    // This helps local development without exposing reset tokens in production.
-    if (!emailSent && process.env.NODE_ENV !== 'production') {
-      return NextResponse.json({ ...genericResponse, resetUrl, developmentOnly: true });
-    }
+    await sendResetEmail(admins[0].email, resetUrl);
 
     return NextResponse.json(genericResponse);
   } catch (error) {
