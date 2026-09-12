@@ -45,15 +45,7 @@ export async function POST(request) {
     const { email } = await request.json();
     if (!email?.trim()) return NextResponse.json({ error: 'Email is required' }, { status: 400 });
 
-    // Check if email provider is configured
-    const apiKey = process.env.RESEND_API_KEY;
-    const fromEmail = process.env.RESEND_FROM_EMAIL;
-    if (!apiKey || !fromEmail) {
-      return NextResponse.json(
-        { error: 'Email sending is not configured on this server. Please contact your super admin to reset your password directly from the Staff Management page.' },
-        { status: 503 }
-      );
-    }
+    const emailConfigured = !!(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL);
 
     await ensureResetColumns();
     const admins = await db.query('SELECT id, email FROM admins WHERE LOWER(email) = LOWER($1) AND is_active = true', [email.trim()]);
@@ -70,9 +62,18 @@ export async function POST(request) {
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
     const resetUrl = `${baseUrl}/reset-password?token=${encodeURIComponent(token)}`;
-    await sendResetEmail(admins[0].email, resetUrl);
 
-    return NextResponse.json(genericResponse);
+    if (emailConfigured) {
+      await sendResetEmail(admins[0].email, resetUrl);
+      return NextResponse.json(genericResponse);
+    }
+
+    // No email provider configured — return reset link directly so user can click it on screen
+    return NextResponse.json({
+      message: 'Password reset link generated. Click the link below to reset your password (valid for 1 hour):',
+      resetUrl,
+      noEmail: true,
+    });
   } catch (error) {
     console.error('Forgot password error:', error);
     return NextResponse.json({ error: 'Unable to process password reset request' }, { status: 500 });

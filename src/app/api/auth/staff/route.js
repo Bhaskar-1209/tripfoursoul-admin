@@ -10,6 +10,15 @@ const AVAILABLE_PERMISSIONS = [
   'team-members', 'deals', 'sections', 'blog', 'staff'
 ];
 
+// Parse permissions: DB stores it as a JSON string, we need an array
+const parsePermissions = (perms) => {
+  if (Array.isArray(perms)) return perms;
+  if (typeof perms === 'string') {
+    try { return JSON.parse(perms); } catch { return []; }
+  }
+  return [];
+};
+
 // GET - List all staff members (admin only)
 export async function GET(request) {
   try {
@@ -22,7 +31,10 @@ export async function GET(request) {
     if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     
     const admins = await db.query('SELECT * FROM admins');
-    const filtered = admins.map(({ password, ...admin }) => admin);
+    const filtered = admins.map(({ password, ...admin }) => ({
+      ...admin,
+      permissions: parsePermissions(admin.permissions),
+    }));
     
     // Non-admin can only see themselves
     if (payload.role !== 'admin' && payload.role !== 'super_admin') {
