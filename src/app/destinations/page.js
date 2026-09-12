@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import Sidebar from "@/components/Sidebar";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import ConfirmActionModal from "@/components/ConfirmActionModal";
+import Pagination, { usePagination } from "@/components/Pagination";
 import { pricingDisplay } from "@/lib/price";
 
 export default function DestinationsPage() {
@@ -15,6 +16,14 @@ export default function DestinationsPage() {
   const [confirmAction, setConfirmAction] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [confirmSortOrder, setConfirmSortOrder] = useState("");
+
+  const {
+    currentItems: paginatedDestinations,
+    currentPage,
+    setCurrentPage,
+    totalItems,
+    itemsPerPage,
+  } = usePagination(destinations, 10);
 
   const fetchDestinations = async (showLoader = false) => {
     if (showLoader) setLoading(true);
@@ -131,18 +140,21 @@ export default function DestinationsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {destinations.map((destination) => (
+                  {paginatedDestinations.map((destination) => (
                     <tr key={destination.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="px-3 py-3">
-                        <div className="flex items-center gap-2">
-                          {(() => {
-                            const imgs = (Array.isArray(destination.gallery_images) && destination.gallery_images.length)
-                              ? destination.gallery_images
-                              : (destination.image_url ? [destination.image_url] : []);
-                            return imgs.slice(0, 3).map((url, i) => (
-                              <img key={i} src={url} alt={destination.name} className="h-12 w-16 rounded object-cover" />
-                            ));
-                          })()}
+                        <div className="flex items-center gap-3">
+                          {destination.image_url ? (
+                            <img
+                              src={destination.image_url}
+                              alt={destination.name}
+                              className="h-12 w-16 rounded object-cover flex-shrink-0 border border-gray-100 shadow-sm"
+                            />
+                          ) : (
+                            <div className="h-12 w-16 rounded bg-gray-100 flex items-center justify-center text-[10px] text-gray-400 flex-shrink-0">
+                              No cover
+                            </div>
+                          )}
                           <span className="font-medium text-gray-900">{destination.name}</span>
                         </div>
                       </td>
@@ -199,6 +211,12 @@ export default function DestinationsPage() {
                   ))}
                 </tbody>
               </table>
+              <Pagination
+                currentPage={currentPage}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
               {destinations.length === 0 && (
                 <p className="text-gray-400 text-sm py-8 text-center">No destinations added yet. Click "Add New Destination" to create your first destination.</p>
               )}

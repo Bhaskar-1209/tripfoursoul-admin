@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import ConfirmActionModal from "@/components/ConfirmActionModal";
+import Pagination, { usePagination } from "@/components/Pagination";
 import toast from "react-hot-toast";
 
 const formatDate = (value) => {
@@ -121,6 +122,14 @@ export default function OffersPage() {
     return true;
   });
 
+  const {
+    currentItems: paginatedOffers,
+    currentPage,
+    setCurrentPage,
+    totalItems,
+    itemsPerPage,
+  } = usePagination(filteredOffers, 10);
+
   return (
     <div className="flex min-h-screen">
       <Sidebar />
@@ -149,7 +158,7 @@ export default function OffersPage() {
               <table className="w-full text-left text-sm">
                 <thead><tr className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500"><th className="px-3 py-3 font-semibold">Offer</th><th className="px-3 py-3 font-semibold">Travel dates</th><th className="px-3 py-3 font-semibold">Coupon</th><th className="px-3 py-3 font-semibold">Sort</th><th className="px-3 py-3 font-semibold">Status</th><th className="px-3 py-3 font-semibold">Actions</th></tr></thead>
                 <tbody>
-                  {filteredOffers.map((offer) => (
+                  {paginatedOffers.map((offer) => (
                     <tr key={offer.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="px-3 py-3"><div className="flex items-center gap-3">{offer.image_url && <img src={offer.image_url} alt={offer.title} className="h-12 w-16 rounded object-cover" />}<div><p className="font-medium text-gray-900">{offer.title}</p>{offer.badge && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">{offer.badge}</span>}</div></div></td>
                       <td className="px-3 py-3 text-gray-600">{travelDatesLabel(offer) || "—"}</td>
@@ -161,6 +170,12 @@ export default function OffersPage() {
                   ))}
                 </tbody>
               </table>
+              <Pagination
+                currentPage={currentPage}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
               {!filteredOffers.length && <p className="py-8 text-center text-sm text-gray-400">No {activeFilter === "all" ? "offers" : activeFilter} offers found.</p>}
             </div>
           )}

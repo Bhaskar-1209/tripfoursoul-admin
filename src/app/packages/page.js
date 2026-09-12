@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import Sidebar from "@/components/Sidebar";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import ConfirmActionModal from "@/components/ConfirmActionModal";
+import Pagination, { usePagination } from "@/components/Pagination";
 import { pricingDisplay } from "@/lib/price";
 
 export default function PackagesPage() {
@@ -121,6 +122,14 @@ function PackagesPageContent() {
     return true;
   });
 
+  const {
+    currentItems: paginatedPackages,
+    currentPage,
+    setCurrentPage,
+    totalItems,
+    itemsPerPage,
+  } = usePagination(filteredPackages, 10);
+
   return (
     <div className="flex min-h-screen">
       <Sidebar />
@@ -167,7 +176,7 @@ function PackagesPageContent() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredPackages.map((item) => (
+                  {paginatedPackages.map((item) => (
                     <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-3">
@@ -213,6 +222,12 @@ function PackagesPageContent() {
                   ))}
                 </tbody>
               </table>
+              <Pagination
+                currentPage={currentPage}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
               {!filteredPackages.length && <p className="py-8 text-center text-sm text-gray-400">No {activeFilter === "all" ? "packages" : activeFilter} packages found.</p>}
             </div>
           )}

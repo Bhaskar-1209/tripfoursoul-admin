@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Sidebar from "@/components/Sidebar";
+import Pagination, { usePagination } from "@/components/Pagination";
 import useStatusToast from "@/hooks/useStatusToast";
 
 const emptyService = {
@@ -20,6 +21,19 @@ export default function ServicesPage() {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useStatusToast();
+
+  const sortedServices = useMemo(
+    () => [...services].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)),
+    [services]
+  );
+
+  const {
+    currentItems: paginatedServices,
+    currentPage,
+    setCurrentPage,
+    totalItems,
+    itemsPerPage,
+  } = usePagination(sortedServices, 10);
 
   useEffect(() => {
     fetchServices();
@@ -241,14 +255,12 @@ export default function ServicesPage() {
               <tbody className="divide-y divide-gray-100 bg-white">
                 {services.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-sm text-gray-500">
+                    <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-500">
                       No services found. Add your first service.
                     </td>
                   </tr>
                 ) : (
-                  services
-                    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
-                    .map((service) => (
+                  paginatedServices.map((service) => (
                       <tr key={service.id}>
                         <td className="px-4 py-4 text-sm text-gray-700">
                           <div className="font-medium">{service.title}</div>
@@ -277,6 +289,12 @@ export default function ServicesPage() {
                 )}
               </tbody>
             </table>
+            <Pagination
+              currentPage={currentPage}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
           </div>
         </div>
       </main>

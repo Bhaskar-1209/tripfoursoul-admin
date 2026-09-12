@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Sidebar from "@/components/Sidebar";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import Pagination, { usePagination } from "@/components/Pagination";
 
 export default function BlogCategoriesPage() {
   const router = useRouter();
@@ -18,6 +19,14 @@ export default function BlogCategoriesPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
+
+  const {
+    currentItems: paginatedCategories,
+    currentPage,
+    setCurrentPage,
+    totalItems,
+    itemsPerPage,
+  } = usePagination(categories, 10);
 
   const fetchCategories = async () => {
     try {
@@ -211,7 +220,7 @@ export default function BlogCategoriesPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead><tr className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500"><th className="px-3 py-3">Category</th><th className="px-3 py-3">Slug</th><th className="px-3 py-3">Posts</th><th className="px-3 py-3">Sort</th><th className="px-3 py-3">Status</th><th className="px-3 py-3">Actions</th></tr></thead>
-                <tbody>{categories.map((cat) => (
+                <tbody>{paginatedCategories.map((cat) => (
                   <tr key={cat.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="px-3 py-3"><div className="flex items-center gap-3">{cat.image_url && <img src={cat.image_url} alt={cat.name} className="h-10 w-14 rounded object-cover" />}<div><p className="font-medium text-gray-900">{cat.name}</p>{cat.description && <p className="max-w-xs truncate text-xs text-gray-500">{cat.description}</p>}</div></div></td>
                     <td className="px-3 py-3 text-gray-600">/{cat.slug}</td>
@@ -222,6 +231,12 @@ export default function BlogCategoriesPage() {
                   </tr>
                 ))}</tbody>
               </table>
+              <Pagination
+                currentPage={currentPage}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
               {categories.length === 0 && (
                 <p className="text-gray-400 text-sm py-8 text-center">{`No categories yet. Click "Add Category" to create your first blog category.`}</p>
               )}

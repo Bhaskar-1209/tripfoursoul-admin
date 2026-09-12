@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
+import Pagination, { usePagination } from "@/components/Pagination";
 import useStatusToast from "@/hooks/useStatusToast";
 
 const PERMISSION_OPTIONS = [
@@ -35,6 +36,14 @@ export default function StaffPage() {
   const [message, setMessage] = useStatusToast();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  const {
+    currentItems: paginatedStaff,
+    currentPage,
+    setCurrentPage,
+    totalItems,
+    itemsPerPage,
+  } = usePagination(staff, 10);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -109,7 +118,7 @@ export default function StaffPage() {
 
           {/* Staff List */}
           <div className="space-y-3">
-            {staff.map((item) => (
+            {paginatedStaff.map((item) => (
               <div key={item.id} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
@@ -162,6 +171,12 @@ export default function StaffPage() {
                 )}
               </div>
             ))}
+            <Pagination
+              currentPage={currentPage}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
             {staff.length === 0 && (
               <p className="text-gray-400 text-sm py-8 text-center">No staff members found.</p>
             )}

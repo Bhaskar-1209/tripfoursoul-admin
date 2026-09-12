@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Sidebar from "@/components/Sidebar";
+import Pagination, { usePagination } from "@/components/Pagination";
 import useStatusToast from "@/hooks/useStatusToast";
 
 export default function TeamMembersPage() {
@@ -13,6 +14,14 @@ export default function TeamMembersPage() {
   const [message, setMessage] = useStatusToast();
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
+
+  const {
+    currentItems: paginatedTeam,
+    currentPage,
+    setCurrentPage,
+    totalItems,
+    itemsPerPage,
+  } = usePagination(team, 10);
 
   useEffect(() => { fetchTeam(); }, []);
 
@@ -173,7 +182,7 @@ export default function TeamMembersPage() {
 
           {/* Team List */}
           <div className="space-y-3">
-            {team.map((member) => (
+            {paginatedTeam.map((member) => (
               <div key={member.id} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <img src={member.image_url || "https://tripforsoul.com/public/img/logo.png"} alt={member.name} className="w-14 h-14 rounded-full object-cover border" />
                 <div className="flex-1">
@@ -190,6 +199,12 @@ export default function TeamMembersPage() {
                 </div>
               </div>
             ))}
+            <Pagination
+              currentPage={currentPage}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
             {team.length === 0 && (
               <p className="text-gray-400 text-sm py-8 text-center">No team members added yet. Click "Add New Member" to create one.</p>
             )}

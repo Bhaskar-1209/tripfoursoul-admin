@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
+import Pagination, { usePagination } from "@/components/Pagination";
 import useStatusToast from "@/hooks/useStatusToast";
 
 export default function FeaturesPage() {
@@ -13,6 +14,14 @@ export default function FeaturesPage() {
   const [form, setForm] = useState({ icon: "", title: "", description: "", sort_order: 0 });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useStatusToast();
+
+  const {
+    currentItems: paginatedFeatures,
+    currentPage,
+    setCurrentPage,
+    totalItems,
+    itemsPerPage,
+  } = usePagination(features, 10);
 
   useEffect(() => { fetchFeatures(); }, []);
 
@@ -177,7 +186,7 @@ export default function FeaturesPage() {
 
           {/* Features List */}
           <div className="space-y-3">
-            {features.map((feature) => (
+            {paginatedFeatures.map((feature) => (
               <div key={feature.id} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
@@ -213,6 +222,12 @@ export default function FeaturesPage() {
                 </div>
               </div>
             ))}
+            <Pagination
+              currentPage={currentPage}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
             {features.length === 0 && (
               <p className="text-gray-400 text-sm py-8 text-center">No features added yet. Click &quot;Add New Feature&quot; to create your first feature.</p>
             )}

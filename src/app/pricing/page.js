@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
+import Pagination, { usePagination } from "@/components/Pagination";
 import toast, { Toaster } from "react-hot-toast";
 
 const SUPPORTED_CURRENCIES = ["USD", "INR", "EUR"];
@@ -113,6 +114,16 @@ export default function PricingPage() {
     return acc;
   }, {});
 
+  const groupedEntries = Object.entries(groupedPricing);
+
+  const {
+    currentItems: paginatedRegions,
+    currentPage,
+    setCurrentPage,
+    totalItems,
+    itemsPerPage,
+  } = usePagination(groupedEntries, 10);
+
   return (
     <div className="flex min-h-screen">
       <Toaster position="top-right" />
@@ -211,7 +222,7 @@ export default function PricingPage() {
                 </tr>
               </thead>
               <tbody>
-                {Object.entries(groupedPricing).map(([region, items]) => (
+                {paginatedRegions.map(([region, items]) => (
                   items.map((item, idx) => (
                     <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
                       {idx === 0 && (
@@ -240,6 +251,12 @@ export default function PricingPage() {
                 ))}
               </tbody>
             </table>
+            <Pagination
+              currentPage={currentPage}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
             {pricing.length === 0 && (
               <p className="text-gray-400 text-sm py-4 text-center">No pricing configured yet.</p>
             )}

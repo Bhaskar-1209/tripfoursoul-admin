@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import Pagination, { usePagination } from "@/components/Pagination";
 import toast, { Toaster } from "react-hot-toast";
 import { ArrowUpDown, CheckCircle2, Edit3, Eye, EyeOff, Filter, Image as ImageIcon, Plus, Search, Trash2, Video } from "lucide-react";
 
@@ -81,6 +82,14 @@ export default function GalleryPage() {
   const imageCount = images.filter((image) => (image.media_type || "image") === "image").length;
   const videoCount = images.filter((image) => (image.media_type || "image") === "video" || image.video_url).length;
 
+  const {
+    currentItems: paginatedImages,
+    currentPage,
+    setCurrentPage,
+    totalItems,
+    itemsPerPage,
+  } = usePagination(visibleImages, 12);
+
   return (
     <div className="flex min-h-screen">
       <Toaster position="top-right" />
@@ -157,7 +166,7 @@ export default function GalleryPage() {
               )}
               {images.length > 0 && !visibleImages.length && <p className="py-16 text-center text-sm text-[#5D756C]">No media matches these filters.</p>}
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                {visibleImages.map((img) => {
+                {paginatedImages.map((img) => {
                   const isVideo = img.media_type === "video" || img.video_url;
                   return (
                     <article key={img.id} className="overflow-hidden rounded-xl border border-[#DCE8DF] bg-white shadow-sm transition-shadow hover:shadow-md">
@@ -181,6 +190,12 @@ export default function GalleryPage() {
                   );
                 })}
               </div>
+              <Pagination
+                currentPage={currentPage}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
             </>
           )}
         </section>

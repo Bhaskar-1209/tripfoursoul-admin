@@ -29,6 +29,13 @@ export default function NewDestinationPage() {
     setMessageType(type);
   };
 
+  const setCoverImage = (url) => {
+    setForm((current) => ({
+      ...current,
+      image_url: url,
+    }));
+  };
+
   const handleSave = async () => {
     if (!form.name.trim() || !form.region.trim()) {
       notify("Destination name and region are required");
@@ -40,11 +47,14 @@ export default function NewDestinationPage() {
     }
     setSaving(true);
     try {
+      const coverImage = (form.image_url && form.gallery_images.includes(form.image_url))
+        ? form.image_url
+        : (form.gallery_images[0] || "");
       const priceFields = buildPricePayload(form.price_currency, form.price_value);
       const res = await fetch("/api/destinations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, image_url: form.gallery_images[0] || "", gallery_images: form.gallery_images, ...priceFields, is_active: 1 }),
+        body: JSON.stringify({ ...form, image_url: coverImage, gallery_images: form.gallery_images, ...priceFields, is_active: 1 }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -112,8 +122,11 @@ export default function NewDestinationPage() {
 
   const removeImage = (index) => {
     setForm((current) => {
+      const removedUrl = current.gallery_images[index];
       const gallery_images = current.gallery_images.filter((_, i) => i !== index);
-      return { ...current, gallery_images, image_url: gallery_images[0] || "" };
+      const isCoverRemoved = current.image_url === removedUrl;
+      const image_url = isCoverRemoved ? (gallery_images[0] || "") : current.image_url;
+      return { ...current, gallery_images, image_url };
     });
   };
 
@@ -168,16 +181,45 @@ export default function NewDestinationPage() {
                   {uploading ? "Uploading..." : "Upload"}
                 </button>
               </div>
-              <p className="mt-1 text-xs text-gray-500">Upload up to {MAX_DESTINATION_IMAGES} WebP images, max 1 MB each. The first image becomes the cover. ({form.gallery_images.length}/{MAX_DESTINATION_IMAGES})</p>
+              <p className="mt-1 text-xs text-gray-500">
+                Upload up to {MAX_DESTINATION_IMAGES} WebP images, max 1 MB each. Click &quot;Set as Cover&quot; on any image to choose your main cover photo. ({form.gallery_images.length}/{MAX_DESTINATION_IMAGES})
+              </p>
               {form.gallery_images.length > 0 && (
-                <div className="mt-3 grid grid-cols-4 gap-3">
-                  {form.gallery_images.map((url, index) => (
-                    <div key={`${url}-${index}`} className="relative">
-                      <img src={url} alt="Destination image" className="w-full h-24 object-cover rounded border" />
-                      {index === 0 && <span className="absolute top-1 left-1 rounded bg-black/60 px-1 text-[10px] text-white">Cover</span>}
-                      <button type="button" onClick={() => removeImage(index)} className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 text-xs">×</button>
-                    </div>
-                  ))}
+                <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {form.gallery_images.map((url, index) => {
+                    const isCover = form.image_url ? url === form.image_url : index === 0;
+                    return (
+                      <div
+                        key={`${url}-${index}`}
+                        className={`relative rounded-lg overflow-hidden border transition-all ${
+                          isCover ? "ring-2 ring-emerald-500 border-emerald-500 shadow-sm" : "border-gray-200"
+                        }`}
+                      >
+                        <img src={url} alt="Destination image" className="w-full h-24 object-cover" />
+                        {isCover ? (
+                          <span className="absolute top-1 left-1 rounded bg-emerald-600 px-1.5 py-0.5 text-[10px] font-semibold text-white shadow-sm flex items-center gap-1">
+                            ✓ Cover
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setCoverImage(url)}
+                            className="absolute top-1 left-1 rounded bg-black/60 hover:bg-emerald-600 px-1.5 py-0.5 text-[10px] font-medium text-white transition-colors shadow-sm"
+                          >
+                            Set as Cover
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs transition-colors shadow-sm"
+                          title="Remove image"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

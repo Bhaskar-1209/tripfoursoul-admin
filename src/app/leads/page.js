@@ -6,6 +6,7 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import Sidebar from "@/components/Sidebar";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import Pagination, { usePagination } from "@/components/Pagination";
 import useStatusToast from "@/hooks/useStatusToast";
 
 export default function LeadsPage() {
@@ -17,6 +18,14 @@ export default function LeadsPage() {
   const [exportStartDate, setExportStartDate] = useState("");
   const [exportEndDate, setExportEndDate] = useState("");
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  const {
+    currentItems: paginatedLeads,
+    currentPage,
+    setCurrentPage,
+    totalItems,
+    itemsPerPage,
+  } = usePagination(leads, 15);
 
   const leadName = (lead) => lead.name || [lead.first_name, lead.last_name].filter(Boolean).join(" ") || "—";
   const formatDate = (date) => {
@@ -188,7 +197,7 @@ export default function LeadsPage() {
           <div className="admin-card overflow-x-auto">
             <table className="w-full min-w-[1850px] text-left text-sm">
               <thead><tr className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500"><th className="px-3 py-3">Submitted</th><th className="px-3 py-3">Name</th><th className="px-3 py-3">Service</th><th className="px-3 py-3">Source page</th><th className="px-3 py-3">Email</th><th className="px-3 py-3">Phone</th><th className="px-3 py-3">Coupon code</th><th className="px-3 py-3">Travel start</th><th className="px-3 py-3">Travel end</th><th className="px-3 py-3">Travel style</th><th className="px-3 py-3">Trip budget</th><th className="px-3 py-3">Receive offers</th><th className="px-3 py-3">Status</th><th className="px-3 py-3">Action</th></tr></thead>
-              <tbody>{leads.map((lead) => (
+              <tbody>{paginatedLeads.map((lead) => (
                 <tr key={lead.id} className="border-b border-gray-100 align-top">
                   <td className="px-3 py-3 text-gray-500">{lead.created_at ? new Date(lead.created_at).toLocaleString() : "—"}</td>
                   <td className="px-3 py-3 font-semibold text-gray-900">{leadName(lead)}</td>
@@ -207,6 +216,12 @@ export default function LeadsPage() {
                 </tr>
               ))}</tbody>
             </table>
+            <Pagination
+              currentPage={currentPage}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
             {!leads.length && <p className="py-8 text-center text-sm text-gray-500">No leads yet.</p>}
           </div>
         )}

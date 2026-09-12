@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
+import Pagination, { usePagination } from "@/components/Pagination";
 import useStatusToast from "@/hooks/useStatusToast";
 
 export default function TestimonialsPage() {
@@ -15,6 +16,14 @@ export default function TestimonialsPage() {
   const [message, setMessage] = useStatusToast();
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
+
+  const {
+    currentItems: paginatedTestimonials,
+    currentPage,
+    setCurrentPage,
+    totalItems,
+    itemsPerPage,
+  } = usePagination(testimonials, 10);
 
   useEffect(() => { fetchTestimonials(); }, []);
 
@@ -273,7 +282,7 @@ export default function TestimonialsPage() {
 
           {/* Testimonials List */}
           <div className="space-y-3">
-            {testimonials.map((item) => (
+            {paginatedTestimonials.map((item) => (
               <div key={item.id} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                 {item.image_url && (
                   <img src={item.image_url} alt={item.name} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
@@ -324,6 +333,12 @@ export default function TestimonialsPage() {
                 </div>
               </div>
             ))}
+            <Pagination
+              currentPage={currentPage}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
             {testimonials.length === 0 && (
               <p className="text-gray-400 text-sm py-8 text-center">No testimonials added yet. Click &quot;Add New Testimonial&quot; to create your first testimonial.</p>
             )}

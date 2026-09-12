@@ -101,7 +101,15 @@ const validDurationDays = (days) => {
   return /^\d+$/.test(item) && Number(item) > 0 ? Number(item) : null;
 };
 const travelServiceTypes = new Set(['private-transfer', 'travel-insurance', 'visa']);
-const normalizedServiceType = (serviceType) => value(serviceType).toLowerCase().replace(/[\s_]+/g, '-');
+const normalizedServiceType = (serviceType) => {
+  const s = value(serviceType).toLowerCase().replace(/[\s_]+/g, '-');
+  if (s.includes('visa')) return 'visa';
+  if (s.includes('insurance')) return 'travel-insurance';
+  if (s.includes('transfer')) return 'private-transfer';
+  if (s.includes('custom') || s.includes('planning')) return 'custom-travel-planning';
+  if (s.includes('esim')) return 'esim';
+  return s;
+};
 const hydrateMessageDetails = (lead) => {
   const parsed = parsedMessageDetails(lead.message);
   return {
@@ -143,7 +151,7 @@ export async function POST(request) {
     const firstName = value(body.first_name);
     const middleName = value(body.middle_name);
     const lastName = value(body.last_name);
-    const serviceType = normalizedServiceType(body.service_type || body.service);
+    const serviceType = normalizedServiceType(body.service_type || body.service || body.service_name || (body.source_page?.includes('service=') ? body.source_page.split('service=')[1]?.split('&')[0] : ''));
     const destination = value(body.destination || body.country_visiting || body.country_to_visit || body.country_you_are_visiting || body.country_you_want_to_visit);
     const nationality = value(body.nationality || body.citizenship);
     const travelIntent = value(body.travel_intent);
@@ -151,9 +159,11 @@ export async function POST(request) {
     const dateOfBirth = validDate(value(body.date_of_birth));
     const travelDate = validDate(value(body.travel_date));
     const gender = value(body.gender).toUpperCase();
+    const additionalInfo = value(body.additional_information) || cleanMessage(rawMessage);
+    const finalMessage = cleanMessage(rawMessage) || additionalInfo;
     const lead = {
       // Keep the legacy full-name field for existing admin views and integrations.
-      name: value(body.name) || [firstName, lastName].filter(Boolean).join(' '),
+      name: value(body.name) || [firstName, middleName, lastName].filter(Boolean).join(' '),
       first_name: firstName,
       middle_name: middleName,
       last_name: lastName,
@@ -161,15 +171,15 @@ export async function POST(request) {
       phone: value(body.phone),
       destination,
       package_name: value(body.package_name || body.package),
-      date: value(body.date),
+      date: value(body.date) || value(body.travel_start_date),
       travel_start_date: validDate(value(body.travel_start_date)) || validDate(parsed.travel_start_date),
       travel_end_date: validDate(value(body.travel_end_date)) || validDate(parsed.travel_end_date),
       travel_style: value(body.travel_style) || parsed.travel_style,
       trip_budget: value(body.trip_budget) || parsed.trip_budget,
       receive_offers: Object.prototype.hasOwnProperty.call(body, 'receive_offers') ? booleanValue(body.receive_offers) : booleanValue(parsed.receive_offers),
       travellers: value(body.travellers),
-      message: cleanMessage(rawMessage),
-      additional_information: value(body.additional_information),
+      message: finalMessage,
+      additional_information: additionalInfo,
       coupon_code: value(body.coupon_code || body.coupon).toUpperCase(),
       offer_duration: value(body.offer_duration) || null,
       offer_duration_days: validDurationDays(body.offer_duration_days),

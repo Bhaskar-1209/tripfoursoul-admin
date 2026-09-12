@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Sidebar from "@/components/Sidebar";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import Pagination, { usePagination } from "@/components/Pagination";
 
 export default function BlogPage() {
   const router = useRouter();
@@ -87,6 +88,14 @@ export default function BlogPage() {
     ? posts.filter((p) => String(p.category_id) === String(selectedCategory.id))
     : [];
 
+  const {
+    currentItems: paginatedCategoryPosts,
+    currentPage,
+    setCurrentPage,
+    totalItems,
+    itemsPerPage,
+  } = usePagination(categoryPosts, 10);
+
   // Get posts with no category
   const uncategorizedPosts = posts.filter((p) => !p.category_id);
 
@@ -131,7 +140,7 @@ export default function BlogPage() {
             )}
 
             <div className="space-y-3">
-              {categoryPosts.map((item) => (
+              {paginatedCategoryPosts.map((item) => (
                 <div key={item.id} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                   {item.cover_image && (
                     <img src={item.cover_image} alt={item.title} className="w-24 h-20 object-cover rounded-lg flex-shrink-0" />
@@ -167,6 +176,12 @@ export default function BlogPage() {
                   </div>
                 </div>
               ))}
+              <Pagination
+                currentPage={currentPage}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
               {categoryPosts.length === 0 && (
                 <p className="text-gray-400 text-sm py-8 text-center">No blog posts in this category yet.</p>
               )}
