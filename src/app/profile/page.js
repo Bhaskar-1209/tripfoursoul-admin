@@ -28,7 +28,7 @@ export default function ProfilePage() {
           <p className="mt-2 text-sm text-[#5D756C]">View your admin account details and section access.</p>
         </div>
         {loading ? <LoadingSpinner text="Loading profile..." /> : user ? (
-          <div className="grid max-w-4xl gap-6 lg:grid-cols-[1fr_1.25fr]">
+          <div className="grid gap-6 lg:grid-cols-[1fr_1.25fr]">
             <section className="admin-card">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#DCE8DF] text-2xl font-bold text-[#24564C]">{(user.username || "A").slice(0, 1).toUpperCase()}</div>
               <h2 className="mt-5 text-xl font-bold text-[#25463F]">{user.username}</h2>
