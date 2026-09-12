@@ -33,8 +33,12 @@ export default function ForgotPasswordPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Unable to send OTP");
-      setMessage(data.message);
-      if (data.noEmail && data.otp) setDevOtp(data.otp);
+      if (data.noEmail && data.otp) {
+        setDevOtp(data.otp);
+        // Don't show message — OTP box already shows everything
+      } else {
+        setMessage(data.message);
+      }
       setStep(2);
     } catch (error) {
       setMessage(error.message);
