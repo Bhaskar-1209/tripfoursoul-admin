@@ -256,9 +256,29 @@ const getOne = async (table, id) => {
 };
 
 // Generic insert
+// const insert = async (table, data) => {
+//   const keys = Object.keys(data);
+//   const values = Object.values(data);
+//   const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
+
+//   const result = await query(
+//     `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders}) RETURNING id`,
+//     values
+//   );
+
+//   return { ...data, id: result.id };
+// };
 const insert = async (table, data) => {
   const keys = Object.keys(data);
-  const values = Object.values(data);
+
+  const values = Object.values(data).map((value) => {
+    if (Array.isArray(value) || (value !== null && typeof value === 'object')) {
+      return JSON.stringify(value);
+    }
+
+    return value;
+  });
+
   const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
 
   const result = await query(
@@ -270,10 +290,33 @@ const insert = async (table, data) => {
 };
 
 // Generic update
+// const update = async (table, id, data) => {
+//   const keys = Object.keys(data);
+//   const values = Object.values(data);
+//   const setClause = keys.map((key, i) => `${key} = $${i + 1}`).join(', ');
+
+//   await query(
+//     `UPDATE ${table} SET ${setClause} WHERE id = $${keys.length + 1}`,
+//     [...values, id]
+//   );
+
+//   return { ...data, id };
+// };
+
 const update = async (table, id, data) => {
   const keys = Object.keys(data);
-  const values = Object.values(data);
-  const setClause = keys.map((key, i) => `${key} = $${i + 1}`).join(', ');
+
+  const values = Object.values(data).map((value) => {
+    if (Array.isArray(value) || (value !== null && typeof value === 'object')) {
+      return JSON.stringify(value);
+    }
+
+    return value;
+  });
+
+  const setClause = keys
+    .map((key, i) => `${key} = $${i + 1}`)
+    .join(', ');
 
   await query(
     `UPDATE ${table} SET ${setClause} WHERE id = $${keys.length + 1}`,
