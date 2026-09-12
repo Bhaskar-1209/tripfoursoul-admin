@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 
 const PERMISSION_OPTIONS = [
@@ -26,8 +26,11 @@ const PERMISSION_OPTIONS = [
   { value: "staff", label: "Staff Management" },
 ];
 
-export default function CreateStaffPage() {
+export default function EditStaffPage() {
   const router = useRouter();
+  const params = useParams();
+  const id = params?.id;
+
   const [form, setForm] = useState({
     username: "",
     email: "",
@@ -35,8 +38,33 @@ export default function CreateStaffPage() {
     role: "staff",
     permissions: [],
   });
+  const [originalUsername, setOriginalUsername] = useState("");
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!id) return;
+    fetch("/api/auth/staff")
+      .then((res) => res.json())
+      .then((data) => {
+        const member = data.staff?.find((s) => String(s.id) === String(id));
+        if (member) {
+          setOriginalUsername(member.username);
+          setForm({
+            username: member.username,
+            email: member.email || "",
+            password: "",
+            role: member.role || "staff",
+            permissions: Array.isArray(member.permissions) ? member.permissions : [],
+          });
+        } else {
+          setError("Staff member not found");
+        }
+      })
+      .catch(() => setError("Failed to load staff member"))
+      .finally(() => setLoading(false));
+  }, [id]);
 
   // Hide "staff" permission when role is admin or super_admin
   const visiblePermissions = (form.role === "admin" || form.role === "super_admin")
@@ -65,17 +93,25 @@ export default function CreateStaffPage() {
   const handleSave = async () => {
     setError("");
     if (!form.username.trim()) return setError("Username is required");
-    if (!form.password.trim()) return setError("Password is required");
 
     setSaving(true);
     try {
+      const body = {
+        id,
+        username: form.username,
+        email: form.email,
+        role: form.role,
+        permissions: form.permissions,
+        ...(form.password ? { password: form.password } : {}),
+      };
+
       const res = await fetch("/api/auth/staff", {
-        method: "POST",
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to create staff member");
+      if (!res.ok) throw new Error(data.error || "Failed to update staff member");
       router.push("/staff");
     } catch (err) {
       setError(err.message);
@@ -83,6 +119,17 @@ export default function CreateStaffPage() {
       setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen">
+        <Sidebar />
+        <main className="flex-1 p-8 flex items-center justify-center">
+          <p className="text-gray-400">Loading...</p>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen">
@@ -96,7 +143,9 @@ export default function CreateStaffPage() {
           >
             ← Back
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Add New Staff Member</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Edit Staff — <span className="text-teal-700">{originalUsername}</span>
+          </h1>
         </div>
 
         <div className="max-w-2xl">
@@ -114,7 +163,7 @@ export default function CreateStaffPage() {
                 value={form.username}
                 onChange={(e) => setForm({ ...form, username: e.target.value })}
                 className="admin-input"
-                placeholder="e.g., rajesh"
+                disabled={originalUsername === "admin"}
               />
             </div>
 
@@ -132,13 +181,13 @@ export default function CreateStaffPage() {
 
             {/* Password */}
             <div>
-              <label className="admin-label">Password *</label>
+              <label className="admin-label">New Password <span className="text-gray-400 font-normal">(leave blank to keep current)</span></label>
               <input
                 type="password"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 className="admin-input"
-                placeholder="Enter password (min. 6 chars)"
+                placeholder="Enter new password"
               />
             </div>
 
@@ -149,6 +198,7 @@ export default function CreateStaffPage() {
                 value={form.role}
                 onChange={handleRoleChange}
                 className="admin-input"
+                disabled={originalUsername === "admin"}
               >
                 <option value="staff">Staff</option>
                 <option value="admin">Admin</option>
@@ -176,6 +226,7 @@ export default function CreateStaffPage() {
                         checked={form.permissions.includes(perm.value)}
                         onChange={() => togglePermission(perm.value)}
                         className="h-4 w-4 accent-teal-600"
+                        disabled={originalUsername === "admin"}
                       />
                       {perm.label}
                     </label>
@@ -195,7 +246,7 @@ export default function CreateStaffPage() {
                 disabled={saving}
                 className="admin-btn disabled:opacity-50"
               >
-                {saving ? "Creating..." : "Create Staff Member"}
+                {saving ? "Saving..." : "Update Staff Member"}
               </button>
               <button
                 onClick={() => router.push("/staff")}
@@ -210,4 +261,3 @@ export default function CreateStaffPage() {
     </div>
   );
 }
-
