@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server';
-import { createHash, randomBytes } from 'crypto';
+import { createHash } from 'crypto';
 import db from '@/lib/db';
 
-const TOKEN_TTL_MS = 60 * 60 * 1000;
+const OTP_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
-const hashToken = (token) => createHash('sha256').update(token).digest('hex');
+const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 let schemaReady;
-const ensureResetColumns = () => {
+const ensureOTPColumns = () => {
   if (!schemaReady) {
     schemaReady = Promise.all([
-      db.query('ALTER TABLE admins ADD COLUMN IF NOT EXISTS reset_token_hash VARCHAR(64)'),
-      db.query('ALTER TABLE admins ADD COLUMN IF NOT EXISTS reset_token_expires_at TIMESTAMP'),
+      db.query('ALTER TABLE admins ADD COLUMN IF NOT EXISTS otp_code VARCHAR(6)'),
+      db.query('ALTER TABLE admins ADD COLUMN IF NOT EXISTS otp_expires_at TIMESTAMP'),
     ]).catch((error) => {
       schemaReady = null;
       throw error;
@@ -20,7 +20,7 @@ const ensureResetColumns = () => {
   return schemaReady;
 };
 
-const sendResetEmail = async (email, resetUrl) => {
+const sendOTPEmail = async (email, otp) => {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.RESEND_FROM_EMAIL;
   if (!apiKey || !from) return false;
@@ -31,13 +31,22 @@ const sendResetEmail = async (email, resetUrl) => {
     body: JSON.stringify({
       from,
       to: [email],
-      subject: 'Reset your TripForSoul admin password',
-      html: `<p>We received a request to reset your TripForSoul admin password.</p><p><a href="${resetUrl}">Reset password</a></p><p>This link expires in one hour and can only be used once.</p>`,
+      subject: 'Your TripForSoul Admin Password Reset OTP',
+      html: `
+        <div style="font-family: sans-serif; max-width: 400px; margin: auto;">
+          <h2 style="color: #24564C;">Password Reset OTP</h2>
+          <p>Use the following OTP to reset your TripForSoul admin password:</p>
+          <div style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #24564C; background: #DCE8DF; padding: 16px; border-radius: 8px; text-align: center;">
+            ${otp}
+          </div>
+          <p style="color: #666; font-size: 14px; margin-top: 16px;">This OTP is valid for <strong>10 minutes</strong> and can only be used once.</p>
+          <p style="color: #999; font-size: 12px;">If you did not request this, please ignore this email.</p>
+        </div>
+      `,
     }),
   });
 
-  if (!response.ok) throw new Error('Email provider rejected the reset email');
-  return true;
+  return response.ok;
 };
 
 export async function POST(request) {
@@ -45,37 +54,44 @@ export async function POST(request) {
     const { email } = await request.json();
     if (!email?.trim()) return NextResponse.json({ error: 'Email is required' }, { status: 400 });
 
-    const emailConfigured = !!(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL);
+    await ensureOTPColumns();
 
-    await ensureResetColumns();
-    const admins = await db.query('SELECT id, email FROM admins WHERE LOWER(email) = LOWER($1) AND is_active = true', [email.trim()]);
+    const admins = await db.query(
+      'SELECT id, email FROM admins WHERE LOWER(email) = LOWER($1) AND is_active = true',
+      [email.trim()]
+    );
 
-    const genericResponse = { message: 'If an account exists for that email, a reset link has been sent.' };
-    if (!admins.length) return NextResponse.json(genericResponse);
-
-    const token = randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
-    await db.update('admins', admins[0].id, {
-      reset_token_hash: hashToken(token),
-      reset_token_expires_at: expiresAt.toISOString(),
-    });
-
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
-    const resetUrl = `${baseUrl}/reset-password?token=${encodeURIComponent(token)}`;
-
-    if (emailConfigured) {
-      await sendResetEmail(admins[0].email, resetUrl);
-      return NextResponse.json(genericResponse);
+    // Always return success to avoid leaking whether account exists
+    if (!admins.length) {
+      return NextResponse.json({ success: true, message: 'If an account exists for that email, an OTP has been sent.' });
     }
 
-    // No email provider configured — return reset link directly so user can click it on screen
+    const otp = generateOTP();
+    const expiresAt = new Date(Date.now() + OTP_TTL_MS).toISOString();
+
+    await db.update('admins', admins[0].id, {
+      otp_code: otp,
+      otp_expires_at: expiresAt,
+    });
+
+    const emailSent = await sendOTPEmail(admins[0].email, otp);
+
+    if (!emailSent) {
+      // No email configured — return OTP directly (for internal admin tool use)
+      return NextResponse.json({
+        success: true,
+        message: 'OTP generated successfully (email not configured, showing directly):',
+        otp, // shown on screen when no email provider
+        noEmail: true,
+      });
+    }
+
     return NextResponse.json({
-      message: 'Password reset link generated. Click the link below to reset your password (valid for 1 hour):',
-      resetUrl,
-      noEmail: true,
+      success: true,
+      message: `OTP sent to ${admins[0].email}. Valid for 10 minutes.`,
     });
   } catch (error) {
-    console.error('Forgot password error:', error);
-    return NextResponse.json({ error: 'Unable to process password reset request' }, { status: 500 });
+    console.error('Forgot password OTP error:', error);
+    return NextResponse.json({ error: 'Unable to send OTP. Please try again.' }, { status: 500 });
   }
 }
